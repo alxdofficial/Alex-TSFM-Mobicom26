@@ -94,18 +94,19 @@ To handle cross-dataset label inconsistency (e.g., ``jogging'' vs.\ ``running'')
 \emph{Fairness and input policy.}
 Each model receives the richest input its architecture can consume.
 HALO evaluates at native rates with rich channel descriptions; LanHAR at 50\,Hz; LiMU-BERT, CrossHAR, MOMENT, and LLaSA use the LIMU-BERT preprocessing pipeline (20\,Hz, 120-step, 6-channel windows); MOMENT additionally left-pads each channel to its expected 512 timesteps per its published protocol.
-Conversely, MOMENT benefits from 341M parameters and 6144-dim embeddings, and classifier-based models benefit from group scoring---each is an architectural advantage we preserve rather than neutralize.
-To ensure a fair comparison we further guarantee:
-(i)~identical windows, labels, and splits for all models;
+Conversely, MOMENT benefits from 341M parameters and 6144-dim embeddings, and classifier-based models benefit from group scoring.
+To ensure a fair comparison:
+(i)~all models receive identical windows, labels, and splits;
 (ii)~each baseline uses its recommended classifier;
-(iii)~deviations from original protocols err in the baseline's favour (e.g., unfreezing CrossHAR, giving MOMENT end-to-end fine-tuning, 10$\times$ LLaSA's per-class budget);
-(iv)~group scoring favours classifier-based models, while text-aligned models use exact string match---a strictly harder criterion.
-As a direct fairness control, Section~\ref{sec:native_rate_ablation} evaluates HALO under the most conservative baseline inputs (20\,Hz, generic descriptions) and shows it still leads on 3 of 4 settings (Table~\ref{tab:fairness_control}).
+(iii)~where we deviated from a baseline's original protocol, we chose the option favouring that baseline (e.g., unfreezing CrossHAR, giving MOMENT end-to-end fine-tuning, 10$\times$ LLaSA's per-class budget);
+(iv)~classifier-based models use group scoring, while text-aligned models use exact string match.
+We report exact match for text-aligned models because open-vocabulary deployment depends on raw label-string retrieval; synonym-group scoring would not reflect real deployment accuracy.
+As a direct fairness control, Section~\ref{sec:native_rate_ablation} evaluates HALO under baseline-equivalent inputs (20\,Hz, generic descriptions) and shows it still leads on 3 of 4 settings (Table~\ref{tab:fairness_control}).
 
 \textbf{Implementation details.}
 Training proceeds in two stages with a single model jointly across all 10 datasets.
 Stage~1 pretrains the IMU encoder (Section~\ref{sec:pretraining}) for 100~epochs (batch~20, AdamW, LR~$10^{-4}$, weight decay~$10^{-5}$, 10 warmup epochs, MAE mask ratio 0.5, contrastive temperature 0.2).
-Stage~2 initializes from the pretrained encoder and trains with 70/15/15 splits per dataset, mixed precision, and gradient accumulation (micro-batch~32, accumulation~16). Key hyperparameters: learned temperature $\alpha_0{=}0.07$, soft-target temperature $\tau_s{=}0.5$, memory bank $Q{=}256$.
+Stage~2 initializes from the pretrained encoder and trains for 200~epochs with 70/15/15 splits per dataset, mixed precision, and gradient accumulation (micro-batch~32, accumulation~16). Key hyperparameters: learned temperature $\alpha_0{=}0.07$, soft-target temperature $\tau_s{=}0.5$, memory bank $Q{=}256$.
 Group-balanced sampling mitigates class imbalance (weights inversely proportional to group frequency, capped at $20\times$).
 HALO uses a fixed 1.0\,s evaluation patch size for all datasets with no per-dataset tuning; sensitivity is analyzed in Section~\ref{sec:patch_sensitivity}. All training is performed on a single NVIDIA A100 80\,GB GPU; on-device inference profiling uses a smartphone (Section~\ref{sec:scaling}).
 
@@ -234,7 +235,7 @@ On VTT-ConIoT, all models score near random on zero-shot ($<$9\%). With supervis
 \subsubsection{Ablation study on design components}
 \label{sec:component_ablation}
 
-We isolate three architectural and training contributions by disabling each independently from the full model.\footnote{Ablation runs use 100 epochs (vs.\ 200 for the final model) with a single seed; absolute numbers differ slightly from Table~\ref{tab:main_results} but relative deltas are meaningful.} Table~\ref{tab:component_ablation} reports 5-dataset averages.
+We isolate three architectural and training contributions by disabling each independently from the full model.\footnote{Ablation runs use 100 Stage~2 epochs (vs.\ 200 for the final model) with a single seed; absolute numbers differ slightly from Table~\ref{tab:main_results} but relative deltas are meaningful.} Table~\ref{tab:component_ablation} reports 5-dataset averages.
 
 \begin{table}[t]
   \centering
@@ -336,7 +337,7 @@ Table~\ref{tab:scaling} shows Small is the sweet spot: Medium regresses by 8.2\,
     Medium & 63M & 37.8 & 47.7 & 72.6 & 84.5 \\
     \bottomrule
   \end{tabular}
-  \caption{Model scaling: average accuracy (\%) on 3 test datasets at 20\,Hz. Small (35M) is the best; Medium regresses on all zero-shot metrics despite doubling parameters.}
+  \caption{Model scaling: average accuracy (\%) on 3 main test datasets at 20\,Hz. Small (35M) is the best; Medium regresses on all zero-shot metrics despite doubling parameters.}
   \label{tab:scaling}
 \end{table}
 
