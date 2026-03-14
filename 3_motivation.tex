@@ -1,0 +1,51 @@
+% =========================
+% 3_motivation.tex
+% =========================
+\section{Motivation}
+\label{sec:motivation}
+
+We identify two fundamental challenges that prevent current IMU-based HAR models from serving as general-purpose foundations: \emph{sensing heterogeneity} across devices and deployments, and \emph{limited generalization} to unseen activity distributions. We analyze each challenge through the lens of real-world applications and derive the design requirements that motivate HALO.
+
+\subsection{Sensing Heterogeneity Across Devices and Deployments}
+
+Wearable and mobile devices differ widely in their sensing configurations, leading to substantial data heterogeneity across HAR datasets. For example, a smartwatch with a 3-axis accelerometer at 50\,Hz produces significantly different raw data than a multi-sensor body suit capturing 51 channels at 100\,Hz, even when both record the same physical activity. 
+To systematically analyze such heterogeneity, we analyze the 17 datasets included in Table~\ref{tab:datasets} of our benchmark. Figure~\ref{fig:dataset_scatter} visualizes the distributions of the key characteristics of these datasets.
+
+% As visualized in Figure~\ref{fig:dataset_scatter}, these datasets span a broad range of sampling rates and channel counts: while most training and test sets clustered around 50\,Hz / 6~channels, others vary from 20 to 100\,Hz and from 3 to 5 channels, reflecting the diversity of sensing conditions encountered in real applications.
+
+
+
+\begin{figure}[t]
+    \centering
+    \setlength{\abovecaptionskip}{2pt}
+    \setlength{\belowcaptionskip}{-4pt}
+  \includegraphics[width=\columnwidth]{figures/fig_dataset_scatter.pdf}
+  \caption{Dataset heterogeneity across the 17 HAR datasets in our benchmark. Each point represents one dataset. Training datasets (blue circles) and test datasets (red triangles) span 20--100\,Hz in sampling rates, 3--45 channels, and 4--19 activity labels.}
+  \label{fig:dataset_scatter}
+\end{figure}
+
+\textbf{Sampling rate variation.}
+Sampling rates range from 20\,Hz to 100\,Hz (Figure~\ref{fig:dataset_scatter}), so a 4-second window contains 80 to 400 timesteps depending on the device. A fixed positional encoding tied to timestep index conflates physical time with sequence length, causing identical motions at different rates to appear structurally different.
+
+\textbf{Channel and placement diversity.}
+Channel counts range from 3-axis wrist accelerometers to 51-channel multi-IMU body suits. A fixed-width input layer cannot accommodate this variability without padding artifacts or dataset-specific input heads.
+
+% Label vocabulary inconsistency moved to Section 3.2 (generalization)
+
+
+
+
+
+\subsection{Limited Generalization to Novel Distributions and Activities}
+
+Beyond sensing heterogeneity, existing approaches share a structural limitation: they produce representations consumed by a fixed, closed-world classifier. This is adequate within a single dataset but fails in two important transfer scenarios.
+
+\textbf{Label vocabulary inconsistency.} Label vocabularies differ in both naming and granularity: ``walking,'' ``level walking,'' ``walking on a flat surface,'' and ``normal walk'' all denote the same activity across different datasets, while ``sport'' and ``rope skipping'' represent very different levels of specificity. Because each research group defines its own taxonomy independently, standard one-hot supervision treats ``jogging'' and ``running'' as maximally different, producing contradictory gradients when both labels appear in the training set for similar motions.
+
+The first is \textit{label shift}: a model trained on ten datasets with a combined 87 unique activity labels is never exposed to the specific label strings used in a held-out test set, even when the underlying motions overlap. For classifier-based models, this means the output vocabulary cannot cover the test labels, and synonym mismatches (e.g., predicting ``jogging'' when the ground truth is ``running'') count as errors even when semantically correct. The second is \textit{genuinely novel activities}: our test datasets include activities with no semantic analog in the training label set (e.g., \textit{car\_step\_in} in MobiAct, industrial activities in VTT-ConIoT), making correct predictions structurally impossible for any closed-world model.
+
+Text-aligned models can avoid the closed-world limitation: inference is cosine-similarity retrieval over an arbitrary text library, so the candidate set can be changed at runtime without retraining. However, effective text alignment requires both (i) a sensor encoder robust to the heterogeneity described above, and (ii) a training objective that handles synonym variation in label strings rather than treating them as distinct classes.
+
+\subsection{Design Requirements}
+
+The analysis above yields three concrete requirements for a cross-device IMU model: (R1)~the model must handle arbitrary sampling rates, channel counts, and sensor placements without dataset-specific architectural changes; (R2)~it must support open-vocabulary recognition over arbitrary label sets at test time, including labels not seen during training; and (R3)~it must align semantically equivalent labels during training to avoid contradictory gradients from synonym variation. HALO achieves R1 through heterogeneity-aware pretraining (Section~\ref{sec:design}), and R2--R3 through synonym-aware IMU-to-text contrastive alignment (Section~\ref{sec:design}).

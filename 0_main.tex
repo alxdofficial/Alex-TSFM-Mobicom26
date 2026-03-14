@@ -1,0 +1,135 @@
+\documentclass[sigconf, 10pt]{acmart}
+
+\usepackage[english]{babel}
+\usepackage{blindtext}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{color}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{tabularray}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{xcolor} % For custom colors
+\usepackage{todonotes}
+\usepackage{array} % To use the 'p' column type
+\usepackage{makecell} % To allow for line breaks within cells
+\usepackage{booktabs} % For better table lines
+\usepackage{geometry}
+% \geometry{margin=2.5cm}  % Adjust margins to prevent overfull boxes
+% \setlength{\marginparwidth}{2cm}  % Fix todonotes warning
+\usepackage{microtype}
+\usepackage{booktabs}
+\tolerance=1500
+\emergencystretch=0.5em
+
+% Tighten float spacing
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\dblfloatsep}{6pt plus 2pt minus 2pt}
+
+% Copyright
+\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference info
+\setcopyright{none}
+
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\setcopyright{usgov}
+%\setcopyright{usgovmixed}
+%\setcopyright{cagov}
+%\setcopyright{cagovmixed}
+
+\newcommand{\name}{HALO\xspace}
+
+\def\thickhline{\noalign{\hrule height.8pt}}
+
+\newcommand{\says}[3]{\todo[size=\small,color=#2,inline]{#1 says: #3}}
+\newcommand\xiaomin[1]{\says{Xiaomin}{yellow}{#1}}
+
+\newcommand{\TODO}[1]{{\color{red}{#1}}}
+
+\pagestyle{plain} % removes running headers
+\settopmatter{printacmref=false, printccs=false, printfolios=true}
+% \acmConference[SIGCOMM '23]{SIGCOMM '23: Annual conference of the ACM Special Interest Group on Data Communication}{Sep 2023}{New York City, US}
+
+% DOI
+\acmDOI{}
+
+% ISBN
+\acmISBN{}
+
+%Conference
+%\acmConference[Submitted for review to SIGCOMM]{}
+%\acmYear{2018}
+%\copyrightyear{}
+
+%% {} with no args suppresses printing of the price
+% \acmPrice{}
+
+
+\begin{document}
+
+\title{HALO: A Heterogeneity-Aware Language-Aligned IMU Foundation Model for Open-Set Human Activity Recognition}
+
+% Compared with image and text; sensing is a lot more heterogeneous, sample rate, sensor charateristics, and modalities; when it comes to training large models benefit on large scale data, it proposes challenges
+
+
+% \title{MMBind: Multimodal Learning for IoT through Binding Distributed and Incomplete Data
+% }
+% MMBind: Multimodal Learning on Distributed Incomplete IoT Data via Binding with Common Modality
+
+% author list: Xiaomin, Jason (co-first), Tommy, Yihan, xxx (professors and collaborators)
+
+
+% Learning algorithms and models for perception, understanding, and adaptation
+
+%\titlenote{Produces the permission block, and copyright information}
+%\subtitle{Extended Abstract}
+% Paper #N, 12 pages body, 14 pages total
+% \author{Paper \#239, 12 pages body, 17 pages total}
+% \author{Firstname Lastname}
+% \authornote{Note}
+% \orcid{1234-5678-9012}
+% \affiliation{%
+%   \institution{Affiliation}
+%   \streetaddress{Address}
+%   \city{City} 
+%   \state{State} 
+%   \postcode{Zipcode}
+% }
+% \email{email@domain.com}
+
+% The default list of authors is too long for headers}
+% \renewcommand{\shortauthors}{xxx}
+
+\begin{abstract}
+Human Activity Recognition (HAR) using inertial measurement units (IMUs) enables a wide range of applications, yet no single model can accept diverse IMU configurations---varying sampling rates, channel counts, and sensor placements---and recognize activities across unseen devices and label vocabularies without per-dataset adaptation.
+We introduce HALO\footnote{The source code and pretrained models for HALO will be released upon acceptance.} (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-aligned \textbf{O}pen-set model), a domain-specific IMU foundation model that addresses this through a two-stage framework.
+Stage~1 pretrains a heterogeneity-aware IMU encoder via adaptive-pooling tokenization, channel-independent processing, and \emph{contextualized sensor conditioning} that injects natural-language sensor descriptions into each channel embedding. Stage~2 aligns this encoder with text via \emph{synonym-aware soft contrastive learning}, enabling open-set recognition via cosine-similarity retrieval without per-dataset classifiers.
+Trained on 10 public HAR datasets and evaluated on 7 held-out datasets, HALO outperforms five state-of-the-art baselines on all 8 aggregate metrics---including under baseline-equivalent input conditions (20\,Hz, generic descriptions)---with only ${\sim}$35M trainable parameters (10$\times$ fewer than MOMENT). HALO improves zero-shot open-set accuracy by 13.7 percentage points over MOMENT (42.0\% vs.\ 28.3\%). A video demonstration is available at \url{https://youtu.be/n36M9ho2z9o}.
+
+% We further evaluate on two severely out-of-domain datasets where all models collapse in the zero-shot setting, highlighting the limits of cross-dataset transfer under extreme distribution shift.
+
+
+\end{abstract}
+
+
+\maketitle
+
+\input{1_introduction.tex}
+\input{2_related_work.tex}
+\input{3_motivation}
+\input{4_overview}
+\input{5_design}
+\input{6_experiments}
+\input{7_conclusion}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{reference}
+
+\end{document}

@@ -1,0 +1,26 @@
+% =========================
+% 4_overview.tex
+% =========================
+\section{System Overview}
+\label{sec:overview}
+
+HALO is an IMU-to-text semantic alignment model trained across heterogeneous HAR datasets for open-set, zero-shot activity recognition. The system addresses the design requirements identified in Section~\ref{sec:motivation} through a two-stage training framework. Figure~\ref{fig:overview} illustrates the end-to-end pipeline.
+
+
+\begin{figure}[t]
+    \centering
+    \setlength{\abovecaptionskip}{2pt}
+    \setlength{\belowcaptionskip}{-4pt}
+  \includegraphics[width=\columnwidth]{figures/fig_overview.png}
+  \caption{System overview of HALO. Diverse activities and heterogeneous IMU configurations are handled by seconds-based patching with adaptive pooling and channel-independent tokenization (Stage~1), then aligned with text via synonym-aware contrastive learning (Stage~2). Zero-shot inference swaps label banks at runtime with no retraining.  }
+  \label{fig:overview}
+\end{figure}
+
+\textbf{Stage~1: Heterogeneity-aware pretraining.} The IMU encoder maps variable-rate, variable-channel sessions to a fixed embedding $\mathbf{z}_{\text{imu}} \in \mathbb{R}^{D}$ through adaptive-pooling tokenization, channel-independent processing, and contextualized sensor conditioning, then is pretrained via masked autoencoding and patch-level contrastive learning (Section~\ref{sec:heterogeneity}).
+
+\textbf{Stage~2: Synonym-aware IMU-to-text alignment.} The pretrained encoder is aligned with a frozen Sentence-BERT text encoder via synonym-aware soft contrastive learning that derives soft target distributions from text--text similarity, resolving label conflicts across datasets and mapping both modalities into a shared 384-dimensional space (Section~\ref{sec:alignment_design}).
+
+
+\textbf{Inference.} At test time, recognition is cosine-similarity retrieval: given $\mathbf{z}_{\text{imu}}$, we select the label embedding with maximum similarity, supporting arbitrary candidate inventories including open-vocabulary settings. No per-dataset classifier is needed. The full model contains ${\sim}$35M trainable parameters (8-layer dual-branch IMU encoder ${\sim}$19M, alignment and projection heads ${\sim}$16M) plus a single frozen Sentence-BERT backbone (all-MiniLM-L6-v2, 22.7M) shared for both channel conditioning and text alignment. At deployment, the sensor description string is specified once when the app is configured; the corresponding text embeddings are computed once and cached, adding zero per-inference cost. Likewise, all candidate label embeddings can be precomputed offline.
+
+% Figure~\ref{fig:overview} illustrates the end-to-end pipeline; Figures~\ref{fig:encoder} and~\ref{fig:alignment} detail the encoder and alignment components respectively.

@@ -1,0 +1,7 @@
+
+\section{Discussion and Conclusion}
+\label{sec:conclusion}
+
+We presented HALO, an IMU foundation model that accepts diverse wearable configurations and recognizes activities via open-vocabulary retrieval without per-dataset adaptation, leading five baselines on all 8 aggregate metrics with ${\sim}$35M parameters.
+
+Several limitations point to future work. First, channel-text conditioning uses dataset-level descriptions; on RealWorld, rich descriptions hurt zero-shot accuracy by 9.9\,pp (Section~\ref{sec:native_rate_ablation}) because heterogeneous body placements are poorly captured by a single description---motivating per-sample metadata conditioning. Second, severe distribution shift remains unsolved: all models collapse on HARTH and VTT-ConIoT in zero-shot. Third, the 87-label vocabulary and 384-dim embedding constrain semantic coverage. Future work targets per-sample conditioning, multi-prototype label pooling, and unsupervised domain adaptation.

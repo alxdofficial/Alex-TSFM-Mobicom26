@@ -1,0 +1,39 @@
+
+\section{Introduction}
+
+
+
+% From diverse wearable devices to unified activity understanding. Consumer wearables vary widely in sampling rates, channel counts, and sensor placements, producing heterogeneous IMU signals. HALO maps all configurations into a shared IMU--text embedding space, enabling zero-shot, open-set activity recognition via cosine similarity---no per-dataset classifier needed.
+
+
+
+Inertial measurement units (IMUs) are among the most widely deployed sensors in consumer electronics such as smartwatches and smartphones, enabling human activity recognition (HAR) for applications in health monitoring~\cite{mhealth}, rehabilitation~\cite{pamap2}, sports analytics~\cite{dsads}, and human--computer interaction. However, developing a unified model for HAR that generalizes across diverse subjects, devices, and activities remains challenging due to two fundamental issues. First, \emph{sensing heterogeneity}: datasets differ substantially in sampling rates (20--100 Hz), sensor suites (3--45 channels spanning accelerometers, gyroscopes, and magnetometers at various body placements), and label vocabularies with inconsistently overlapping activity names. Second, \emph{limited generalization}: models trained on one dataset typically transfer poorly to others, especially when faced with unseen activities or mismatched label spaces.
+
+Addressing these challenges requires a model that can (i) operate at arbitrary sampling rates without architectural modifications, (ii) handle variable sensor suites and placements, and (iii) recognize activities absent from training---i.e., support open-vocabulary recognition under label shift. Existing approaches address these axes in isolation. Self-supervised methods (LiMU-BERT~\cite{limubert}, CrossHAR~\cite{crosshar}) improve transferability but require closed-world classifiers. General-purpose foundation models (MOMENT~\cite{moment}) cover diverse signal types but lack HAR-specific inductive biases. Language-aligned models (LanHAR~\cite{lanhar}) decouple the label interface via text similarity, but without strong sensor pretraining, naive text alignment proves insufficient for robust zero-shot transfer.
+
+\begin{figure}[t]
+    \centering
+    \setlength{\abovecaptionskip}{2pt}
+    \setlength{\belowcaptionskip}{-4pt}
+  \includegraphics[width=\columnwidth]{figures/fig_hook.png}
+  \caption{HALO is a domain-specific IMU foundation model that can tackle various sensing heterogeneity for open-set human activity recognition.
+  }
+  \label{fig:hook}
+\end{figure}
+
+
+We present HALO (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-aligned \textbf{O}pen-set model), a domain-specific IMU foundation model that enables a new deployment capability: a single pretrained model that accepts diverse wearable and phone IMU configurations---varying sampling rates, channel counts, and sensor placements---and recognizes activities via open-vocabulary cosine-similarity retrieval, with no per-dataset classifier or architectural modification required.
+HALO achieves this through a two-stage framework driven by the three design requirements above.
+Stage~1 pretrains a heterogeneity-aware IMU encoder via self-supervised objectives (masked patch autoencoding and contrastive learning), using (1) seconds-based adaptive-pooling tokenization for rate invariance, (2) channel-independent processing for variable sensor suites, and (3) \emph{contextualized sensor conditioning} that injects natural-language descriptions of each channel's sensor configuration (e.g., ``Accelerometer X-axis, waist-mounted phone'') to provide placement context.
+Stage~2 aligns this encoder with a frozen SentenceBERT backbone~\cite{sbert} via \emph{synonym-aware soft contrastive learning}: soft targets derived from text--text similarity allow semantically related labels (e.g., ``walking'', ``strolling'', ``ambulating'') to reinforce one another, resolving the label-conflict problem inherent to multi-dataset training. At inference, activity recognition is cosine-similarity retrieval over any text label library---eliminating per-dataset classifiers.
+
+
+We train HALO on 10 public HAR datasets and evaluate it on seven held-out test datasets---five main benchmarks with high label coverage and two severe out-of-domain datasets containing entirely unseen activities---under four evaluation settings: zero-shot open-set (predicting from all 87 training labels with no knowledge of which labels appear in the test set), zero-shot closed-set (predicting only from the labels present in the test dataset), and 1\% and 10\% supervised fine-tuning. Against five state-of-the-art baselines spanning reconstruction-based, text-aligned, and LLM-based paradigms, HALO leads on all 8 aggregate metrics across the five main datasets, improving zero-shot open-set accuracy by 13.7 percentage points over the general-purpose foundation model MOMENT~\cite{moment} (42.0\% vs.\ 28.3\%) while using only ${\sim}$35M trainable parameters---10$\times$ fewer than MOMENT (341.2M). On two severe out-of-domain datasets, all models---including HALO---collapse in zero-shot, confirming the limits of current cross-dataset transfer under extreme sensor or label shift; yet HALO adapts effectively with as little as 1\% labeled data, recovering to the strongest supervised performance on the harder of the two datasets.
+
+
+We make the following contributions:
+\begin{itemize}
+  \item We systematically investigate sensing heterogeneity and open-set generalization as the two fundamental barriers preventing current IMU models from serving as general-purpose foundations for mobile HAR, and derive three concrete design requirements: rate-agnostic tokenization, variable-channel processing, and synonym-robust label alignment.
+  \item We propose \textbf{HALO}, a domain-specific IMU foundation model that jointly addresses all three requirements through a two-stage training framework. The key integration insight is that heterogeneity-aware pretraining (adaptive-pooling tokenization, channel-independent processing, and \emph{contextualized sensor conditioning} via natural-language placement descriptions) provides a robust encoder that can then be aligned to text via \emph{synonym-aware soft contrastive learning}, enabling a deployment capability no prior system achieves: a single model that accepts diverse IMU configurations and recognizes activities via open-vocabulary cosine-similarity retrieval.
+  \item We establish a unified cross-dataset benchmark spanning 10 training and 7 test datasets with four evaluation settings (eight metrics), and demonstrate that HALO outperforms five state-of-the-art baselines on all 8 aggregate metrics---including under baseline-equivalent input conditions (20\,Hz, generic descriptions)---with ${\sim}$35M trainable parameters. We will release the pretrained model checkpoint and codebase to facilitate reproducible research.
+\end{itemize}
