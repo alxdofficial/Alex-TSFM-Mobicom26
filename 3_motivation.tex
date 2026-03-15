@@ -20,7 +20,7 @@ To systematically analyze such heterogeneity, we analyze the 17 datasets include
     \setlength{\abovecaptionskip}{2pt}
     \setlength{\belowcaptionskip}{-4pt}
   \includegraphics[width=\columnwidth]{figures/fig_dataset_scatter.pdf}
-  \caption{Dataset heterogeneity across 14 of the 17 HAR datasets in our benchmark (3 test datasets at 50\,Hz/6\,ch omitted for legibility as they overlap with the central cluster). Training datasets (blue circles) and test datasets (red triangles) span 20--100\,Hz in sampling rates, 3--45 channels, and 4--19 activity labels.}
+  \caption{Dataset heterogeneity across 14 HAR datasets in our benchmark. Training datasets (blue circles) and test datasets (red triangles) span 20--100\,Hz in sampling rates, 3--45 channels, and 4--19 activity labels.}
   \label{fig:dataset_scatter}
 \end{figure}
 
@@ -36,7 +36,7 @@ Channel counts range from 3-axis wrist accelerometers to 51-channel multi-IMU bo
 
 
 
-\subsection{Limited Generalization to Novel Distributions and Activities}
+\subsection{Limited Generalization to New Distributions and Activities}
 
 Beyond sensing heterogeneity, existing approaches share a structural limitation: they produce representations consumed by a fixed, closed-world classifier. This is adequate within a single dataset but fails in two important transfer scenarios.
 

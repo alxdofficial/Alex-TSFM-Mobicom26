@@ -11,14 +11,7 @@ This section details HALO's two stages: the hetero\-geneity-aware encoder with s
 
 The encoder addresses the three heterogeneity challenges identified in Section~\ref{sec:motivation} through dedicated components (Figure~\ref{fig:encoder}). At inference time, a sample flows through them in sequence: tokenization produces per-channel tokens $\mathbf{H}_0$, sensor conditioning enriches them to $\mathbf{H}'$, and the channel-independent encoder fuses them into the session embedding $\mathbf{z}_{\text{imu}}$. We present each component below, grouping the encoder with its fusion mechanism before describing conditioning, since the encoder architecture is easier to understand as a self-contained unit.
 
-\begin{figure}[t]
-    \centering
-    \setlength{\abovecaptionskip}{2pt}
-    \setlength{\belowcaptionskip}{-4pt}
-  \includegraphics[width=\columnwidth]{figures/fig_encoder.png}
-  \caption{Heterogeneity-aware Pretraining. Each row shows a challenge (left) and the corresponding design in HALO (right): adaptive-pooling tokenization for variable sampling rates; channel-independent feature extraction for variable channel counts; and contextualized sensor conditioning for variable sensor placements.}
-  \label{fig:encoder}
-\end{figure}
+
 
 \subsubsection{Adaptive-Pooling Tokenization for Variable Sampling Rates}
 \label{sec:tokenization}
@@ -42,6 +35,14 @@ Each normalized patch-channel pair is converted into a $D$-di\-men\-sion\-al tok
 
 Because both branches use adaptive pooling, the tokenizer natively accepts any sampling rate without resampling or architectural changes---a single trained model can process 20\,Hz smartphone data and 100\,Hz clinical IMU data through the same weights. This is a key advantage over fixed-length tokenizers such as PatchTST~\cite{patchtst}, which require a predetermined number of samples per patch and therefore either resample all inputs to a common rate (distorting high-frequency content at downsampled rates and fabricating samples at upsampled rates) or maintain separate tokenizer configurations per dataset. Patch-size sensitivity analysis (Section~\ref{sec:patch_sensitivity}) confirms that the fixed 1.0\,s default is within 1.3\,pp of per-dataset optima across the full 20--100\,Hz range.
 
+\begin{figure}
+    \centering
+    \setlength{\abovecaptionskip}{2pt}
+    \setlength{\belowcaptionskip}{-4pt}
+  \includegraphics[width=\columnwidth]{figures/fig_encoder.png}
+  \caption{Heterogeneity-aware Pretraining. Each row shows a challenge (left) and the corresponding design in HALO (right): adaptive-pooling tokenization for variable sampling rates; channel-independent feature extraction for variable channels; and contextualized sensor conditioning for variable sensor placements.}
+  \label{fig:encoder}
+\end{figure}
 % ------------------------------------------------------------------
 \subsubsection{Channel-Independent Feature Extraction for Variable Channel Counts}
 \label{sec:encoder_fusion}
@@ -70,7 +71,6 @@ A frozen Sentence-BERT backbone~\cite{sbert} (all-MiniLM-L6-v2, 384-dim)---share
 The conditioned token is:
 $\mathbf{H}'_{b,p,c} = \mathbf{H}_{0,b,p,c} + \gamma\,\mathbf{e}_c$,
 where $\gamma$ is a learnable scale initialized to~0.1 so that conditioning acts as a gentle bias early in training and grows as the model learns to exploit it.\looseness=-1
-
 The conditioned tokens $\mathbf{H}'$ are then passed to the dual-branch Transformer (Section~\ref{sec:encoder_fusion}).
 
 Descriptions are constructed per dataset from a simple template combining modality, axis, and placement metadata (e.g., ``Accelerometer X-axis, waist-mounted smartphone''). Each dataset's channel descriptions are specified once during data preparation and remain fixed throughout training and evaluation. For datasets without placement annotations (e.g., UCI-HAR provides only ``smartphone'' without specifying pocket vs.\ hand), we use the available metadata; datasets with no sensor metadata fall back to generic descriptions (e.g., ``IMU channel''). At inference, the model leverages rich descriptions when available and falls back to generic ones otherwise. Sensor conditioning is the single largest contributor to zero-shot transfer ($-$19.6\,pp ZS-O when removed; Table~\ref{tab:component_ablation}); even with generic descriptions HALO outperforms baselines on 3 of~4 settings (Table~\ref{tab:fairness_control}).\looseness=-1
@@ -90,7 +90,7 @@ This objective encourages the encoder to capture fine-grained temporal patterns 
 
 Together, the dual objectives produce an encoder that captures both local signal fidelity (via MAE) and global motion discriminability (via contrastive learning). Signal augmentation is critical: it closes a 9.5\,pp generalization gap invisible on in-distribution validation but evident on held-out datasets (Section~\ref{sec:component_ablation}).
 
-\subsection{Synonym-aware IMU-to-text alignment}
+\subsection{Synonym-aware IMU-to-text Alignment}
 \label{sec:alignment_design}
 
 A key challenge in multi-dataset IMU-to-text alignment is \emph{label synonym conflict}: ``walking,'' ``strolling,'' and ``ambulating'' describe the same motion, yet standard contrastive objectives treat them as unrelated negatives, producing contradictory gradients when both appear in a batch. HALO resolves this through synonym-aware label augmentation (Section~\ref{sec:label_aug}) and soft contrastive alignment (Section~\ref{sec:soft_contrastive}).
@@ -100,16 +100,17 @@ A key challenge in multi-dataset IMU-to-text alignment is \emph{label synonym co
     \setlength{\abovecaptionskip}{2pt}
     \setlength{\belowcaptionskip}{-4pt}
   \includegraphics[width=\columnwidth]{figures/fig_alignment.png}
-  \caption{IMU-to-text alignment and zero-shot inference. \emph{Top:} during training, the IMU encoder and a frozen text encoder are aligned in a shared space via synonym-aware contrastive learning, so semantically similar activities cluster together. \emph{Bottom:} at inference, the IMU segment is encoded and compared against an \emph{open} label library via cosine similarity---no retraining, no per-dataset classifier.}
+  \caption{IMU-to-text alignment and zero-shot inference. \emph{Top:} During training, the IMU encoder is aligned with a frozen text encoder in a shared embedding space via synonym-aware contrastive learning, so that semantically related activities are clustered together. \emph{Bottom:} At inference, the IMU segment is encoded and matched against an \emph{open} label library via cosine similarity-enabling zero-shot recognition without retraining or dataset-specific classifiers.}
   \label{fig:alignment}
 \end{figure}
+
 
 \subsubsection{Synonym-Aware Label Augmentation}
 \label{sec:label_aug}
 
 Each dataset defines a curated synonym map (e.g., \textit{walking} $\leftrightarrow$ \textit{strolling} $\leftrightarrow$ \textit{ambulating}) and natural-language templates (e.g., ``person \{\}'', ``a person is \{\}''). Synonym maps are constructed once per dataset from WordNet and common HAR naming conventions, averaging 2.3~synonyms per activity across the 87-label vocabulary. During each Stage~2 step, with probability~0.8 the original label is replaced by a randomly sampled synonym wrapped in a random template (disabled at evaluation), diversifying the text embeddings seen for each activity and preventing the text encoder from overfitting to exact label strings in any single dataset.\looseness=-1
 
-Label augmentation reduces synonym conflict frequency in each batch ($-$7.0\,pp at 1\% when removed; Table~\ref{tab:component_ablation}), but cannot eliminate it entirely---residual synonyms still appear as negatives---motivating the soft targets described next.
+Such label augmentation reduces synonym conflict frequency in each batch ($-$7.0\,pp at 1\% when removed; Table~\ref{tab:component_ablation}), but cannot eliminate it entirely---residual synonyms still appear as negatives---motivating the soft targets described next.
 
 \subsubsection{IMU-to-Text Alignment with Soft Contrastive Learning}
 \label{sec:soft_contrastive}

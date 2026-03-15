@@ -12,9 +12,11 @@ HALO is an IMU-to-text semantic alignment model trained across heterogeneous HAR
     \setlength{\abovecaptionskip}{2pt}
     \setlength{\belowcaptionskip}{-4pt}
   \includegraphics[width=\columnwidth]{figures/fig_overview.png}
-  \caption{System overview of HALO. Diverse activities and heterogeneous IMU configurations are handled by seconds-based patching with adaptive pooling and channel-independent tokenization (Stage~1), then aligned with text via synonym-aware contrastive learning (Stage~2). Zero-shot inference swaps label banks at runtime with no retraining.  }
+  \caption{System overview of HALO. The sensing heterogeneity is addressed through heterogeneity-aware pretraining of the IMU encoder (Stage~1), followed by synonym-aware soft contrastive learning to align sensor features with text semantics (Stage~2), enabling generalizable and open-set activity recognition. Zero-shot inference is achieved by swapping label banks at runtime without retraining.  }
   \label{fig:overview}
 \end{figure}
+
+% System overview of HALO. Sensing heterogeneity is addressed through heterogeneity-aware pretraining of the IMU encoder (Stage 1), followed by synonym-aware contrastive learning to align sensor features with text semantics (Stage 2), enabling generalizable and open-set activity recognition. Zero-shot inference is achieved by swapping label banks at runtime without retraining.
 
 \textbf{Stage~1: Heterogeneity-aware pretraining.} The IMU encoder maps variable-rate, variable-channel sessions to a fixed embedding $\mathbf{z}_{\text{imu}} \in \mathbb{R}^{D}$ through adaptive-pooling tokenization, channel-independent processing, and contextualized sensor conditioning, then is pretrained via masked autoencoding and patch-level contrastive learning (Section~\ref{sec:heterogeneity}).
 

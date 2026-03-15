@@ -40,9 +40,10 @@ We evaluate whether HALO supports (i)~robust performance under heterogeneous mul
   \end{tabular}}
   \caption{Dataset overview. Top: 10 training datasets. Bottom: 7 held-out test datasets.
   $\dagger$\,Main test datasets. $\ddagger$\,Severe OOD datasets; reported separately.
-  \emph{Cov.}: fraction of test activities with a training equivalent.
-  \emph{Diff.}: difficulty level based on distribution shift and label novelty. }
+  \emph{Cov.}: Fraction of test activities that have an equivalent in the training set.
+  \emph{Diff.}: Difficulty level determined by distribution shift and label novelty. }
   \label{tab:datasets}
+   \vspace{-1em}
 \end{table}
  % HALO evaluates at native rates; baselines use 20\,Hz.
 
@@ -78,10 +79,10 @@ These asymmetries are inherent to the architectures; where we deviated from a ba
     HALO (ours)                  & Text-aligned    & 384  & ${\sim}$35M & ${\sim}$58M \\
     \bottomrule
   \end{tabular}
-  \caption{Baseline overview. \emph{Train.}: parameters updated during pretraining/alignment. \emph{Infer.}: total parameters at test time including frozen modules. HALO's inference total includes a single frozen MiniLM (22.7M) shared for both contrastive alignment and channel conditioning; all text embeddings are precomputable. $^*$LanHAR freezes SciBERT (109.9M) during stage-2; unfreezes for fine-tuning. }
+  \caption{Baseline overview. \emph{Train.}: parameters updated during pretraining andalignment. \emph{Infer.}: Total parameters used at inference, including frozen modules.  HALO's inference total includes a single frozen MiniLM (22.7M) shared for both contrastive alignment and channel conditioning; all text embeddings are precomputable. $^*$LanHAR freezes SciBERT (109.9M) during stage-2 and unfreezes it for fine-tuning. }
   \label{tab:baselines}
+  \vspace{-1em}
 \end{table}
-
 
 \textbf{Evaluation protocol.}
 \label{sec:eval_protocol}
@@ -144,18 +145,23 @@ HALO uses a fixed 1.0\,s evaluation patch size for all datasets with no per-data
       & 1.4 & 1.2 & 17.4 & 8.4 & --- & --- & --- & --- \\
     \bottomrule
   \end{tabular}
-  \caption{Average accuracy (\%) and macro F1 (\%) across 5 main test datasets. \textbf{Bold}: best per metric. ZS-O/ZS-C: zero-shot open/closed-set.
-  HALO and LanHAR evaluate at each dataset's native rate; other baselines use 20\,Hz resampled data.
-  $^\dagger$LLaSA: published 7B model, zero-shot only (no supervised), subsampled to 100 samples/class; MotionSense and Shoaib are in LLaSA's training data.}
+  \caption{Overall performance in average accuracy (\%) and macro F1 (\%) across 5 main test datasets. \textbf{Bold}: best result for each metric. ZS-O/ZS-C: zero-shot open-set/closed-set settings.
+  HALO and LanHAR are evaluated at each dataset's native sampling rate; other baselines use data resampled to 20\,Hz. $^\dagger$LLaSA: published 7B model, zero-shot only (no supervised)
+  }
   \label{tab:main_results}
+  \vspace{-1em}
 \end{table}
 
-\subsubsection{Performance Across Main Datasets}
+% Overall performance measured by average accuracy (%) and macro F1 (%) across five main test datasets. Bold indicates the best result for each metric. ZS-O / ZS-C denote zero-shot open-set and closed-set settings, respectively. HALO and LanHAR are evaluated at each dataset’s native sampling rate, while all other baselines use data resampled to 20 Hz.
+
+% $^\dagger$LLaSA: published 7B model, zero-shot only (no supervised), subsampled to 100 samples/class; MotionSense and Shoaib are in LLaSA's training data.
+
+\subsubsection{Overall performance in different settings}
 
 Table~\ref{tab:main_results} summarizes average performance. HALO leads on all eight metrics; notably, these gains hold even under baseline-equivalent inputs (20\,Hz, generic descriptions), as confirmed in the fairness control (Table~\ref{tab:fairness_control}). The largest margin is in zero-shot open-set (42.0\% vs.\ MOMENT's 28.3\%, +13.7~pp), where predicting from 87 candidates without test-set knowledge is hardest. Even at 1\% supervision, HALO leads despite MOMENT's 6144-dim embeddings (16$\times$ HALO's 384-dim) giving its classifier substantially more capacity. LanHAR underperforms despite being text-aligned and evaluating at native 50\,Hz---likely because its sensor encoder lacks self-supervised pretraining.
 
 % ------------------------------------------------------------------
-\subsubsection{Per-Dataset Results}
+\subsubsection{Results in each dataset }
 
 \begin{table}[t]
   \centering
@@ -176,20 +182,14 @@ Table~\ref{tab:main_results} summarizes average performance. HALO leads on all e
     \textbf{Average} & 42.0 & 53.1 & 76.5 & 85.7 & 21.0 & 37.2 & 70.0 & 81.7 \\
     \bottomrule
   \end{tabular}
-  \caption{HALO per-dataset accuracy (\%) and macro F1 (\%) on the five main test datasets. ZS-O/ZS-C: zero-shot open/closed-set. All datasets are held out from training.}
+  \caption{Per-dataset results of HALO on the five main test datasets. ZS-O/ZS-C: zero-shot open/closed-set. All datasets are held out from training.}
   \label{tab:per_dataset}
+  \vspace{-1em}
 \end{table}
 
 HALO leads zero-shot on all five datasets except Opportunity closed-set, where MOMENT edges ahead (53.9\% vs.\ 49.3\%), possibly because its 6144-dim SVM-RBF classifier benefits from the small label set. MobiAct---the hardest with 13~classes including falls---shows the largest zero-shot gap (HALO 42.2\% vs.\ MOMENT 28.7\% open-set). At 10\% supervision, HALO leads on all 5 datasets; at 1\%, HALO leads on 4 of 5 (MOMENT edges ahead only on Opportunity: 74.3\% vs.\ 72.0\%).
 
-
-% ------------------------------------------------------------------
-\subsubsection{Severe Out-of-Domain Transfer}
-\label{sec:severe_ood}
-
-Table~\ref{tab:severe_ood} reports HARTH and VTT-ConIoT separately. HARTH uses back/thigh-mounted accelerometers only (no gyroscope), with gravity-contaminated data that differs substantially from training; despite 100\% label coverage, this sensor shift causes all models to collapse in zero-shot. VTT-ConIoT is an industrial dataset where only 50\% of activities have training equivalents; the rest (e.g., kneeling work, roll painting) are entirely novel.
-
-\begin{table}[t]
+\begin{table}
   \centering
   \small
   \setlength{\tabcolsep}{3pt}
@@ -207,23 +207,16 @@ Table~\ref{tab:severe_ood} reports HARTH and VTT-ConIoT separately. HARTH uses b
     LLaSA$^\dagger$& 11.9& 12.5 & --- & --- & --- & 6.9 & --- & --- \\
     \bottomrule
   \end{tabular}
-  \caption{Severe OOD accuracy (\%). ZS-O/ZS-C: zero-shot open/closed-set. All models collapse on HARTH zero-shot (sensor distribution shift); VTT-ConIoT is capped at ${\sim}$50\% by novel activities. $^\dagger$LLaSA: zero-shot only, subsampled.}
+  \caption{Accuracy on severe out-of-domain datasets (\%). ZS-O/ZS-C: zero-shot open/closed-set. All models collapse on HARTH zero-shot (sensor distribution shift); VTT-ConIoT is capped at ${\sim}$50\% by novel activities. $^\dagger$LLaSA: zero-shot only, subsampled.}
   \label{tab:severe_ood}
 \end{table}
 
-% Move Figure 8 earlier so it enters float queue before severe OOD tables
-\begin{figure}[tb]
-    \centering
-    \setlength{\abovecaptionskip}{2pt}
-    \setlength{\belowcaptionskip}{-4pt}
-  \includegraphics[width=0.9\columnwidth]{figures/fig_embedding_umap.png}
-  \caption{UMAP projection of learned IMU and text embeddings at epoch~100.
-  Circles: per-activity IMU centroids; diamonds: SBERT text centroids; lines connect matched pairs.
-  Stats (inset): nearest-neighbor accuracy 76.7\%, positive similarity 0.857, gap 0.377.
-  }
-  \label{fig:embedding_umap}
-\end{figure}
 
+% ------------------------------------------------------------------
+\subsubsection{Severe out-of-domain transfer performance}
+\label{sec:severe_ood}
+
+Table~\ref{tab:severe_ood} reports HARTH and VTT-ConIoT separately. HARTH uses back/thigh-mounted accelerometers only (no gyroscope), with gravity-contaminated data that differs substantially from training; despite 100\% label coverage, this sensor shift causes all models to collapse in zero-shot. VTT-ConIoT is an industrial dataset where only 50\% of activities have training equivalents; the rest (e.g., kneeling work, roll painting) are entirely novel.
 On HARTH, all embedding-based models achieve near-zero zero-shot accuracy ($<$3\%), confirming genuine sensor distribution shift rather than a model-specific failure. LLaSA's generative reasoning is less sensitive to signal distribution (11.9\% open-set), but still far from useful. With supervised data, HALO leads at 10\% (78.3\% vs.\ CrossHAR's 71.9\%); at 1\%, MOMENT edges ahead (66.7\% vs.\ 64.7\%).
 On VTT-ConIoT, all models score near random on zero-shot ($<$9\%). With supervised data, MOMENT leads (34.8\% at 10\%), benefiting from its general time-series pretraining; HALO's HAR-specific encoder provides strong in-domain transfer but less benefit when the target domain is fundamentally different.
 
@@ -236,6 +229,10 @@ On VTT-ConIoT, all models score near random on zero-shot ($<$9\%). With supervis
 \label{sec:component_ablation}
 
 We isolate three architectural and training contributions by disabling each independently from the full model.\footnote{Ablation runs use 100 Stage~2 epochs (vs.\ 200 for the final model) with a single seed; absolute numbers differ slightly from Table~\ref{tab:main_results} but relative deltas are meaningful.} Table~\ref{tab:component_ablation} reports 5-dataset averages.
+\emph{Channel-text fusion} (i.e., sensor conditioning, Section~\ref{sec:conditioning}) is the single most important zero-shot component ($-$19.6\,pp ZS-O), as the model must otherwise infer sensor semantics purely from signal patterns; the effect fades with supervision ($-$2.9\,pp at 10\%).
+\emph{Text augmentation} has the largest supervised impact ($-$7.0\,pp at 1\%), preventing the text encoder from memorizing exact label strings.
+\emph{Signal augmentation} closes a 9.5\,pp generalization gap invisible on in-distribution validation but critical on held-out datasets; on severe OOD the effect strengthens to $-$6.8\,pp at 10\%.
+
 
 \begin{table}[t]
   \centering
@@ -255,22 +252,11 @@ We isolate three architectural and training contributions by disabling each inde
       & 42.7 {\footnotesize(--2.2)} & 49.9 {\footnotesize(--2.0)} & 67.7 {\footnotesize(--7.0)} & 84.2 {\footnotesize(--1.2)} \\
     \bottomrule
   \end{tabular}
-  \caption{Ablation study on design components: average accuracy (\%) across 5 main test datasets. Deltas vs.\ full model in parentheses. Each row removes one component while keeping all others.}
+  \caption{Ablation study of design components. Each row removes one component while keeping all others fixed. Results report average accuracy (\%) across five main test datasets, with performance deltas relative to the full model shown in parentheses.}
   \label{tab:component_ablation}
 \end{table}
 
-\emph{Channel-text fusion} (i.e., sensor conditioning, Section~\ref{sec:conditioning}) is the single most important zero-shot component ($-$19.6\,pp ZS-O), as the model must otherwise infer sensor semantics purely from signal patterns; the effect fades with supervision ($-$2.9\,pp at 10\%).
-\emph{Text augmentation} has the largest supervised impact ($-$7.0\,pp at 1\%), preventing the text encoder from memorizing exact label strings.
-\emph{Signal augmentation} closes a 9.5\,pp generalization gap invisible on in-distribution validation but critical on held-out datasets; on severe OOD the effect strengthens to $-$6.8\,pp at 10\%.
-
-% ------------------------------------------------------------------
-\subsubsection{Analysis on native rate and fairness}
-\label{sec:native_rate_ablation}
-
-We compare HALO at native rates with rich descriptions against the same model on 20\,Hz resampled data with generic channel names (e.g., ``acc\_x''), matching the LIMU-BERT pipeline used by four of five baselines.
-Table~\ref{tab:fairness_control} shows that even under these conservative inputs, HALO leads on 3 of 4 settings (+2.3~pp ZS-O, +4.7~pp ZS-C, +3.4~pp at 10\% over MOMENT); only at 1\% does MOMENT edge ahead.
-
-\begin{table}[t]
+\begin{table}
   \centering
   \small
   \setlength{\tabcolsep}{4pt}
@@ -287,14 +273,33 @@ Table~\ref{tab:fairness_control} shows that even under these conservative inputs
       & 28.3 & 44.7 & 73.8 & 81.3 \\
     \bottomrule
   \end{tabular}
-  \caption{Fairness control: average accuracy (\%) across 5 main test datasets. Row~2 feeds HALO the same 20\,Hz, 6-channel data with generic descriptions used by four of five baselines (LanHAR uses 50\,Hz). Even under these conservative inputs, HALO leads on 3 of 4 settings.}
+  \caption{Analysis of native sampling rate and evaluation fairness with average accuracy (\%) across five main test datasets. In Row 2, HALO is evaluated using the same 20Hz, 6‑channel inputs with generic textual descriptions as four of the five baselines (LanHAR uses 50Hz data). Even under these conservative and standardized inputs, HALO outperforms baselines in three of the four evaluation settings.}
   \label{tab:fairness_control}
 \end{table}
 
+% ------------------------------------------------------------------
+\subsubsection{Analysis on native sampling rate and fairness}
+\label{sec:native_rate_ablation}
+
+We compare HALO at native rates with rich descriptions against the same model on 20\,Hz resampled data with generic channel names (e.g., ``acc\_x''), matching the LIMU-BERT pipeline used by four of five baselines.
+Table~\ref{tab:fairness_control} shows that even under these conservative inputs, HALO leads on 3 of 4 settings (+2.3~pp ZS-O, +4.7~pp ZS-C, +3.4~pp at 10\% over MOMENT); only at 1\% does MOMENT edge ahead.
 The native-rate advantage is dataset-dependent: MotionSense and MobiAct show large zero-shot gains (+24.5 and +19.7~pp) where rich channel text aids placement disambiguation, while RealWorld drops ($-$9.9~pp) because its heterogeneous body placements are poorly captured by a single dataset-level description. Supervised performance is less affected (within 3~pp at 10\%).
 
+% Move Figure 8 earlier so it enters float queue before severe OOD tables
+\begin{figure}
+    \centering
+    \setlength{\abovecaptionskip}{2pt}
+    \setlength{\belowcaptionskip}{-2pt}
+  \includegraphics[width=0.8\columnwidth]{figures/fig_embedding_umap.png}
+  \caption{Analysis of embedding space. UMAP projection of learned IMU and text embeddings at epoch~100.
+  Circles: per-activity IMU centroids; diamonds: SBERT text centroids; lines connect matched IMU–text pairs.
+  }
+  \label{fig:embedding_umap}
+\end{figure}
+
+
 % ------------------------------------------------------------------
-\subsubsection{Embedding Space Analysis}
+\subsubsection{Analysis of embedding space }
 \label{sec:embedding_analysis}
 
 Figure~\ref{fig:embedding_umap} visualizes the learned embedding space via UMAP~\cite{umap}. Semantically related groups (e.g., \textit{running}, \textit{stairs}, \textit{walking}) cluster together with tight cross-modal alignment: nearest-neighbor accuracy reaches 76.7\%, positive similarity 0.857, and the similarity gap between matched and unmatched pairs is 0.377. Stationary activities form a distinct cluster separated from locomotion, mirroring kinematic structure. Text centroids align closely with IMU counterparts, confirming the contrastive objective maps both modalities into a shared semantic space.
@@ -311,20 +316,14 @@ HALO uses a fixed 1.0\,s patch size for all results---no per-dataset tuning. Fig
     \centering
     \setlength{\abovecaptionskip}{2pt}
     \setlength{\belowcaptionskip}{-4pt}
-  \includegraphics[width=0.8\columnwidth]{figures/fig_patch_sensitivity.pdf}
-  \caption{Patch size sensitivity: zero-shot closed-set accuracy (\%) at each candidate patch duration. The dashed vertical line marks the fixed 1.0\,s choice. Original datasets measured at 20\,Hz; Shoaib/Opportunity at native rates.}
+  \includegraphics[width=0.7\columnwidth]{figures/fig_patch_sensitivity.pdf}
+  \caption{Patch size sensitivity. Zero-shot closed-set accuracy (\%) across candidate patch durations. The dashed vertical line indicates the selected patch size of 1.0\,s. Original datasets are evaluated at 20\,Hz, while Shoaib and Opportunity are evaluated at their native sampling rates.}
   \label{fig:patch_sensitivity}
 \end{figure}
 
 
-% ------------------------------------------------------------------
-\subsection{Scaling of Model Sizes}
-\label{sec:scaling}
 
-We train three model sizes---Tiny ($d{=}192$, 4 layers, 6M), Small ($d{=}384$, 8 layers, 35M), and Medium ($d{=}512$, 8 layers, 63M)---with identical training recipes, hyperparameters, and data to isolate the effect of model capacity.
-Table~\ref{tab:scaling} shows Small is the sweet spot: Medium regresses by 8.2\,pp on ZS-O despite doubling parameters, achieving the highest \emph{validation} accuracy but the worst held-out generalization---classic overfitting to dataset-specific patterns rather than transferable motion representations. Tiny underfits, falling 13.2\,pp below Small on ZS-O, though it slightly outperforms Small at 10\% supervision (86.4\% vs.\ 85.3\%), suggesting smaller models benefit more from supervised regularization. The ${\sim}$13K-session corpus supports ${\sim}$35M parameters before overfitting dominates; larger HAR corpora could shift this ceiling upward.
-
-\begin{table}[t]
+\begin{table}
   \centering
   \small
   \setlength{\tabcolsep}{4pt}
@@ -337,11 +336,20 @@ Table~\ref{tab:scaling} shows Small is the sweet spot: Medium regresses by 8.2\,
     Medium & 63M & 37.8 & 47.7 & 72.6 & 84.5 \\
     \bottomrule
   \end{tabular}
-  \caption{Model scaling: average accuracy (\%) on 3 main test datasets at 20\,Hz. Small (35M) is the best; Medium regresses on all zero-shot metrics despite doubling parameters.}
+  \caption{Scaling of model size. Average accuracy (\%) on 3 main test datasets at 20\,Hz. The Small model (35M) achieves the best performance, while the Medium model regresses on all zero-shot metrics despite having twice as many parameters.}
   \label{tab:scaling}
 \end{table}
 
-\subsection{Inference Overhead}
+
+% ------------------------------------------------------------------
+\subsection{Scaling of Model Sizes}
+\label{sec:scaling}
+
+We train three model sizes---Tiny ($d{=}192$, 4 layers, 6M), Small ($d{=}384$, 8 layers, 35M), and Medium ($d{=}512$, 8 layers, 63M)---with identical training recipes, hyperparameters, and data to isolate the effect of model capacity.
+Table~\ref{tab:scaling} shows Small is the sweet spot: Medium regresses by 8.2\,pp on ZS-O despite doubling parameters, achieving the highest \emph{validation} accuracy but the worst held-out generalization---classic overfitting to dataset-specific patterns rather than transferable motion representations. Tiny underfits, falling 13.2\,pp below Small on ZS-O, though it slightly outperforms Small at 10\% supervision (86.4\% vs.\ 85.3\%), suggesting smaller models benefit more from supervised regularization. The ${\sim}$13K-session corpus supports ${\sim}$35M parameters before overfitting dominates; larger HAR corpora could shift this ceiling upward.
+
+
+\subsection{Inference Overhead on Smartphones}
 
 
 \begin{table}[t]
@@ -359,18 +367,33 @@ MOMENT & 24.0M & 37.69 & 37.98 & 25.05 & 1.8K \\
 \textbf{HALO (ours)} & \textbf{34.0M} & \textbf{7.16} & \textbf{7.37} & \textbf{32.81} & \textbf{2414.4K} \\
 \bottomrule
 \end{tabular}}
-\caption{On-device inference overhead under a unified smartphone profiling protocol (Core ML, 10 warm-up + 100 timed iterations, identical raw IMU input). \emph{Params}: profiled model size. \emph{CPU Wt/ms}: cycle-weighted running CPU activity normalized by benchmark duration.}
+\caption{Inference overhead on an iPhone 16 Pro. All models are benchmarked with same setting: identical 6-channel IMU inputs using Core ML, with 10 warm-up iterations followed by 100 timed iterations. \emph{Params} denotes the profiled model size. \emph{CPU Wt/ms} reports cycle-weighted CPU activity normalized by benchmark duration.}
 \label{tab:inference_results}
+\vspace{-8pt}
 \end{table}
-Table~\ref{tab:inference_results} shows HALO at 7.16\,ms average latency (p95: 7.37\,ms)---comfortably real-time and $5.26\times$ faster than MOMENT (37.69\,ms). All models are profiled on the same iPhone 15 Pro using Core ML with identical 6-channel raw IMU input, 10 warm-up + 100 timed iterations. HALO is slower than lightweight baselines (CrossHAR 0.29\,ms, LiMU-BERT 0.31\,ms) due to its dual-branch Transformer, but remains well within real-time constraints. MOMENT's slower inference stems from requiring 6 separate encoder passes for a 6-channel input through its 341M-parameter T5 encoder, whereas HALO processes all channels jointly in a single forward pass. HALO's peak memory (32.81\,MB) is modest; all label embeddings are precomputed offline and cached, adding negligible runtime overhead.
 
+Table~\ref{tab:inference_results} shows that HALO achieves an average inference latency of 7.16\,ms (p95: 7.37\,ms) on an iPhone~16~Pro, well within real-time requirements for on-device activity recognition. Under the same Core~ML deployment setting (identical 6-channel IMU input, 10 warm-up and 100 timed iterations), HALO is $5.26\times$ faster than MOMENT (7.16\,ms vs.\ 37.69\,ms) while jointly modeling all six IMU channels in a single forward pass.
+Although HALO is slower than lightweight baselines such as CrossHAR (0.29\,ms) and LiMU-BERT (0.31\,ms) due to its dual-branch Transformer architecture, its latency remains practical for smartphone deployment. The speedup over MOMENT mainly stems from inference structure: MOMENT relies on a large T5-style encoder and requires six separate passes for a 6-channel input, whereas HALO processes all channels jointly. HALO reaches a peak memory usage of 32.81\,MB, and label embeddings are precomputed and cached offline, incurring negligible runtime overhead.
+
+% Table~\ref{tab:inference_results} shows that HALO achieves an average inference latency of 7.16\,ms with a p95 latency of 7.37\,ms on an iPhone 16 Pro, which is comfortably within real-time requirements for on-device activity recognition. Compared with MOMENT, HALO is $5.26\times$ faster (7.16\,ms vs.\ 37.69\,ms) while supporting joint modeling over all six IMU channels in a single forward pass.
+% All models are evaluated under the same deployment setting using Core ML with identical 6-channel raw IMU input, 10 warm-up iterations, and 100 timed iterations. HALO is slower than lightweight baselines such as CrossHAR (0.29\,ms) and LiMU-BERT (0.31\,ms), which is expected given its larger dual-branch Transformer architecture. However, its latency remains low enough for practical smartphone deployment.
+% The gap between HALO and MOMENT mainly comes from the difference in inference structure. MOMENT relies on a large pretrained T5-style encoder and requires six separate encoder passes for a 6-channel input, which substantially increases end-to-end latency. In contrast, HALO processes all channels jointly in one forward pass, leading to markedly lower inference cost despite its larger parameter count than several lightweight baselines. HALO reaches a peak memory usage of 32.81\,MB, which remains modest for modern smartphones. In addition, label embeddings are precomputed offline and cached before deployment, so they introduce negligible runtime overhead during inference.
+
+
+
+\subsection{Real-World Case Study}
+\label{sec:case_study}
+
+We implement the full HALO pipeline as an iOS application and test under continuous placement and label shifts. As shown in Figure~\ref{fig:demo_setting}, the pipeline consists of four stages: (1)~SFT data collection on the smartphone, where the user performs each target activity for 30\,s per class; (2)~SFT head training on a laptop (under 2 minutes for 6 classes); (3)~weight transfer back to the device via a local network; and (4)~real-time inference. The demo covers three body locations (\textit{left pocket}, \textit{wrist}, \textit{upper arm}) with six seen classes (\textit{Sitting}, \textit{Standing}, \textit{Walking}, \textit{Running}, \textit{Jumping}, \textit{Lying}) and two unseen labels (\textit{Marching}, \textit{Jogging}) introduced at inference to test robustness beyond the SFT label space.
+
+Across 40 inference windows (Figure~\ref{fig:demo_performance}), HALO achieves 97.5\% accuracy with only one transient error near the pocket-to-wrist transition, recovering immediately. The placement transition from pocket to wrist represents a significant sensor distribution shift mid-session, yet the model adapts within a single window. The unseen-label phase remains fully correct, confirming that the personalized head preserves semantic generalization even when inference-time labels differ from the SFT classes---the model correctly distinguishes ``Marching'' from ``Walking'' and ``Jogging'' from ``Running'' despite never training on these labels during SFT. Mean end-to-end pipeline latency is 30.35\,ms (P95: 33.66\,ms), higher than the isolated model benchmark (7.16\,ms, Table~\ref{tab:inference_results}) due to app-level overhead; memory stays within 73--78\,MB, and the deployed model is 21.8M parameters (${\sim}$34\,MB on disk)---practical for continuous on-device HAR.
 
 \begin{figure}[tbp]
     \centering
     \setlength{\abovecaptionskip}{2pt}
     \setlength{\belowcaptionskip}{-4pt}
     \includegraphics[width=\columnwidth]{figures/demo_setting.png}
-    \caption{Real-world deployment setting and pipeline.}
+    \caption{Deployment setting of smartphone-based IMU HAR in the real-world case study.}
     \label{fig:demo_setting}
 \end{figure}
 
@@ -379,13 +402,6 @@ Table~\ref{tab:inference_results} shows HALO at 7.16\,ms average latency (p95: 7
     \setlength{\abovecaptionskip}{2pt}
     \setlength{\belowcaptionskip}{-4pt}
     \includegraphics[width=\columnwidth]{figures/demo_performance.png}
-    \caption{Continuous on-device performance during the demo.}
+    \caption{Performance continuous IMU-based HAR on the smartphone.}
     \label{fig:demo_performance}
 \end{figure}
-
-\subsection{Real-World Case Study}
-\label{sec:case_study}
-
-We implement the full HALO pipeline as an iOS application and test under continuous placement and label shifts. As shown in Figure~\ref{fig:demo_setting}, the pipeline consists of four stages: (1)~SFT data collection on the smartphone, where the user performs each target activity for 30\,s per class; (2)~SFT head training on a laptop (under 2 minutes for 6 classes); (3)~weight transfer back to the device via a local network; and (4)~real-time inference. The demo covers three body locations (\textit{left pocket}, \textit{wrist}, \textit{upper arm}) with six seen classes (\textit{Sitting}, \textit{Standing}, \textit{Walking}, \textit{Running}, \textit{Jumping}, \textit{Lying}) and two unseen labels (\textit{Marching}, \textit{Jogging}) introduced at inference to test robustness beyond the SFT label space.
-
-Across 40 inference windows (Figure~\ref{fig:demo_performance}), HALO achieves 97.5\% accuracy with only one transient error near the pocket-to-wrist transition, recovering immediately. The placement transition from pocket to wrist represents a significant sensor distribution shift mid-session, yet the model adapts within a single window. The unseen-label phase remains fully correct, confirming that the personalized head preserves semantic generalization even when inference-time labels differ from the SFT classes---the model correctly distinguishes ``Marching'' from ``Walking'' and ``Jogging'' from ``Running'' despite never training on these labels during SFT. Mean end-to-end pipeline latency is 30.35\,ms (P95: 33.66\,ms), higher than the isolated model benchmark (7.16\,ms, Table~\ref{tab:inference_results}) due to app-level overhead; memory stays within 73--78\,MB, and the deployed model is 21.8M parameters (${\sim}$34\,MB on disk)---practical for continuous on-device HAR.
