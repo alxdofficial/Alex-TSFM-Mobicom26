@@ -51,6 +51,12 @@
 
 \newcommand{\TODO}[1]{{\color{red}{#1}}}
 
+% --- v2 resubmission markers: stale v1 results / superseded methods, pending the v2 retrain ---
+% \OUTDATED{...}: a visible block note flagging content that reflects the v1 model/eval and will be
+%   re-measured/rewritten after the v2 retrain. \STALE{n}: inline wrap for a single stale number.
+\newcommand{\OUTDATED}[1]{{\color{orange}\textbf{[OUTDATED --- v1 result / superseded method, pending v2 retrain]} \textit{#1}}}
+\newcommand{\STALE}[1]{{\color{orange}#1}}
+
 \pagestyle{plain} % removes running headers
 \settopmatter{printacmref=false, printccs=false, printfolios=true}
 % \acmConference[SIGCOMM '23]{SIGCOMM '23: Annual conference of the ACM Special Interest Group on Data Communication}{Sep 2023}{New York City, US}
@@ -106,14 +112,16 @@
 % \renewcommand{\shortauthors}{xxx}
 % yet no single model can accept diverse IMU configurations---varying sampling rates, channel counts, and sensor placements---and recognize activities across unseen devices and label vocabularies without per-dataset adaptation.
 \begin{abstract}
-Human Activity Recognition (HAR) using inertial measurement units (IMUs) enables a wide range of applications, yet the field still lacks a unified model that can generalize across diverse subjects, devices, and activities. Training such a model is difficult due to two key challenges: \emph{sensing heterogeneity}---differences in sampling rates, channel configurations, and sensor placements---and \emph{poor generalization} to unseen activities and label vocabularies.
-We introduce HALO (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-aligned \textbf{O}pen-set model), a domain-specific IMU foundation model that addresses both challenges through a two-stage training framework\footnote{The source code and pretrained models for HALO will be released upon acceptance.}.
-Stage~1 pretrains the IMU encoder with heterogeneity-aware self-supervised learning, including adaptive-pooling tokenization, channel-independent feature extraction, and \emph{contextualized sensor conditioning} that injects natural-language sensor descriptions into each channel embedding. Stage~2 aligns this IMU encoder with text embeddings via \emph{synonym-aware soft contrastive learning}, enabling open-set recognition via cosine-similarity retrieval without per-dataset classifiers.
-Trained on 10 public HAR datasets and evaluated on 7 held-out datasets, HALO outperforms five state-of-the-art baselines on all 8 aggregate metrics. Despite using only ${\sim}$35M trainable parameters---10$\times$ fewer than the latest foundation model MOMENT (341.2M)---HALO improves zero-shot open-set accuracy by 13.7\%. A video demonstration of HALO's performance in real world is available at \url{https://youtu.be/rooVKragtFU}.
+Inertial measurement units (IMUs) are ubiquitous in phones and watches, yet human activity recognition (HAR) still has no foundation model that developers can readily build on: one pretrained model that ingests whatever sensors a device exposes, recognizes an application's own activity labels without retraining, and runs both offline over a recording and as a low-latency on-device stream. Building one is hard because IMU deployments differ in \emph{sensing heterogeneity} (sampling rates, channel suites, and placements), demand \emph{open-set} recognition of activities never seen in training, and must serve \emph{both offline and streaming} use---all under evaluation honest enough that reported gains survive leakage-free, subject-disjoint testing rather than being inflated by synonym ontologies or shared subjects.
+We introduce HALO (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-aligned \textbf{O}pen-set model), a domain-specific IMU foundation model trained in a single language-alignment stage\footnote{The source code and pretrained models for HALO will be released upon acceptance.}. HALO combines three elements. First, a \emph{physical-frequency filterbank tokenizer} that is rate-invariant and anti-aliased \emph{by construction}: it reads each channel on a fixed physical-Hz axis via a native-rate transform with no resampling, so a single set of weights ingests $20$--$100$\,Hz data without interpolation or per-rate heads. Second, \emph{language-based sensor conditioning} that injects natural-language placement and sensor descriptions into each channel token, while the sampling rate and window duration---quantities a frozen text encoder cannot represent numerically---are supplied to the tokenizer as numbers rather than as text. Third, a \emph{streamable encoder} whose temporal attention uses rotary position embeddings over \emph{physical time} and is trained under mixed full/causal masks with an offline-to-online consistency objective, so one weight set serves both whole-session recognition and low-latency on-device streaming. At inference, activities are recognized by open-vocabulary cosine similarity to text labels---no per-dataset classifier. We train on 11 public HAR datasets and evaluate under a leakage-free, subject-disjoint protocol that scores against each dataset's own label strings. The result is packaged behind a deployable \texttt{predict()} interface---so a developer applies HALO to a new sensor setup and label set in a few lines, with no classifier training or architectural change---and demonstrated in an on-device iOS app. A video demonstration is available at \url{https://youtu.be/rooVKragtFU}.
 
-% We further evaluate on two severely out-of-domain datasets where all models collapse in the zero-shot setting, highlighting the limits of cross-dataset transfer under extreme distribution shift.
-
+\OUTDATED{Headline comparative numbers (vs.\ baselines; parameter/accuracy claims) are removed pending the v2 retrain under the model + protocol above; the prior v1 abstract is retained in the comment block below for reference.}
 \end{abstract}
+
+% --- v1 abstract (superseded; kept for reference until v2 numbers land) ---
+% Trained on 10 public HAR datasets and evaluated on 7 held-out datasets, HALO outperforms five
+% state-of-the-art baselines on all 8 aggregate metrics. Despite using only ~35M trainable
+% parameters---10x fewer than MOMENT (341.2M)---HALO improves zero-shot open-set accuracy by 13.7%.
 
 % Human Activity Recognition (HAR) using inertial measurement units (IMUs) enables a wide range of applications, yet the field still lacks a unified model that can generalize across diverse subjects, devices, and activities. We introduce HALO\footnote{The source code and pretrained models for HALO will be released upon acceptance.} (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-aligned \textbf{O}pen-set model), an IMU foundation model for human activity recognition. 
 % Training such a model is difficult due to two key challenges: \emph{sensing heterogeneity}---differences in sampling rates, channel configurations, and sensor placements---and \emph{poor generalization} to unseen activities and label vocabularies. HALO addresses both challenges through a two-stage training framework.
