@@ -4,48 +4,188 @@
 \section{Motivation}
 \label{sec:motivation}
 
-We identify two fundamental challenges that prevent current IMU-based HAR models from serving as general-purpose foundations: \emph{sensing heterogeneity} across devices and deployments, and \emph{limited generalization} to unseen activity distributions. We analyze each challenge through the lens of real-world applications and derive the design requirements that motivate HALO.
+This section develops the three claims the rest of the paper rests on. Section~\ref{sec:heterogeneity_motiv}
+characterises the heterogeneity that any cross-device IMU model must absorb.
+Section~\ref{sec:no_grammar} argues that this heterogeneity cannot be closed by
+data---inertial signals admit no closed grammar---so compatibility must be supplied as
+inductive bias, and that the bias must be \emph{calibrated} rather than maximised.
+Section~\ref{sec:geometry} shows by direct measurement that the field's standard mechanism
+for open-ended labels rests on a false premise. Section~\ref{sec:requirements} turns the
+three into design requirements.
 
 \subsection{Sensing Heterogeneity Across Devices and Deployments}
+\label{sec:heterogeneity_motiv}
 
-Wearable and mobile devices differ widely in their sensing configurations, leading to substantial data heterogeneity across HAR datasets. For example, a smartwatch with a 3-axis accelerometer at 50\,Hz produces significantly different raw data than a multi-sensor body suit capturing 51 channels at 100\,Hz, even when both record the same physical activity. 
-To systematically analyze such heterogeneity, we analyze the datasets included in Table~\ref{tab:datasets} of our benchmark. Figure~\ref{fig:dataset_scatter} visualizes the distributions of the key characteristics of these datasets. \OUTDATED{The dataset counts and the scatter figure reflect the v1 benchmark; the v2 set is 11 training / 6 held-out (CAPTURE-24 added, VTT-ConIoT removed, HARTH promoted to the main test set) and will be regenerated.}
+Wearable and mobile devices differ widely in their sensing configurations, and the
+differences are not cosmetic. Our training corpus alone (Table~\ref{tab:datasets},
+Figure~\ref{fig:corpus}) spans sampling rates from $20$ to $100$\,Hz, accelerometer-only and
+accelerometer-plus-gyroscope suites, and sensor placements at the waist, trouser pocket,
+wrist, lower back, ear, and head---the last two from smart glasses and wireless earbuds,
+devices that did not exist as HAR platforms when most public benchmarks were collected.
 
-% As visualized in Figure~\ref{fig:dataset_scatter}, these datasets span a broad range of sampling rates and channel counts: while most training and test sets clustered around 50\,Hz / 6~channels, others vary from 20 to 100\,Hz and from 3 to 5 channels, reflecting the diversity of sensing conditions encountered in real applications.
+\textbf{Sampling rate.} At $20$\,Hz a $6$-second window is $120$ samples; at $100$\,Hz it is
+$600$. Any encoder whose positional code is tied to a timestep index conflates physical time
+with sequence length, so the same motion at two rates presents as two different structures.
+The usual fix---resample everything to a common rate---is worse than it looks: downsampling
+to the corpus minimum aliases the high-frequency content that distinguishes, say, brushing
+teeth from waving, and upsampling fabricates samples that were never measured.
 
+\textbf{Channel set, placement, and orientation.} Configurations range from a single 3-axis
+wrist accelerometer to six simultaneous placements on one body. A fixed-width input layer
+cannot accommodate this without padding artifacts or per-dataset input heads. Worse, the
+\emph{meaning} of a channel depends on where and how the device is worn: a wrist
+accelerometer's $x$-axis and a hip accelerometer's $x$-axis are not the same physical
+quantity, and neither is stable if the user pockets the phone upside down.
 
+\textbf{Conventions the data does not announce.} Two accelerometer streams that look
+identical may differ in gravity convention (Android reports total acceleration; iOS
+\texttt{userAcceleration} removes gravity), in units, or in an unadvertised on-device
+low-pass filter. In assembling our corpus we found several public datasets whose distributed
+form had already been transformed---one is per-axis min--max normalised, destroying physical
+scale; another ships gravity-removed body acceleration under a name suggesting total
+acceleration. A model that silently assumes a convention will be wrong on data it has every
+reason to think it understands.
 
 \begin{figure}[t]
     \centering
     \setlength{\abovecaptionskip}{2pt}
     \setlength{\belowcaptionskip}{-4pt}
-  \includegraphics[width=\columnwidth]{figures/fig_dataset_scatter.pdf}
-  \caption{Dataset heterogeneity across 14 HAR datasets in our benchmark. Training datasets (blue circles) and test datasets (red triangles) span 20--100\,Hz in sampling rates, 3--45 channels, and 4--19 activity labels.}
-  \label{fig:dataset_scatter}
+  \input{figures/fig_corpus.tex}
 \end{figure}
 
-\textbf{Sampling rate variation.}
-Sampling rates range from 20\,Hz to 100\,Hz (Figure~\ref{fig:dataset_scatter}), so a 4-second window contains 80 to 400 timesteps depending on the device. A fixed positional encoding tied to timestep index conflates physical time with sequence length, causing identical motions at different rates to appear structurally different.
+\subsection{Inertial Signals Admit No Closed Grammar}
+\label{sec:no_grammar}
 
-\textbf{Channel and placement diversity.}
-Channel counts range from 3-axis wrist accelerometers to 51-channel multi-IMU body suits. A fixed-width input layer cannot accommodate this variability without padding artifacts or dataset-specific input heads.
+The heterogeneity above is usually treated as an engineering nuisance to be absorbed by
+pretraining on more of it. We think that is the wrong diagnosis, and the difference matters
+because it changes what the solution has to be.
 
-% Label vocabulary inconsistency moved to Section 3.2 (generalization)
+Foundation models in language and vision work in large part because their input space is
+effectively \emph{closed} by a corpus. Text is produced by a grammar over a finite lexicon;
+enough text does approach the distribution of sentences a model will meet. Natural images
+obey a stable projective geometry and a stable statistics of surfaces and light. In both
+cases the substrate has structure that a sufficiently large sample covers.
 
+Inertial signals have no such closure. The map from a motion to a recorded signal is
+composed at deployment time from a chain of choices---mounting orientation (a continuous
+$SO(3)$ nuisance), body placement, sampling rate, filter chain, gravity convention, sensor
+suite---and the chain composes. There is no finite enumeration to cover, and the free
+parameters are continuous. A corpus $10\times$ larger reduces the \emph{probability} that a
+new deployment is far from anything seen, but the tail does not close, and the transformations
+that generate it are cheap to encounter: shipping on a second phone model, or a firmware
+update, is enough.
 
+If compatibility cannot come from coverage, it must come from \emph{inductive bias}: the
+architecture, not the data, must make the representation invariant to the nuisance axes and
+explicitly aware of the ones that carry signal. This is the standard move---but for inertial
+sensing it has a failure mode on \emph{both} sides, and the interesting design question is
+where to sit between them.
 
+\textbf{Too much bias.} Layout-locked encoders fix a channel order, a channel count, and a
+rate. They are the most sample-efficient thing to train and cannot read a device they were
+not built for. Orientation-\emph{invariant} designs (e.g.\ training against uniformly
+sampled $SO(3)$ rotations) are a subtler version of the same error: invariance is lossy.
+Discarding orientation discards gravity, and with it the distinction between lying down and
+standing still, which is exactly the kind of activity a posture or sleep application cares
+about.
 
+\textbf{Too little bias.} The opposite extreme treats every scalar channel as an independent
+univariate series identified only by a free-text name. This is maximally flexible, and it
+creates a shortcut. In a multi-corpus training set, the string describing a channel is
+nearly a sufficient statistic for \emph{which corpus} the window came from; so is the
+sampling rate, and so is the channel count. A model rewarded for predicting a label within a
+corpus can satisfy much of that objective by first inferring the corpus and then predicting
+its marginal---and cross-dataset evaluation is precisely where that strategy stops working.
+We therefore treat corpus identifiability as a measurable failure and probe for it directly
+(Table~\ref{tab:identity_probe}).
 
-\subsection{Limited Generalization to New Distributions and Activities}
+A third position, recently explored outside HAR, is to make the model \emph{equivariant} to
+resolution---to condition its computation on the sampling rate so that it adapts, as in
+sampling-rate-equivariant forecasting~\cite{flowstate} or grid-agnostic spectral
+tokenization~\cite{spectraltok}. That is strictly better than resampling, but it is not the same
+as what we want. An equivariant model still has to be \emph{told} the rate, and its features at
+two rates are related by a learned transformation rather than being the same quantity. We want
+the stronger property: that a feature \emph{denotes} a physical frequency, so a band computed
+from a $20$\,Hz phone and a band computed from a $100$\,Hz research IMU are directly comparable
+without any conditioning at all---which is what makes them comparable in a shared memory. Within
+IMU sensing this property is, as far as we know, unclaimed: the closest tokenizer,
+MoPFormer~\cite{mopformer}, resamples every dataset to $100$\,Hz before quantising into motion
+primitives, so its codebook is defined over a fixed-rate grid.
 
-Beyond sensing heterogeneity, existing approaches share a structural limitation: they produce representations consumed by a fixed, closed-world classifier. This is adequate within a single dataset but fails in two important transfer scenarios.
+The calibrated position, which HALO adopts, is to commit to the physics that does not vary
+and to nothing that does. Three things do not vary: co-located axes on one rigid device
+share a coordinate frame and must be rotated together, not independently; human motion
+energy lives at physical frequencies, so a band means the same thing at every sampling rate;
+and the quasi-static component of an accelerometer is gravity, so it carries posture and must
+be preserved as a signed quantity rather than normalised away. Everything else---rate,
+channel count, ordering, placement, which sensors exist---is deferred to run time and
+described in language, at the granularity of the \emph{sensor} rather than the channel, so
+that the description is expressive enough to name an unseen device but too coarse to
+fingerprint a corpus.
 
-\textbf{Label vocabulary inconsistency.} Label vocabularies differ in both naming and granularity: ``walking,'' ``level walking,'' ``walking on a flat surface,'' and ``normal walk'' all denote the same activity across different datasets, while ``sport'' and ``rope skipping'' represent very different levels of specificity. Because each research group defines its own taxonomy independently, standard one-hot supervision treats ``jogging'' and ``running'' as maximally different, producing contradictory gradients when both labels appear in the training set for similar motions.
+\subsection{Sensor Similarity Does Not Track Linguistic Similarity}
+\label{sec:geometry}
 
-The first is \textit{label shift}: a model trained on many datasets with a large combined label vocabulary is never exposed to the specific label strings used in a held-out test set, even when the underlying motions overlap. For classifier-based models, this means the output vocabulary cannot cover the test labels, and synonym mismatches (e.g., predicting ``jogging'' when the ground truth is ``running'') count as errors even when semantically correct. The second is \textit{genuinely novel activities}: our test datasets include activities with no semantic analog in the training label set (e.g., \textit{car\_step\_in} in MobiAct), making correct predictions structurally impossible for any closed-world model.
+The second obstacle concerns the output side. Because deployments name their own activities,
+a reusable model cannot have a fixed output layer, and the field's answer has been to embed
+label strings with a frozen sentence encoder and align sensor features to that space, so
+that recognition becomes nearest-neighbour retrieval over an arbitrary label
+library~\cite{clip,lanhar,goat,unimts}. The mechanism is elegant and its premise is rarely
+stated: that proximity in sentence-embedding space is a usable proxy for proximity in motion
+space.
 
-Text-aligned models can avoid the closed-world limitation: inference is cosine-similarity retrieval over an arbitrary text library, so the candidate set can be changed at runtime without retraining. However, effective text alignment requires both (i) a sensor encoder robust to the heterogeneity described above, and (ii) a training objective that handles synonym variation in label strings rather than treating them as distinct classes.
+\input{figures/fig_geometry.tex}
+
+It is not. Figure~\ref{fig:geometry} measures this on our own vocabulary. We selected $14$
+label pairs---seven where the two names denote the same physical motion, seven where they
+denote different motions---and computed the cosine similarity of their embeddings under
+all-MiniLM-L6-v2, the encoder these systems use. If the premise held, the same-motion pairs
+would sit to the right of the different-motion pairs. The ordering is reversed: the
+different-motion pairs average $0.77$ and the same-motion pairs $0.60$, and $38$ of the $49$
+cross-comparisons are individually inverted. \emph{Drinking coffee} and \emph{drinking
+water} are the same wrist trajectory at $0.56$; \emph{sitting} and \emph{sitting down}, a
+static posture versus a dynamic transition, are at $0.93$.
+
+The failure is structural rather than a deficiency of one sentence encoder. Natural language
+encodes activities by their \emph{object and purpose}---what is being drunk, what is being
+cut---while an IMU sees only the \emph{kinematics of the limb}, which is invariant to the
+object. Conversely, morphological relatives (\emph{sit}/\emph{sit down},
+\emph{upstairs}/\emph{downstairs}) share nearly all of their surface form while denoting
+opposite dynamics. No amount of alignment training repairs a target geometry that is wrong;
+a model forced to fit it will minimise its loss by other means, and within a multi-dataset
+corpus the cheapest other means is dataset identity.
+
+The architectural consequence is to stop trying. HALO keeps language as the \emph{interface}
+for naming activities---that part is necessary, and cheap---but does not use it as the
+\emph{metric space} in which recognition happens. Retrieval is performed in sensor space,
+where similarity means kinematic similarity; label text enters only afterwards, to name the
+retrieved neighbours and to enumerate what the deployment is willing to predict
+(Section~\ref{sec:evidence_design}).
 
 \subsection{Design Requirements}
+\label{sec:requirements}
 
-The analysis above yields four concrete requirements for a \emph{deployable} cross-device IMU model: (R1)~the model must handle arbitrary sampling rates, channel counts, and sensor placements without dataset-specific architectural changes; (R2)~it must support open-vocabulary recognition over arbitrary label sets at test time, including labels not seen during training; (R3)~it must align semantically equivalent labels during training to avoid contradictory gradients from synonym variation; and (R4)~to be usable on a phone or watch, a single model must recognize activities both \emph{offline} (over a finished recording) and \emph{online} (as a causal, low-latency stream), rather than only in the offline whole-window setting assumed by prior benchmarks. HALO achieves R1 through its physical-frequency filterbank tokenizer and channel-independent encoder, R2--R3 through language-based conditioning and synonym-aware text alignment, and R4 through a streamable encoder trained under both full and causal attention (Section~\ref{sec:design}).
+The three claims yield four requirements.
+
+\textbf{R1 (from L1).} The encoder must accept arbitrary sampling rates, channel counts,
+sensor suites, and placements with one weight set and no architectural change, absorbing them
+through construction rather than through resampling or per-dataset heads---and must signal
+what a given configuration could not observe instead of silently fabricating it.
+
+\textbf{R2 (from L1).} The conditioning that carries acquisition context must generalise
+compositionally to unseen configurations, and must be coarse enough that it cannot serve as
+a corpus identifier. This is a testable property, not an assertion.
+
+\textbf{R3 (from L2).} Recognition over a run-time-declared label set must not require a
+single projection reconciling sensor geometry with sentence geometry. Similarity must be
+computed where it is meaningful, and label text used only where it is meaningful.
+
+\textbf{R4 (from L3).} The model must place no floor on how much target supervision is
+required, and adding a small amount must be possible without a gradient update, without
+retraining, and without data leaving the device---so that $k{=}0$, $k{=}10$, and full
+supervision are points on one curve rather than three different systems.
+
+HALO meets R1--R2 with the physical-frequency filterbank tokenizer and factored per-sensor
+language conditioning (Section~\ref{sec:tokenizer_design}), R3 with the evidence engine
+(Section~\ref{sec:evidence_design}), and R4 because the evidence engine's memory is
+append-only (Section~\ref{sec:deployment}).

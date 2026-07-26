@@ -1,473 +1,387 @@
 % =========================
-% 6_experiments.tex (updated with bug-fixed native-rate HALO results)
+% 6_experiments.tex  --- protocol and tables written; result cells reserved (\PH / \PENDING)
 % =========================
 \section{Experiments}
 \label{sec:experiments}
 
-\OUTDATED{\textbf{Entire section pending the v2 retrain --- do not cite these numbers.} Every table and figure in this section reflects the v1 model and the v1 evaluation protocol and will be re-measured. The v2 protocol used going forward is: subject-disjoint splits; zero-shot scored against each target dataset's \emph{own} label strings (ZS-XD) with macro-F1 as the primary metric; a ConSE bridge for closed-vocabulary baselines; and a parity row (common $20$\,Hz input + neutral channel text) that isolates the architecture's contribution. The open-set-over-all-training-labels setting and the ``severe out-of-domain'' category are removed (they induced label leakage and coverage artifacts). The split is now 11 training / 6 held-out datasets (CAPTURE-24 added; VTT-ConIoT dropped; HARTH promoted to the main test set). The baseline set is CrossHAR and LiMU-BERT, with UniMTS and ssl-wearables planned; MOMENT, LanHAR, and LLaSA are dropped from the comparison.}
+\PENDING{The corpus, protocol, baseline roster, and table structure in this section are final
+and describe what is implemented. Result cells are reserved space, shown in orange, and are
+filled once the training run completes.}
 
 \subsection{Methodology}
 \label{sec:methodology}
 
-We evaluate whether HALO (i)~generalizes zero-shot to unseen datasets when scored against each dataset's \emph{own} label strings (cross-dataset zero-shot, ZS-XD), (ii)~transfers sample-efficiently under subject-disjoint few-shot supervision, and (iii)~runs on-device both offline and as a low-latency stream. \OUTDATED{The v1 open-set/closed-set zero-shot split and the ``severe out-of-domain'' category are removed; see the section banner for the full v1$\to$v2 protocol change.}
+We ask four questions. \textbf{(Q1)} Along the label-efficiency curve---$k$ target
+exemplars per class, for $k$ from zero up to full supervision---where does HALO stand against
+strong frozen encoders, and is there a regime it owns? \textbf{(Q2)} Does the tokenizer's inductive bias do
+what Section~\ref{sec:no_grammar} claims: is the representation genuinely rate-invariant, and
+is the conditioning genuinely too coarse to identify a corpus? \textbf{(Q3)} Which Phase-A
+objectives carry the transfer, and does any of them beat its own untrained control?
+\textbf{(Q4)} Does the system run on a phone, and does it behave in a real deployment?
 
+\subsubsection{Data}
+\label{sec:datasets}
+
+We train on 12 public HAR datasets contributing 20 distinct sensor streams
+(Table~\ref{tab:datasets}, top), and evaluate on 7 datasets never seen by any model during
+training (bottom). After conversion to native-rate grids and the removal of 95 windows whose
+values exceed physically possible sensor rails, the corpus is $343{,}140$ non-overlapping
+six-second windows---$572$ hours of signal---over $93$ activity labels, split subject-disjointly
+into $300{,}231$ training and $42{,}909$ validation windows. The validation split is constructed by a greedy label-cover procedure so
+that all $93$ labels are represented.
 
 \begin{table}[t]
   \centering
   \resizebox{\columnwidth}{!}{
-  \begin{tabular}{l c c c c l}
+  \begin{tabular}{l r r c r l}
     \toprule
-    Dataset & Hz & \#Subj & \#Act & \#Ch & Description \\
+    Dataset & Hz & \#Str & Ch & \#Win & Placement(s) \\
     \midrule
-    UCI-HAR~\cite{ucihar}        & 50  & 30  &  6 & 9  & Waist phone \\
-    HHAR~\cite{hhar}             & 50  &  9  &  6 & 6  & Phone + watch \\
-    UniMiB~\cite{unimibi}        & 50  & 30  & 17 & 3  & Phone acc, ADLs \\
-    MHEALTH~\cite{mhealth}       & 50  & 10  & 12 & 6  & Body IMU suite \\
-    PAMAP2~\cite{pamap2}         & 100 &  9  & 18 & 27 & Multi-IMU \\
-    WISDM~\cite{wisdm}           & 20  & 51  & 18 & 6  & Phone + watch \\
-    DSADS~\cite{dsads}           & 25  &  8  & 19 & 45 & 5 body positions \\
-    HAPT~\cite{hapt}             & 50  & 30  & 12 & 6  & Phone, transitions \\
-    KU-HAR~\cite{kuhar}          & 100 & 90  & 18 & 6  & Phone, 18 acts \\
-    RecGym~\cite{recgym}         & 20  & 10  & 12 & 6  & Watch, gym \\
-    CAPTURE-24~\cite{chan2024capture24} & 100 & 151 & 10 & 3 & Wrist, free-living \\
+    \multicolumn{6}{l}{\textit{Training corpus (12 datasets, 20 streams)}}\\
+    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 3 & 144{,}142 & wrist, free-living \\
+    WISDM~\cite{wisdm}                  &  20 & 2 & 6 &  70{,}201 & pocket $+$ wrist \\
+    XRF~V2~\cite{xrf_v2}                &  50 & 6 & 6 &  34{,}764 & pockets, wrists, glasses, earbuds \\
+    NFI-FARED~\cite{nfi_fared}          & 100 & 2 & 6 &  26{,}520 & wrist $+$ lower back \\
+    HARMES~\cite{harmes}                &  50 & 1 & 6 &  18{,}576 & wrist \\
+    UniMiB~SHAR~\cite{unimibi}          &  50 & 1 & 3 &  11{,}771 & trouser pocket \\
+    UCI-HAR~\cite{ucihar}               &  50 & 1 & 6 &  10{,}299 & waist \\
+    HHAR~\cite{hhar}                    &  50 & 1 & 6 &   9{,}587 & waist \\
+    KU-HAR~\cite{kuhar}                 & 100 & 1 & 6 &   9{,}233 & waist \\
+    SP-SW-HAR~\cite{sp_sw_har}          & 100 & 2 & 6 &   3{,}757 & pocket $+$ wrist \\
+    PAMAP2~\cite{pamap2}                & 100 & 1 & 6 &   3{,}186 & wrist \\
+    MHEALTH~\cite{mhealth}              &  50 & 1 & 6 &   1{,}104 & wrist \\
     \midrule
-    MotionSense~\cite{motionsense}   & 50 & 24 &  6 & 6 & Phone, basic \\
-    RealWorld~\cite{realworld}       & 50 & 15 &  8 & 3 & Phone, acc-only \\
-    MobiAct~\cite{mobiact}           & 50 & 66 & 13 & 6 & Falls + ADLs \\
-    Shoaib~\cite{shoaib}             & 50 & 10 &  7 & 6 & Multi-placement \\
-    HARTH~\cite{harth}               & 50 & 22 & 12 & 6 & Back/thigh acc \\
-    InclusiveHAR~\cite{inclusivehar} & 50 & 20 &  6 & 6 & Phone, mixed abilities \\
+    \multicolumn{6}{l}{\textit{Held-out evaluation (7 datasets, never trained on)}}\\
+    MotionSense~\cite{motionsense}      &  50 & 1 & 6 & --- & trouser pocket \\
+    RealWorld~\cite{realworld}          &  50 & 1 & 6 & --- & waist \\
+    Shoaib~\cite{shoaib}                &  50 & 1 & 6 & --- & 5 body positions \\
+    InclusiveHAR~\cite{inclusivehar}    &  50 & 1 & 6 & --- & waist, mixed abilities \\
+    USC-HAD~\cite{usc_had}              & 100 & 1 & 6 & --- & hip \\
+    TNDA-HAR~\cite{tnda_har}            &  50 & 1 & 6 & --- & wrist \\
+    UT-Complex~\cite{ut_complex}        &  50 & 1 & 6 & --- & wrist \\
     \bottomrule
   \end{tabular}}
-  \caption{Dataset overview. Top: 11 training datasets (CAPTURE-24 adds free-living wrist data). Bottom: 6 held-out test datasets, never seen during any model's training. InclusiveHAR comprises 10 able-bodied and 10 physically disabled subjects and is additionally reported with an ability-stratified breakdown.}
+  \caption{Corpus. \emph{\#Str} is the number of distinct sensor streams (one per device
+  placement); \emph{Ch} is the number of core channels reaching the model
+  (3 = accelerometer only). Window counts are six-second windows on the native-rate grid after
+  physical-plausibility filtering. InclusiveHAR comprises 10 able-bodied and 10 physically
+  disabled subjects and is additionally reported with an ability-stratified breakdown.
+  Six datasets were deliberately excluded from both splits. DSADS~\cite{dsads},
+  HARTH~\cite{harth}, and Opportunity~\cite{opportunity} use torso and limb IMU harnesses
+  rather than phone or watch placements; RecGym~\cite{recgym} is distributed per-axis
+  min--max normalised, which destroys the physical scale and gravity component the tokenizer
+  depends on; MobiAct~\cite{mobiact} was never materialised into grids; and
+  HAPT~\cite{hapt} is excluded because it re-records the same 30 subjects as
+  UCI-HAR~\cite{ucihar}, so including both would place the same people on both sides of a
+  supposedly subject-disjoint boundary.}
   \label{tab:datasets}
    \vspace{-1em}
 \end{table}
 
-\textbf{Datasets.}
-\label{sec:datasets}
-We train jointly on 11 public HAR datasets (Table~\ref{tab:datasets}), including the free-living wrist corpus CAPTURE-24~\cite{chan2024capture24}, and evaluate on 6 held-out datasets \emph{never seen during any model's training}. HALO evaluates at each dataset's native sampling rate; classifier baselines use 20\,Hz resampled data via the LIMU-BERT pipeline (Section~\ref{sec:eval_protocol}).
-
-\textbf{Baselines.}
+\subsubsection{Baselines and the fairness contract}
 \label{sec:baselines}
-We compare HALO against self-supervised HAR encoders under the ZS-XD protocol (Table~\ref{tab:baselines}). \emph{Classifier-based models} (LiMU-BERT~\cite{limubert}, CrossHAR~\cite{crosshar}) produce a fixed-vocabulary classifier; to score them against a test dataset's own (possibly unseen) label strings we bridge their predictions to text via ConSE~\cite{conse}, projecting each classifier's softmax over training labels into the shared text-embedding space. We additionally plan to compare against \emph{UniMTS}~\cite{unimts} (a motion-time-series foundation model with released weights) and \emph{ssl-wearables}~\cite{sslwearables} (a large-scale self-supervised accelerometer model), both of which release checkpoints. \OUTDATED{The v1 comparison additionally included MOMENT, LanHAR, and LLaSA; these are dropped in v2 (MOMENT/LanHAR were dominated and LLaSA's published weights overlap our test sets). The UniMTS and ssl-wearables rows are pending; all baseline numbers are being re-measured.}
 
-\iffalse  % --- v1 baseline table (superseded; MOMENT/LanHAR/LLaSA dropped in v2). Kept for reference. ---
+Cross-model comparison in this setting is easy to get wrong, because the models do not accept
+the same inputs. We therefore state a single contract and apply it uniformly
+(Table~\ref{tab:baselines}). Each model occupies a \emph{level} on each of four tiers---base
+architecture, sampling rate, channels/placement, and label vocabulary---and we never modify a
+released checkpoint's input contract, because doing so discards the model being tested. Two
+baselines (CrossHAR, LiMU-BERT) release no checkpoint compatible with our corpus, so we
+pretrain them ourselves on \emph{our} training data with their own published objectives, which
+makes their data identical to ours; three (harnet, UniMTS, NormWear) are used as released,
+which is faithful but means their pretraining corpora differ from ours and from each other.
+This distinction is material---harnet is pretrained on roughly $700$k person-days against our
+$\sim\!570$ hours of windowed signal---and we state it wherever a comparison could be read as a like-for-like
+data-matched result. Closed-vocabulary models are bridged to arbitrary label strings with
+ConSE~\cite{conse}, which projects a classifier's softmax over its training labels into the
+text-embedding space, so that ``can predict an unseen label'' is available to every model and
+is not something HALO is credited for.
+
 \begin{table}[t]
   \centering
+  \resizebox{\columnwidth}{!}{
   \small
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{l l r r r}
+  \begin{tabular}{l l l l l}
     \toprule
-    Model & Paradigm & Dim & Train. & Infer. \\
+    Model & Weights & Rate & Channels / placement & Labels \\
     \midrule
-    LiMU-BERT~\cite{limubert}  & Masked recon.   & 72   & 72.7K  & 72.7K \\
-    MOMENT~\cite{moment}        & General TS      & 6144 & 341.2M & 341.2M \\
-    CrossHAR~\cite{crosshar}    & Self-sup HAR    & 72   & 531.4K & 531.4K \\
-    LanHAR~\cite{lanhar}        & Text-aligned    & 768  & 13.0M\rlap{$^*$}  & 122.9M \\
-    LLaSA~\cite{llasa}          & LLM generative  & ---  & ${\sim}$6.7B & ${\sim}$6.7B \\
+    LiMU-BERT~\cite{limubert}   & we pretrain & fixed 20\,Hz & 6-ch pad$+$mask; blind & ConSE \\
+    CrossHAR~\cite{crosshar}    & we pretrain & fixed 20\,Hz & 6-ch pad$+$mask; blind & ConSE \\
+    harnet~\cite{sslwearables}  & released    & fixed 30\,Hz & 3-ch acc; wrist-implied & ConSE \\
+    UniMTS~\cite{unimts}        & released    & resampled    & joint-graph placement, 3-ch & native text \\
+    NormWear~\cite{normwear}    & released    & fixed 65\,Hz & variable ch $+$ mask; blind & native text \\
     \midrule
-    HALO (ours)                  & Text-aligned    & 384  & ${\sim}$35M & ${\sim}$58M \\
+    \textbf{HALO} (ours)        & we train    & \textbf{native} & \textbf{per-sensor language} & \textbf{native} \\
     \bottomrule
-  \end{tabular}
-  \caption{Baseline overview (v1).}
-  \label{tab:baselines_v1}
+  \end{tabular}}
+  \caption{Baselines and where each sits on the heterogeneity stack. ``Blind'' means the model
+  receives no information about where the sensor was worn. \emph{Weights}: two baselines are
+  pretrained by us on our corpus with their published objectives (data-matched); three are used
+  as released (faithful, but pretrained on their own, larger, corpora---harnet on
+  ${\sim}700$k person-days). We report both groups separately rather than averaging over them.}
+  \label{tab:baselines}
   \vspace{-1em}
 \end{table}
-\fi
+
+\subsubsection{Protocol}
+\label{sec:eval_protocol}
+
+\emph{Scoring.} Following the good-practice arguments of the zero-shot evaluation
+literature~\cite{zslgbu}, every held-out dataset is scored against its \emph{own} label
+strings, never a shared training-wide ontology, so a prediction counts only if it retrieves that dataset's exact
+activity name. Macro-F1 is primary, with accuracy alongside, because held-out label
+distributions are imbalanced.
+
+\emph{Splits.} All few-shot fits and all memory writes use subjects disjoint from those
+evaluated. Where a cohort is small enough that a single split is unstable, we rotate over
+grouped folds and report a confidence interval.
+
+\emph{Label leakage.} The label-text ensemble used at inference is purged of synonyms drawn
+from the evaluation datasets, so that no evaluation vocabulary is smuggled in through
+paraphrase. Retrieval hyper-parameters are selected on held-out \emph{training} configurations,
+never on evaluation cells.
+
+\emph{Parity control.} To separate the architecture from its native-rate and rich-text inputs,
+HALO is additionally evaluated under baseline-equivalent inputs: common $20$\,Hz resampling and
+a neutral sensor description (Table~\ref{tab:parity}).
+
+\subsection{Q1: The Label-Efficiency Curve}
+\label{sec:label_efficiency}
+
+This is the headline experiment. For each held-out dataset and each budget $k$ of labelled
+target windows per class, we compare three mechanisms on identical data: HALO's memory, given
+the $k$ exemplars as an append with \emph{no gradient update}; a probe fitted on the same $k$
+exemplars over HALO's frozen features; and the same probe over frozen harnet features, which
+is the strong-representation control. We additionally report \emph{retrieval over harnet
+features}---the same memory mechanism on a different encoder---because without it a win could
+be attributed to the mechanism when it belongs to the representation, or the reverse.
+
+\begin{table}[t]
+  \centering
+  \resizebox{\columnwidth}{!}{
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l cccccc}
+    \toprule
+    & \multicolumn{6}{c}{labelled target windows per class ($k$)} \\
+    \cmidrule(lr){2-7}
+    Mechanism & 0 & 1 & 5 & 10 & 50 & full \\
+    \midrule
+    HALO memory (no gradient step)   & \PH & \PH & \PH & \PH & \PH & \PH \\
+    HALO frozen $+$ probe            & \PH & \PH & \PH & \PH & \PH & \PH \\
+    harnet frozen $+$ probe          & \PH & \PH & \PH & \PH & \PH & \PH \\
+    harnet frozen $+$ memory\rlap{$^\dagger$} & \PH & \PH & \PH & \PH & \PH & \PH \\
+    \midrule
+    UniMTS (native text)             & \PH & \PH & \PH & \PH & \PH & \PH \\
+    CrossHAR $+$ ConSE               & \PH & \PH & \PH & \PH & \PH & \PH \\
+    LiMU-BERT $+$ ConSE              & \PH & \PH & \PH & \PH & \PH & \PH \\
+    NormWear (native text)           & \PH & \PH & \PH & \PH & \PH & \PH \\
+    \bottomrule
+  \end{tabular}}
+  \caption{Macro-F1 versus label budget,
+  averaged over the 7 held-out datasets, subject-disjoint throughout. $k{=}0$ is the zero-shot
+  point and $k{=}\text{full}$ the supervised one; they are ends of one curve, not separate
+  experiments, and every row uses \emph{one} frozen encoder across all $k$.
+  $^\dagger$\,The mechanism-versus-representation control: if retrieval helps only on HALO
+  features, the contribution is the encoder; if it helps equally on harnet's, it is the memory.
+  We pre-register that we will report this control regardless of which way it falls.}
+  \label{tab:label_efficiency}
+  \vspace{-1em}
+\end{table}
+
+\textbf{Pre-registered hypothesis and kill criterion.} We expect retrieval to win at small $k$,
+where a nearest-neighbour decision beats a linear fit on a handful of points, and the probe to
+overtake somewhere between $k{=}10$ and $k{=}50$. If that holds, the regime HALO owns is
+$k \le 10$, which is exactly the enrollment setting a user can perform in under a minute. If
+the probe dominates at \emph{every} $k$ including $k{=}1$, retrieval has no regime of its own;
+we will report that outcome plainly.
 
 \begin{table}[t]
   \centering
   \small
   \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{l l r}
+  \begin{tabular}{l cc cc}
     \toprule
-    Model & Paradigm & Params \\
+    & \multicolumn{2}{c}{$k{=}0$} & \multicolumn{2}{c}{$k{=}10$} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    Dataset & Acc & F1 & Acc & F1 \\
     \midrule
-    LiMU-BERT~\cite{limubert}          & Masked recon.\ (+ConSE) & 72.7K \\
-    CrossHAR~\cite{crosshar}           & Self-sup.\ HAR (+ConSE) & 531.4K \\
-    UniMTS~\cite{unimts}               & Motion-TS foundation    & --\rlap{$^\ddagger$} \\
-    ssl-wearables~\cite{sslwearables}  & SSL accelerometer       & --\rlap{$^\ddagger$} \\
+    MotionSense   & \PH & \PH & \PH & \PH \\
+    RealWorld     & \PH & \PH & \PH & \PH \\
+    Shoaib        & \PH & \PH & \PH & \PH \\
+    InclusiveHAR  & \PH & \PH & \PH & \PH \\
+    \quad\emph{able-bodied} & \PH & \PH & \PH & \PH \\
+    \quad\emph{disabled}    & \PH & \PH & \PH & \PH \\
+    USC-HAD       & \PH & \PH & \PH & \PH \\
+    TNDA-HAR      & \PH & \PH & \PH & \PH \\
+    UT-Complex    & \PH & \PH & \PH & \PH \\
     \midrule
-    HALO (ours)                        & Text-aligned            & \STALE{${\sim}$35M}\rlap{$^*$} \\
+    \textbf{Mean} & \PH & \PH & \PH & \PH \\
     \bottomrule
   \end{tabular}
-  \caption{Baselines under the v2 ZS-XD protocol. Classifier-based encoders are bridged to arbitrary text labels via ConSE~\cite{conse}. $^\ddagger$\,Planned; released checkpoints. $^*$\,v1 trainable-parameter count; the v2 total changes (the physical-frequency filterbank tokenizer replaces the CNN and the learnable label bank is removed) and is pending the retrain. HALO shares one frozen MiniLM (22.7M) for both channel conditioning and label alignment, precomputable and cached at deployment.}
-  \label{tab:baselines}
-  \vspace{-1em}
-\end{table}
-
-\textbf{Evaluation protocol.}
-\label{sec:eval_protocol}
-\emph{Cross-dataset zero-shot (ZS-XD).} Each held-out dataset is scored against its \emph{own} label strings---not a shared training-wide ontology---so a prediction counts only if it retrieves that dataset's exact activity name. HALO retrieves by cosine similarity to those label strings directly; classifier-based baselines are bridged to the same strings via ConSE~\cite{conse}, which projects each model's softmax over its training labels into the shared text-embedding space. Macro-F1 is the primary metric (accuracy reported alongside), since held-out label distributions are imbalanced.
-\emph{Subject-disjoint few-shot.} For 1\% and 10\% supervision we fit on labeled data from subjects \emph{disjoint} from those evaluated, so no subject appears in both the fit and test splits; we report macro-F1.
-\emph{Parity control.} To separate the architecture from its native-rate and rich-text advantages, we additionally evaluate HALO under baseline-equivalent inputs---common 20\,Hz resampling and neutral channel descriptions (Table~\ref{tab:fairness_control}).
-\emph{Streaming.} On-device latency and a continuous real-world case study are reported in Sections~\ref{sec:scaling} and~\ref{sec:case_study}.
-\OUTDATED{This replaces the v1 protocol, which scored a shared 87-label open-set/closed-set vocabulary with synonym-group credit for classifier baselines and per-patch majority voting for HALO, and subsampled few-shot data without enforcing subject disjointness---settings that leaked label and subject information across the split.}
-
-\textbf{Implementation details.}
-HALO is trained in a \emph{single} language-alignment stage over all 11 datasets---the encoder is trained from scratch, with no separate self-supervised pretraining stage. \OUTDATED{The v1 two-stage recipe (100 self-supervised pretraining epochs + 200 alignment epochs, MAE mask ratio 0.5, contrastive temperature 0.2) is superseded; the v2 recipe (single-stage, mixed full/causal temporal masks with an offline-to-online consistency term, and unified signal/text/physics augmentation) is pending the retrain and will be reported here.} Alignment hyperparameters retained from v1: learned temperature $\alpha_0{=}0.07$, soft-target temperature $\tau_s{=}0.5$, memory bank $Q{=}256$, gradient accumulation (micro-batch~32), and group-balanced sampling capped at $20\times$. HALO uses a fixed 1.0\,s evaluation patch by default (Section~\ref{sec:patch_sensitivity}). Training uses a single NVIDIA A100 80\,GB GPU; on-device profiling uses a smartphone (Section~\ref{sec:scaling}).
-
-
-% ------------------------------------------------------------------
-\subsection{Overall Performance}
-
-\iffalse  % --- v1 main-results table (open/closed-set, 5 v1 baselines). Superseded; kept for reference. ---
-\begin{table}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{l cc cc cc cc}
-    \toprule
-    & \multicolumn{2}{c}{ZS-O}
-    & \multicolumn{2}{c}{ZS-C}
-    & \multicolumn{2}{c}{1\%}
-    & \multicolumn{2}{c}{10\%} \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
-    Model & Acc & F1 & Acc & F1 & Acc & F1 & Acc & F1 \\
-    \midrule
-    HALO (ours) & 42.0 & 21.0 & 53.1 & 37.2 & 76.5 & 70.0 & 85.7 & 81.7 \\
-    MOMENT   & 28.3 & 7.2 & 44.7 & 33.2 & 73.8 & 69.8 & 81.3 & 76.8 \\
-    CrossHAR & 21.2 & 5.5 & 38.2 & 31.7 & 61.1 & 55.2 & 78.6 & 75.2 \\
-    LiMU-BERT& 21.7 & 7.5 & 33.1 & 23.1 & 35.7 & 22.7 & 51.3 & 43.6 \\
-    LanHAR   & 15.8 & 6.2 & 28.4 & 21.7 & 43.3 & 35.2 & 56.2 & 51.5 \\
-    LLaSA    & 1.4 & 1.2 & 17.4 & 8.4 & --- & --- & --- & --- \\
-    \bottomrule
-  \end{tabular}
-  \caption{Overall performance (v1).}
-  \label{tab:main_results_v1}
-\end{table}
-\fi
-
-\begin{table}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{l cc c c}
-    \toprule
-    & \multicolumn{2}{c}{ZS-XD} & 1\% & 10\% \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-4} \cmidrule(lr){5-5}
-    Model & Acc & F1 & F1 & F1 \\
-    \midrule
-    HALO (ours)               & -- & -- & -- & -- \\
-    \quad\emph{parity} (20\,Hz, neutral text) & -- & -- & -- & -- \\
-    CrossHAR + ConSE          & -- & -- & -- & -- \\
-    LiMU-BERT + ConSE         & -- & -- & -- & -- \\
-    UniMTS$^\ddagger$         & -- & -- & -- & -- \\
-    ssl-wearables$^\ddagger$  & -- & -- & -- & -- \\
-    \bottomrule
-  \end{tabular}
-  \caption{\OUTDATED{Skeleton pending the v2 retrain --- cells are placeholders to be filled by the v2 run.} Overall cross-dataset zero-shot (ZS-XD) and subject-disjoint few-shot performance, averaged over the 6 held-out datasets. Macro-F1 is primary; ZS-XD accuracy is reported alongside. The \emph{parity} row evaluates HALO under baseline-equivalent inputs. $^\ddagger$\,Planned baseline.}
-  \label{tab:main_results}
-  \vspace{-1em}
-\end{table}
-
-% Overall performance measured by average accuracy (%) and macro F1 (%) across five main test datasets. Bold indicates the best result for each metric. ZS-O / ZS-C denote zero-shot open-set and closed-set settings, respectively. HALO and LanHAR are evaluated at each dataset’s native sampling rate, while all other baselines use data resampled to 20 Hz.
-
-% $^\dagger$LLaSA: published 7B model, zero-shot only (no supervised), subsampled to 100 samples/class; MotionSense and Shoaib are in LLaSA's training data.
-
-\subsubsection{Overall performance}
-
-\OUTDATED{Pending the v2 retrain. Table~\ref{tab:main_results} gives the result skeleton; the v1 narrative---HALO leading on all eight open/closed-set metrics with a $+13.7$\,pp zero-shot open-set margin over MOMENT---is superseded and removed. The v2 result will be reported here as a per-metric comparison against CrossHAR and LiMU-BERT (both ConSE-bridged) and the planned UniMTS and ssl-wearables baselines, with the parity row isolating the architecture's contribution from its native-rate and rich-text inputs.}
-
-% ------------------------------------------------------------------
-\subsubsection{Results in each dataset }
-
-\iffalse  % --- v1 per-dataset table (5 main test datasets, open/closed-set). Superseded; kept for reference. ---
-\begin{table}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{l cccc cccc}
-    \toprule
-    & \multicolumn{4}{c}{Accuracy (\%)} & \multicolumn{4}{c}{Macro F1 (\%)} \\
-    \cmidrule(lr){2-5} \cmidrule(lr){6-9}
-    Dataset & ZS-O & ZS-C & 1\% & 10\% & ZS-O & ZS-C & 1\% & 10\% \\
-    \midrule
-    MotionSense & 49.3 & 64.1 & 88.6 & 95.0 & 30.3 & 49.3 & 87.1 & 94.6 \\
-    RealWorld & 48.0 & 48.0 & 75.1 & 85.6 & 33.3 & 37.9 & 74.0 & 86.4 \\
-    MobiAct & 42.2 & 50.0 & 65.3 & 72.9 & 16.3 & 12.8 & 35.2 & 51.7 \\
-    Shoaib & 49.2 & 54.1 & 81.6 & 95.9 & 17.6 & 51.5 & 81.2 & 95.7 \\
-    Opportunity & 21.1 & 49.3 & 72.0 & 79.3 & 7.4 & 34.2 & 72.6 & 80.0 \\
-    \midrule
-    \textbf{Average} & 42.0 & 53.1 & 76.5 & 85.7 & 21.0 & 37.2 & 70.0 & 81.7 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Per-dataset results (v1).}
-  \label{tab:per_dataset_v1}
-\end{table}
-\fi
-
-\begin{table}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{l cc c c}
-    \toprule
-    & \multicolumn{2}{c}{ZS-XD} & 1\% & 10\% \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-4} \cmidrule(lr){5-5}
-    Dataset & Acc & F1 & F1 & F1 \\
-    \midrule
-    MotionSense   & -- & -- & -- & -- \\
-    RealWorld     & -- & -- & -- & -- \\
-    MobiAct       & -- & -- & -- & -- \\
-    Shoaib        & -- & -- & -- & -- \\
-    HARTH         & -- & -- & -- & -- \\
-    InclusiveHAR  & -- & -- & -- & -- \\
-    \midrule
-    \textbf{Average} & -- & -- & -- & -- \\
-    \bottomrule
-  \end{tabular}
-  \caption{\OUTDATED{Skeleton pending the v2 retrain.} Per-dataset HALO results on the 6 held-out datasets (ZS-XD and subject-disjoint few-shot; macro-F1 primary). InclusiveHAR is additionally reported split by ability (able-bodied vs.\ physically disabled).}
+  \caption{Per-dataset HALO performance at the
+  two ends of the enrollment regime. InclusiveHAR is reported stratified by ability, because a
+  model that works only for able-bodied users is not a foundation for rehabilitation
+  applications.}
   \label{tab:per_dataset}
   \vspace{-1em}
 \end{table}
 
-\OUTDATED{Per-dataset commentary pending the v2 retrain. The prior discussion (HALO leading zero-shot on 4/5 main datasets, MobiAct hardest, etc.) referred to the v1 open/closed-set protocol and the demoted Opportunity split, and is removed.}
+\subsection{Q2: Does the Inductive Bias Do What It Claims?}
+\label{sec:bias_experiments}
 
-% ------------------------------------------------------------------
-\OUTDATED{\textbf{The ``severe out-of-domain'' category is removed in v2.} VTT-ConIoT is dropped from the benchmark and HARTH is promoted into the main held-out set (Table~\ref{tab:per_dataset}), so it is no longer reported separately. The v1 severe-OOD table and its discussion---in which all models collapsed on HARTH zero-shot and VTT-ConIoT was capped near $50\%$ by novel activities---are retained in the source for reference only.}
+Section~\ref{sec:no_grammar} made two falsifiable claims about the tokenizer. Both are tested
+directly rather than inferred from end-task accuracy.
 
-\iffalse  % --- v1 severe-OOD table + discussion (removed in v2). Kept for reference. ---
-\begin{table}
-  \centering
-  \small
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{l cccc cccc}
-    \toprule
-    & \multicolumn{4}{c}{HARTH} & \multicolumn{4}{c}{VTT-ConIoT} \\
-    \cmidrule(lr){2-5} \cmidrule(lr){6-9}
-    & ZS-O & ZS-C & 1\% & 10\% & ZS-O & ZS-C & 1\% & 10\% \\
-    \midrule
-    HALO    & 2.0 & 2.5 & 64.7 & 78.3 & 1.3 & 2.2 & 1.9 & 16.9 \\
-    MOMENT  & 0.4 & 1.9 & 66.7 & 65.4 & 1.6 & 5.2 & 18.4 & 34.8 \\
-    CrossHAR& 0.3 & 0.9 & 42.4 & 71.9 & 0.7 & 5.0 & 10.6 & 30.9 \\
-    LiMU-BERT&0.0 & 20.2 & 54.4 & 19.1 & 3.4 & 7.1 & 4.3 & 15.0 \\
-    LanHAR  & 0.9 & 1.1 & 3.4 & 70.0 & 8.3 & 6.9 & 7.7 & 7.7 \\
-    LLaSA   & 11.9& 12.5 & --- & --- & --- & 6.9 & --- & --- \\
-    \bottomrule
-  \end{tabular}
-  \caption{Accuracy on severe out-of-domain datasets (v1).}
-  \label{tab:severe_ood}
-\end{table}
-\fi
+\textbf{Rate-invariance is measured, not assumed.} A closed-form check confirms that a pure
+tone deposits identical band energies at $20$, $50$, and $100$\,Hz, and that changing the DFT
+padding from $S{=}256$ to $512$ leaves band energies and masks unchanged. The end-task version
+of the claim is Table~\ref{tab:tokenizer_ablation}: the same encoder trained on the same data
+but reading a common $20$\,Hz resampling of every stream. This is the experiment that
+distinguishes a physical-frequency \emph{anchoring} from mere resolution flexibility---if the
+$50$ and $100$\,Hz streams carry discriminative content above $10$\,Hz, resampling must destroy
+it, and the gap is the measurement of how much.
 
+\textbf{Conditioning must not be a corpus fingerprint.} Table~\ref{tab:identity_probe} reports
+a dataset-identity probe: a linear classifier fitted on frozen embeddings to predict which
+\emph{source dataset} a window came from, on held-out subjects. A representation that has
+absorbed the acquisition description as a corpus identifier will make this easy; one whose
+conditioning is genuinely compositional will not. We report it for HALO's factored per-sensor
+conditioning, for a per-channel free-text variant, and for the baselines, and we report it
+whether or not it favours us. It is cheap---frozen features and a linear fit---and it is the
+only direct evidence we have for the ``too little bias'' failure mode.
 
-% ------------------------------------------------------------------
-\subsection{Understanding HALO's Performance}
-
-
-\subsubsection{Ablation study on design components}
-\label{sec:component_ablation}
-
-\OUTDATED{Pending the v2 retrain. Table~\ref{tab:component_ablation} lists the v2 components to be ablated. The v1 findings---channel-text conditioning as the dominant zero-shot component ($-$19.6\,pp), text augmentation the largest few-shot effect ($-$7.0\,pp at 1\%), and signal augmentation closing a 9.5\,pp held-out gap---are superseded and will be re-measured under the ZS-XD protocol, alongside new ablations of the filterbank tokenizer (vs.\ resample-to-fixed-rate), the offline-to-online streaming-consistency term, and anchor-embedding whitening.}
-
-
-\iffalse  % --- v1 component ablation (open/closed-set accuracy). Superseded; kept for reference. ---
 \begin{table}[t]
   \centering
+  \resizebox{\columnwidth}{!}{
   \footnotesize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{l cccc}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l ccc}
     \toprule
-    Configuration & ZS-O & ZS-C & 1\% & 10\% \\
+    Tokenizer configuration & $k{=}0$ & $k{=}10$ & rate gap\rlap{$^\ddagger$} \\
     \midrule
-    Full model & 44.9 & 51.9 & 74.7 & 85.4 \\
-    $-$ Channel-text fusion & 25.3 (--19.6) & 43.8 (--8.1) & 72.9 (--1.8) & 82.5 (--2.9) \\
-    $-$ Signal augmentation & 45.3 (+0.4) & 53.0 (+1.1) & 70.9 (--3.8) & 83.5 (--1.9) \\
-    $-$ Text augmentation & 42.7 (--2.2) & 49.9 (--2.0) & 67.7 (--7.0) & 84.2 (--1.2) \\
+    Physical-Hz filterbank, sensor-grouped, factored text & \PH & \PH & \PH \\
+    \quad$-$ filterbank (resample all streams to 20\,Hz)  & \PH & \PH & \PH \\
+    \quad$-$ sensor grouping (per-channel free text)      & \PH & \PH & \PH \\
+    \quad$-$ language conditioning (layout-locked input)  & \PH & \PH & \PH \\
+    \quad$-$ observability / resolution masks             & \PH & \PH & \PH \\
+    \quad$-$ signed DC (gravity) feature                  & \PH & \PH & \PH \\
     \bottomrule
-  \end{tabular}
-  \caption{Ablation study of design components (v1).}
-  \label{tab:component_ablation_v1}
+  \end{tabular}}
+  \caption{Tokenizer inductive-bias ablation
+  (macro-F1 over the 7 held-out datasets), each component removed independently.
+  $^\ddagger$\,\emph{Rate gap} is performance on the $100$\,Hz held-out cell minus performance
+  on the same data downsampled to $20$\,Hz---the direct measurement of what resampling costs.}
+  \label{tab:tokenizer_ablation}
 \end{table}
-\fi
 
 \begin{table}[t]
   \centering
   \footnotesize
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{l ccc}
+  \setlength{\tabcolsep}{5pt}
+  \resizebox{\columnwidth}{!}{
+  \begin{tabular}{l cc}
     \toprule
-    Configuration & ZS-XD & 1\% & 10\% \\
+    Encoder & dataset-ID acc.\ $\downarrow$ & activity F1 $\uparrow$ \\
     \midrule
-    Full model                          & -- & -- & -- \\
-    $-$ Filterbank (resample to 20\,Hz) & -- & -- & -- \\
-    $-$ Channel-text conditioning       & -- & -- & -- \\
-    $-$ Unified augmentation            & -- & -- & -- \\
-    $-$ Streaming consistency           & -- & -- & -- \\
-    $-$ Anchor whitening                & -- & -- & -- \\
+    HALO (factored per-sensor text)   & \PH & \PH \\
+    HALO (per-channel free text)      & \PH & \PH \\
+    HALO (no language conditioning)   & \PH & \PH \\
+    harnet~\cite{sslwearables}        & \PH & \PH \\
+    UniMTS~\cite{unimts}              & \PH & \PH \\
+    \midrule
+    chance                            & \PH & --- \\
     \bottomrule
-  \end{tabular}
-  \caption{\OUTDATED{Skeleton pending the v2 retrain.} Ablation of v2 design components (macro-F1, averaged over the 6 held-out datasets), each removed independently while all others are kept fixed.}
-  \label{tab:component_ablation}
+  \end{tabular}}
+  \caption{\textbf{Dataset-identity probe.} A
+  linear classifier predicting the \emph{source dataset} from frozen embeddings of held-out
+  subjects. High accuracy here means the representation encodes corpus provenance---the
+  ``too little inductive bias'' failure of Section~\ref{sec:no_grammar}---and predicts poor
+  cross-dataset transfer. Lower is better; the activity column confirms the representation has
+  not simply been degraded.}
+  \label{tab:identity_probe}
 \end{table}
-
-\iffalse  % --- v1 fairness/native-rate table (open/closed-set accuracy). Superseded; kept for reference. ---
-\begin{table}
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{l cccc}
-    \toprule
-    Configuration & ZS-O & ZS-C & 1\% & 10\% \\
-    \midrule
-    HALO (native Hz, rich desc.) & 42.0 & 53.1 & 76.5 & 85.7 \\
-    HALO (20\,Hz, generic desc.) & 30.6 & 49.4 & 71.7 & 84.7 \\
-    \midrule
-    Best baseline (MOMENT)       & 28.3 & 44.7 & 73.8 & 81.3 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Native sampling rate and evaluation fairness (v1).}
-  \label{tab:fairness_control_v1}
-\end{table}
-\fi
-
-\begin{table}
-  \centering
-  \small
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{l ccc}
-    \toprule
-    Configuration & ZS-XD & 1\% & 10\% \\
-    \midrule
-    HALO (native Hz, rich channel text)      & -- & -- & -- \\
-    HALO \emph{parity} (20\,Hz, neutral text) & -- & -- & -- \\
-    \midrule
-    Best baseline                            & -- & -- & -- \\
-    \bottomrule
-  \end{tabular}
-  \caption{\OUTDATED{Skeleton pending the v2 retrain.} Parity control (macro-F1, 6 held-out datasets): HALO under its native inputs vs.\ baseline-equivalent inputs (common 20\,Hz resampling, neutral channel descriptions), isolating the architecture's contribution from its input advantages.}
-  \label{tab:fairness_control}
-\end{table}
-
-% ------------------------------------------------------------------
-\subsubsection{Parity control: isolating the architecture}
-\label{sec:native_rate_ablation}
-
-\OUTDATED{Pending the v2 retrain. The parity control (Table~\ref{tab:fairness_control}) evaluates HALO under baseline-equivalent inputs---common 20\,Hz resampling and neutral channel descriptions---so any remaining margin is attributable to the architecture rather than to native-rate or rich-text advantages. The v1 finding that this margin persisted on 3 of 4 settings, and that per-dataset native-rate gains were largest where rich channel text disambiguates placement (while a single \emph{dataset-level} description could hurt heterogeneous-placement datasets such as RealWorld, $-$9.9\,pp), will be re-measured; the RealWorld regression is a v1 artifact of dataset-level rather than per-channel conditioning, which v2 addresses.}
-
-% Move Figure 8 earlier so it enters float queue before severe OOD tables
-\begin{figure}
-    \centering
-    \setlength{\abovecaptionskip}{2pt}
-    \setlength{\belowcaptionskip}{-2pt}
-  \includegraphics[width=0.8\columnwidth]{figures/fig_embedding_umap.png}
-  \caption{Analysis of embedding space. UMAP projection of learned IMU and text embeddings at epoch~100.
-  Circles: per-activity IMU centroids; diamonds: SBERT text centroids; lines connect matched IMU–text pairs.
-  }
-  \label{fig:embedding_umap}
-\end{figure}
-
-
-% ------------------------------------------------------------------
-\subsubsection{Analysis of embedding space }
-\label{sec:embedding_analysis}
-
-Figure~\ref{fig:embedding_umap} visualizes the learned embedding space via UMAP~\cite{umap}. Semantically related groups (e.g., \textit{running}, \textit{stairs}, \textit{walking}) cluster together with tight cross-modal alignment: nearest-neighbor accuracy reaches 76.7\%, positive similarity 0.857, and the similarity gap between matched and unmatched pairs is 0.377. Stationary activities form a distinct cluster separated from locomotion, mirroring kinematic structure. Text centroids align closely with IMU counterparts, confirming the contrastive objective maps both modalities into a shared semantic space.
-
-
-% ------------------------------------------------------------------
-\subsection{Patch Size Sensitivity}
-\label{sec:patch_sensitivity}
-
-
-HALO uses a fixed 1.0\,s patch size for all results---no per-dataset tuning. Figure~\ref{fig:patch_sensitivity} shows that 1.0--1.25\,s patches consistently perform best; the fixed 1.0\,s choice is within 1.3~pp of the per-dataset optimum across all five datasets. This range aligns with typical gait cycle durations (0.8--1.2\,s), capturing approximately one full motion cycle per patch. Shorter patches (0.75\,s) degrade on complex-activity datasets like Opportunity, likely splitting compound activities across patch boundaries; longer patches (1.5--2.0\,s) show diminishing returns as they average over multiple motion phases. The sensitivity curve is relatively flat between 0.75--1.5\,s, and consistency across sampling rates (20--100\,Hz) confirms that seconds-based patching with adaptive pooling decouples temporal resolution from patch semantics.
-
-\begin{figure}[tb]
-    \centering
-    \setlength{\abovecaptionskip}{2pt}
-    \setlength{\belowcaptionskip}{-4pt}
-  \includegraphics[width=0.7\columnwidth]{figures/fig_patch_sensitivity.pdf}
-  \caption{Patch size sensitivity. Zero-shot closed-set accuracy (\%) across candidate patch durations. The dashed vertical line indicates the selected patch size of 1.0\,s. Original datasets are evaluated at 20\,Hz, while Shoaib and Opportunity are evaluated at their native sampling rates.}
-  \label{fig:patch_sensitivity}
-\end{figure}
-
-
-
-\begin{table}
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{l r cccc}
-    \toprule
-    Model & Params & ZS-O & ZS-C & 1\% & 10\% \\
-    \midrule
-    Tiny   & 6M  & 32.8 & 52.1 & 72.6 & \textbf{86.4} \\
-    \textbf{Small} & \textbf{35M} & \textbf{46.0} & \textbf{53.4} & \textbf{77.5} & 85.3 \\
-    Medium & 63M & 37.8 & 47.7 & 72.6 & 84.5 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Scaling of model size. Average accuracy (\%) on 3 main test datasets at 20\,Hz. The Small model (35M) achieves the best performance, while the Medium model regresses on all zero-shot metrics despite having twice as many parameters.}
-  \label{tab:scaling}
-\end{table}
-
-
-% ------------------------------------------------------------------
-\subsection{Scaling of Model Sizes}
-\label{sec:scaling}
-
-We train three model sizes---Tiny ($d{=}192$, 4 layers, 6M), Small ($d{=}384$, 8 layers, 35M), and Medium ($d{=}512$, 8 layers, 63M)---with identical training recipes, hyperparameters, and data to isolate the effect of model capacity.
-Table~\ref{tab:scaling} shows Small is the sweet spot: Medium regresses by 8.2\,pp on ZS-O despite doubling parameters, achieving the highest \emph{validation} accuracy but the worst held-out generalization---classic overfitting to dataset-specific patterns rather than transferable motion representations. Tiny underfits, falling 13.2\,pp below Small on ZS-O, though it slightly outperforms Small at 10\% supervision (86.4\% vs.\ 85.3\%), suggesting smaller models benefit more from supervised regularization. The ${\sim}$13K-session corpus supports ${\sim}$35M parameters before overfitting dominates; larger HAR corpora could shift this ceiling upward.
-
-
-\subsection{Inference Overhead on Smartphones}
-
-\OUTDATED{The latency table below profiles the v1 model against the v1 baseline set (MOMENT/LanHAR/LLaSA, now dropped); v2 will re-profile HALO---whose filterbank tokenizer changes its cost---against CrossHAR, LiMU-BERT, and the planned baselines, and add streaming-mode (per-patch, KV-cached) latency alongside the offline number.}
-
 
 \begin{table}[t]
-\centering
-\resizebox{\columnwidth}{!}{
-\begin{tabular}{lrcccc}
-\toprule
-\textbf{Model} & \textbf{Params} & \textbf{Avg (ms)} & \textbf{p95 (ms)} & \textbf{Peak Mem. (MB)} & \textbf{CPU Wt/ms} \\
-\midrule
-CrossHAR & 110K & 0.29 & 0.30 & 1.20 & 224.0K \\
-LiMU-BERT & 110K & 0.31 & 0.36 & 0.27 & 188.0K \\
-LLaSA & 105K & 0.33 & 0.46 & 0.02 & 187.2K \\
-LanHAR & 8.8M & 0.77 & 0.89 & 0.05 & 71.8K \\
-MOMENT & 24.0M & 37.69 & 37.98 & 25.05 & 1.8K \\
-\textbf{HALO (ours)} & \textbf{34.0M} & \textbf{7.16} & \textbf{7.37} & \textbf{32.81} & \textbf{2414.4K} \\
-\bottomrule
-\end{tabular}}
-\caption{Inference overhead on an iPhone 16 Pro. All models are benchmarked with same setting: identical 6-channel IMU inputs using Core ML, with 10 warm-up iterations followed by 100 timed iterations. \emph{Params} denotes the profiled model size. \emph{CPU Wt/ms} reports cycle-weighted CPU activity normalized by benchmark duration.}
-\label{tab:inference_results}
-\vspace{-8pt}
+  \centering
+  \small
+  \setlength{\tabcolsep}{6pt}
+  \begin{tabular}{l cc}
+    \toprule
+    Configuration & $k{=}0$ & $k{=}10$ \\
+    \midrule
+    HALO (native Hz, per-sensor text)          & \PH & \PH \\
+    HALO \emph{parity} (20\,Hz, neutral text)  & \PH & \PH \\
+    \midrule
+    Best baseline (data-matched group)         & \PH & \PH \\
+    Best baseline (released-checkpoint group)  & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+  \caption{Parity control: HALO under its native
+  inputs versus baseline-equivalent inputs, so that any remaining margin is attributable to the
+  architecture rather than to input advantages. Baselines are split by whether their weights
+  were trained on our corpus or released by their authors.}
+  \label{tab:parity}
 \end{table}
 
-Table~\ref{tab:inference_results} shows that HALO achieves an average inference latency of 7.16\,ms (p95: 7.37\,ms) on an iPhone~16~Pro, well within real-time requirements for on-device activity recognition. Under the same Core~ML deployment setting (identical 6-channel IMU input, 10 warm-up and 100 timed iterations), HALO is $5.26\times$ faster than MOMENT (7.16\,ms vs.\ 37.69\,ms) while jointly modeling all six IMU channels in a single forward pass.
-Although HALO is slower than lightweight baselines such as CrossHAR (0.29\,ms) and LiMU-BERT (0.31\,ms) due to its dual-branch Transformer architecture, its latency remains practical for smartphone deployment. The speedup over MOMENT mainly stems from inference structure: MOMENT relies on a large T5-style encoder and requires six separate passes for a 6-channel input, whereas HALO processes all channels jointly. HALO reaches a peak memory usage of 32.81\,MB, and label embeddings are precomputed and cached offline, incurring negligible runtime overhead.
+\subsection{Q3: Which Phase-A Objectives Carry the Transfer?}
+\label{sec:objective_ablation}
 
-% Table~\ref{tab:inference_results} shows that HALO achieves an average inference latency of 7.16\,ms with a p95 latency of 7.37\,ms on an iPhone 16 Pro, which is comfortably within real-time requirements for on-device activity recognition. Compared with MOMENT, HALO is $5.26\times$ faster (7.16\,ms vs.\ 37.69\,ms) while supporting joint modeling over all six IMU channels in a single forward pass.
-% All models are evaluated under the same deployment setting using Core ML with identical 6-channel raw IMU input, 10 warm-up iterations, and 100 timed iterations. HALO is slower than lightweight baselines such as CrossHAR (0.29\,ms) and LiMU-BERT (0.31\,ms), which is expected given its larger dual-branch Transformer architecture. However, its latency remains low enough for practical smartphone deployment.
-% The gap between HALO and MOMENT mainly comes from the difference in inference structure. MOMENT relies on a large pretrained T5-style encoder and requires six separate encoder passes for a 6-channel input, which substantially increases end-to-end latency. In contrast, HALO processes all channels jointly in one forward pass, leading to markedly lower inference cost despite its larger parameter count than several lightweight baselines. HALO reaches a peak memory usage of 32.81\,MB, which remains modest for modern smartphones. In addition, label embeddings are precomputed offline and cached before deployment, so they introduce negligible runtime overhead during inference.
+Each Phase-A term is removed independently with all others held fixed
+(Table~\ref{tab:objective_ablation}). Two controls matter more than the ablation itself. First,
+the \emph{untrained control}: the evidence decoder is identity-at-initialisation by
+construction, so for every trained arm we report the same architecture untrained; a trained
+component that does not beat its own initialisation is reported as such. Second, the
+\emph{label-supervised control}: the original supervised recipe (masked prediction $+$
+label-SupCon $+$ grounding rail) remains selectable, so the claim that going fully label-free
+helps is measured, not asserted.
 
+\begin{table}[t]
+  \centering
+  \resizebox{\columnwidth}{!}{
+  \footnotesize
+  \setlength{\tabcolsep}{6pt}
+  \begin{tabular}{l cc}
+    \toprule
+    Phase-A configuration & $k{=}0$ & $k{=}10$ \\
+    \midrule
+    Full (A1 fixed $+$ EMA, VICReg, TF, placement, rail) & \PH & \PH \\
+    \quad$-$ EMA-latent target (fixed A1 only)      & \PH & \PH \\
+    \quad$-$ augmentation VICReg                    & \PH & \PH \\
+    \quad$-$ time--frequency consistency            & \PH & \PH \\
+    \quad$-$ cross-placement positives              & \PH & \PH \\
+    \quad$-$ physical grounding rail                & \PH & \PH \\
+    \midrule
+    VICReg $\rightarrow$ NT-Xent (contrastive control) & \PH & \PH \\
+    Label-supervised recipe (SupCon; \emph{uses labels}) & \PH & \PH \\
+    \bottomrule
+  \end{tabular}}
+  \caption{Phase-A objective ablation, macro-F1
+  over the 7 held-out datasets. The last two rows are controls, not variants: they test whether
+  the non-contrastive and label-free choices were worth making.}
+  \label{tab:objective_ablation}
+\end{table}
 
-
-\subsection{Real-World Case Study}
+\subsection{Q4: On-Device Cost and a Real Deployment}
+\label{sec:deployment_experiments}
 \label{sec:case_study}
 
-\OUTDATED{Run with the v1 model; the specific numbers below (97.5\% accuracy, 30.35\,ms end-to-end latency, 21.8M deployed parameters) will be re-measured with the v2 checkpoint. The capability it demonstrates---offline personalization, on-device streaming inference, a mid-session sensor-placement change, and activity labels never seen during personalization---is exactly the reusable-foundation deployment of Section~\ref{sec:deployment} and is unchanged.}
+\PENDING{On-device latency, peak memory, retrieval cost as a function of memory-bank size, and
+the case-study numbers, once the encoder is compiled and profiled.}
 
-We implement the full HALO pipeline as an iOS application and test under continuous placement and label shifts. As shown in Figure~\ref{fig:demo_setting}, the pipeline consists of four stages: (1)~SFT data collection on the smartphone, where the user performs each target activity for 30\,s per class; (2)~SFT head training on a laptop (under 2 minutes for 6 classes); (3)~weight transfer back to the device via a local network; and (4)~real-time inference. The demo covers three body locations (\textit{left pocket}, \textit{wrist}, \textit{upper arm}) with six seen classes (\textit{Sitting}, \textit{Standing}, \textit{Walking}, \textit{Running}, \textit{Jumping}, \textit{Lying}) and two unseen labels (\textit{Marching}, \textit{Jogging}) introduced at inference to test robustness beyond the SFT label space.
-
-Across 40 inference windows (Figure~\ref{fig:demo_performance}), HALO achieves 97.5\% accuracy with only one transient error near the pocket-to-wrist transition, recovering immediately. The placement transition from pocket to wrist represents a significant sensor distribution shift mid-session, yet the model adapts within a single window. The unseen-label phase remains fully correct, confirming that the personalized head preserves semantic generalization even when inference-time labels differ from the SFT classes---the model correctly distinguishes ``Marching'' from ``Walking'' and ``Jogging'' from ``Running'' despite never training on these labels during SFT. Mean end-to-end pipeline latency is 30.35\,ms (P95: 33.66\,ms), higher than the isolated model benchmark (7.16\,ms, Table~\ref{tab:inference_results}) due to app-level overhead; memory stays within 73--78\,MB, and the deployed model is 21.8M parameters (${\sim}$34\,MB on disk)---practical for continuous on-device HAR.
+We implement the full pipeline as an iOS application and will report: encoder latency and peak
+memory under Core~ML; retrieval latency as a function of bank size; and a continuous
+case study in which a user enrolls activities by demonstration, changes the device's body
+placement mid-session, and introduces activity names that were never enrolled. That case study
+is the deployment form of the label-efficiency argument: enrollment by demonstration is what
+$k \le 10$ means to a user.
 
 \begin{figure}[tbp]
     \centering
-    \setlength{\abovecaptionskip}{2pt}
+    \setlength{\abovecaptionskip}{4pt}
     \setlength{\belowcaptionskip}{-4pt}
-    \includegraphics[width=\columnwidth]{figures/demo_setting.png}
-    \caption{Deployment setting of smartphone-based IMU HAR in the real-world case study.}
+    \PHFIG{Reserved for the case-study figure: enrollment by demonstration,\\
+      the mid-session placement change, and the streamed prediction trace.}{34mm}
+    \caption{\PENDING{Deployment setting of the smartphone case study.}}
     \label{fig:demo_setting}
-\end{figure}
-
-\begin{figure}[tbp]
-    \centering
-    \setlength{\abovecaptionskip}{2pt}
-    \setlength{\belowcaptionskip}{-4pt}
-    \includegraphics[width=\columnwidth]{figures/demo_performance.png}
-    \caption{Performance continuous IMU-based HAR on the smartphone.}
-    \label{fig:demo_performance}
 \end{figure}

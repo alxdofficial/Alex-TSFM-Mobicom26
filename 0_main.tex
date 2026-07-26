@@ -21,7 +21,29 @@
 % \geometry{margin=2.5cm}  % Adjust margins to prevent overfull boxes
 % \setlength{\marginparwidth}{2cm}  % Fix todonotes warning
 \usepackage{microtype}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,backgrounds,shapes.geometric,decorations.pathreplacing}
 \tolerance=1500
+
+% --- shared TikZ styles for the HALO figures (see figures/*.tex) ---
+\definecolor{haloblue}{RGB}{31,90,150}
+\definecolor{haloorange}{RGB}{205,110,30}
+\definecolor{halogreen}{RGB}{40,125,85}
+\definecolor{halogray}{RGB}{110,110,115}
+\definecolor{halolight}{RGB}{232,240,248}
+\definecolor{halolight2}{RGB}{252,240,226}
+\tikzset{
+  hbox/.style={draw=haloblue!70,fill=halolight,rounded corners=2pt,inner sep=3pt,
+               align=center,font=\scriptsize},
+  hbox2/.style={draw=haloorange!70,fill=halolight2,rounded corners=2pt,inner sep=3pt,
+                align=center,font=\scriptsize},
+  hplain/.style={align=center,font=\scriptsize,inner sep=2pt},
+  harrow/.style={-{Latex[length=1.5mm,width=1.2mm]},draw=halogray,thick},
+  hphase/.style={draw=halogray!60,dashed,rounded corners=3pt,inner sep=5pt},
+}
 
 % Tighten float spacing
 \setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
@@ -51,11 +73,22 @@
 
 \newcommand{\TODO}[1]{{\color{red}{#1}}}
 
-% --- v2 resubmission markers: stale v1 results / superseded methods, pending the v2 retrain ---
-% \OUTDATED{...}: a visible block note flagging content that reflects the v1 model/eval and will be
-%   re-measured/rewritten after the v2 retrain. \STALE{n}: inline wrap for a single stale number.
-\newcommand{\OUTDATED}[1]{{\color{orange}\textbf{[OUTDATED --- v1 result / superseded method, pending v2 retrain]} \textit{#1}}}
-\newcommand{\STALE}[1]{{\color{orange}#1}}
+% --- FORWARD-LOOKING placeholders ------------------------------------------------
+% These mark space reserved for content that does not exist yet. They never refer to
+% superseded work: anything inconsistent with the current design is deleted outright,
+% so the manuscript states one version of the project and nothing else.
+%
+%   \PENDING{...}   a visible orange note: "this will be written once the run lands"
+%   \PH             one orange placeholder cell inside a results table
+%   \PHFIG{h}{...}  an orange box of height h reserving space for a figure
+\newcommand{\PENDING}[1]{{\color{orange}\textbf{[TO BE COMPLETED]} \textit{#1}}}
+\newcommand{\PH}{{\color{orange}\rule[-0.15ex]{1.6em}{0.9ex}}}
+\newcommand{\PHFIG}[2]{%
+  \begingroup\color{orange}%
+  \fboxsep=0pt\fboxrule=0.8pt%
+  \fcolorbox{orange}{orange!7}{%
+    \parbox[c][#2][c]{\dimexpr\columnwidth-2\fboxrule\relax}{\centering\itshape #1}}%
+  \endgroup}
 
 \pagestyle{plain} % removes running headers
 \settopmatter{printacmref=false, printccs=false, printfolios=true}
@@ -78,7 +111,7 @@
 
 \begin{document}
 
-\title{HALO: A Heterogeneity-Aware Language-Aligned IMU Foundation Model for Open-Set Human Activity Recognition}
+\title{HALO: A Heterogeneity-Aware, Language-Conditioned IMU Foundation Model for Label-Efficient Human Activity Recognition}
 
 % Compared with image and text; sensing is a lot more heterogeneous, sample rate, sensor charateristics, and modalities; when it comes to training large models benefit on large scale data, it proposes challenges
 
@@ -112,22 +145,11 @@
 % \renewcommand{\shortauthors}{xxx}
 % yet no single model can accept diverse IMU configurations---varying sampling rates, channel counts, and sensor placements---and recognize activities across unseen devices and label vocabularies without per-dataset adaptation.
 \begin{abstract}
-Inertial measurement units (IMUs) are ubiquitous in phones and watches, yet human activity recognition (HAR) still has no foundation model that developers can readily build on: one pretrained model that ingests whatever sensors a device exposes, recognizes an application's own activity labels without retraining, and runs both offline over a recording and as a low-latency on-device stream. Building one is hard because IMU deployments differ in \emph{sensing heterogeneity} (sampling rates, channel suites, and placements), demand \emph{open-set} recognition of activities never seen in training, and must serve \emph{both offline and streaming} use---all under evaluation honest enough that reported gains survive leakage-free, subject-disjoint testing rather than being inflated by synonym ontologies or shared subjects.
-We introduce HALO (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-aligned \textbf{O}pen-set model), a domain-specific IMU foundation model trained in a single language-alignment stage\footnote{The source code and pretrained models for HALO will be released upon acceptance.}. HALO combines three elements. First, a \emph{physical-frequency filterbank tokenizer} that is rate-invariant and anti-aliased \emph{by construction}: it reads each channel on a fixed physical-Hz axis via a native-rate transform with no resampling, so a single set of weights ingests $20$--$100$\,Hz data without interpolation or per-rate heads. Second, \emph{language-based sensor conditioning} that injects natural-language placement and sensor descriptions into each channel token, while the sampling rate and window duration---quantities a frozen text encoder cannot represent numerically---are supplied to the tokenizer as numbers rather than as text. Third, a \emph{streamable encoder} whose temporal attention uses rotary position embeddings over \emph{physical time} and is trained under mixed full/causal masks with an offline-to-online consistency objective, so one weight set serves both whole-session recognition and low-latency on-device streaming. At inference, activities are recognized by open-vocabulary cosine similarity to text labels---no per-dataset classifier. We train on 11 public HAR datasets and evaluate under a leakage-free, subject-disjoint protocol that scores against each dataset's own label strings. The result is packaged behind a deployable \texttt{predict()} interface---so a developer applies HALO to a new sensor setup and label set in a few lines, with no classifier training or architectural change---and demonstrated in an on-device iOS app. A video demonstration is available at \url{https://youtu.be/rooVKragtFU}.
-
-\OUTDATED{Headline comparative numbers (vs.\ baselines; parameter/accuracy claims) are removed pending the v2 retrain under the model + protocol above; the prior v1 abstract is retained in the comment block below for reference.}
+Inertial measurement units (IMUs) are ubiquitous in phones and watches, yet human activity recognition (HAR) still has no foundation model that developers can readily build on: one pretrained model that ingests whatever sensors a device exposes and recognizes an application's own activity labels using as little labelled target data as the deployment can afford. Progress has been pursued mainly through scale, but IMU signals admit no closed grammar the way language does---a change of device orientation, mounting, or on-device filtering can place a recording outside any corpus---so more pretraining data alone does not confer compatibility. A second, subtler obstacle is that the field's standard remedy for open-set labels, projecting sensor features into a language embedding space, presumes that sensor similarity tracks linguistic similarity. It does not: \emph{drinking coffee} and \emph{drinking water} are near-identical motions but distant strings, whereas \emph{sitting} and \emph{sitting down}---a static posture and a dynamic transition---are nearly identical strings.
+We introduce HALO (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-conditioned \textbf{O}pen-set model)\footnote{The source code and pretrained models for HALO will be released upon acceptance.}, which responds to each obstacle with a design choice rather than with scale. First, a tokenizer with deliberately \emph{calibrated inductive bias}: co-located axes are grouped into sensors, each read on a fixed physical-frequency axis by a constant-Q filterbank over a native-rate transform, making the model rate-invariant and anti-aliased \emph{by construction}, while sensor identity (device, modality, placement, gravity convention) is supplied as natural language so that channel count and ordering remain free. This is enough physical structure to survive unseen configurations, and few enough assumptions to compose heterogeneous corpora---in contrast to layout-locked encoders, which assume too much, and per-channel free-text models, whose conditioning can degenerate into memorising dataset provenance. Second, an \emph{evidence engine} that avoids reconciling the two geometries at all: instead of projecting sensors into label-text space, it retrieves encoded exemplars from a memory by \emph{sensor} similarity and accumulates evidence for whichever candidate labels the deployment declares at run time. Representation pretraining is entirely activity-label-free; labels enter only as annotations on retrieved memory entries.
+Together these yield a single \emph{label-efficiency} curve rather than a zero-shot-versus-fine-tuning dichotomy: the same frozen model recognises declared labels with no target data, improves as a handful of demonstrated examples are appended to memory without any gradient update, and remains available for conventional fine-tuning when labels are plentiful. We train on 12 public HAR datasets and evaluate on 7 held-out datasets under a leakage-free, subject-disjoint protocol that scores against each dataset's own label strings, and package the model behind a small \texttt{predict()} interface, demonstrated in an on-device iOS app.
 \end{abstract}
 
-% --- v1 abstract (superseded; kept for reference until v2 numbers land) ---
-% Trained on 10 public HAR datasets and evaluated on 7 held-out datasets, HALO outperforms five
-% state-of-the-art baselines on all 8 aggregate metrics. Despite using only ~35M trainable
-% parameters---10x fewer than MOMENT (341.2M)---HALO improves zero-shot open-set accuracy by 13.7%.
-
-% Human Activity Recognition (HAR) using inertial measurement units (IMUs) enables a wide range of applications, yet the field still lacks a unified model that can generalize across diverse subjects, devices, and activities. We introduce HALO\footnote{The source code and pretrained models for HALO will be released upon acceptance.} (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-aligned \textbf{O}pen-set model), an IMU foundation model for human activity recognition. 
-% Training such a model is difficult due to two key challenges: \emph{sensing heterogeneity}---differences in sampling rates, channel configurations, and sensor placements---and \emph{poor generalization} to unseen activities and label vocabularies. HALO addresses both challenges through a two-stage training framework.
-% Stage~1 pretrains the IMU encoder with heterogeneity-aware self-supervised learning, including adaptive-pooling tokenization, channel-independent feature extraction, as well as \emph{contextualized sensor conditioning} that injects natural-language descriptions of per-channel sensor configurations (e.g., ``Accelerometer X-axis, waist-mounted phone'') into each channel embedding. Stage~2 introduces \emph{synonym-aware soft contrastive learning} between IMU and label embeddings, allowing semantically related activities to contribute coherently during training, and enabling robust open-set recognition via cosine-similarity retrieval---eliminating the need for per-dataset classifiers.
-% We train HALO on 10 public HAR datasets and evaluate on 7 held-out datasets. HALO consistently outperforms five state‑of‑the‑art baselines across all 8 aggregate metrics. On two severe out‑of‑domain datasets where all models---including HALO---collapse in the zero‑shot setting, HALO adapts effectively with as little as 1\% labeled data, demonstrating strong representation quality under extreme distribution shift.
-% Despite using only ${\sim}$35M trainable parameters---10$\times$ fewer than the latest foundation model MOMENT (341.2M)---HALO improves zero-shot open-set accuracy by 13.7 percentage points (42.0\% vs.\ 28.3\%).
 
 \maketitle
 

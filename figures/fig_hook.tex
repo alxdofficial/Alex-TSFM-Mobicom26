@@ -1,0 +1,53 @@
+% =====================================================================
+% fig_hook.tex  --  the teaser. Replaces the v1 fig_hook.png, which showed a
+% shared IMU-text embedding space and cosine-similarity recognition -- the
+% mechanism Section 3.3 now argues against.
+%
+% Carries the three legs in one picture:
+%   L1  heterogeneous acquisition -> absorbed by construction in the tokenizer
+%   L2  retrieval happens in SENSOR space; label text only names + enumerates
+%   L3  one frozen model across the whole label budget, no gradient step
+% =====================================================================
+\begin{tikzpicture}[font=\scriptsize]
+
+% ---------------- LEFT: heterogeneous acquisition ----------------
+\node[font=\scriptsize\bfseries,anchor=south,align=center] at (1.05,1.62)
+  {any device, any rate,\\[-1pt] any placement};
+\node[hplain,anchor=west,text width=18mm] (d1) at (0,1.05) {watch, wrist\\ \tiny 3\,ch @ 100\,Hz};
+\node[hplain,anchor=west,text width=18mm] (d2) at (0,0.05) {phone, pocket\\ \tiny 6\,ch @ 20\,Hz};
+\node[hplain,anchor=west,text width=18mm] (d3) at (0,-0.95) {earbuds, ear\\ \tiny 6\,ch @ 25\,Hz};
+
+% ---------------- MIDDLE: the tokenizer ----------------
+\node[hbox,minimum height=20mm,text width=21mm,anchor=west] (tok) at (2.75,0.05)
+  {\textbf{physical-Hz}\\ \textbf{tokenizer}\\[3pt]
+   \tiny bands fixed in Hz\\ \tiny sensor identity in language\\ \tiny gravity preserved};
+\draw[harrow] (d1.east) -- ($(tok.west)+(0,5.5mm)$);
+\draw[harrow] (d2.east) -- (tok.west);
+\draw[harrow] (d3.east) -- ($(tok.west)+(0,-5.5mm)$);
+\node[font=\scriptsize\itshape,color=halogreen,anchor=north] at ($(tok.south)+(0,-1.2mm)$)
+  {no resampling anywhere};
+
+% ---------------- RIGHT: memory + candidates ----------------
+\node[hbox,anchor=west,text width=21mm,minimum height=11mm] (mem) at (6.05,1.15)
+  {\textbf{memory of encoded exemplars}\\[2pt] \tiny retrieve by \textbf{sensor} similarity};
+\node[hbox2,anchor=west,text width=21mm,minimum height=11mm] (cand) at (6.05,-1.05)
+  {\textbf{candidate labels}\\[2pt] \tiny declared at run time\\ \tiny \emph{squat}, \emph{reach overhead}, \dots};
+\draw[harrow] (tok.east) -- (mem.west);
+\draw[harrow] (tok.east) -- (cand.west);
+
+\node[hplain,anchor=west,text width=16mm] (out) at (8.95,0.05)
+  {\textbf{prediction}\\[1pt] \tiny $+$ the exemplars\\ \tiny that produced it};
+\draw[harrow] (mem.east) -| ($(out.north)+(0,3mm)$) -- (out.north);
+\draw[harrow] (cand.east) -| ($(out.south)+(0,-3mm)$) -- (out.south);
+
+% ---------------- BOTTOM: the label-budget dial ----------------
+\node[font=\scriptsize\bfseries,color=halogreen,anchor=west] at (0.15,-2.05)
+  {one frozen model across the whole label budget --- no gradient step at any point};
+\draw[draw=halogray!55,line width=0.6pt] (0.35,-2.45) -- (10.3,-2.45);
+\foreach \x/\lab in {1.0/{$k{=}0$},
+                     4.0/{$k{=}10$ demonstrated},
+                     7.8/{full supervision}} {
+  \draw[draw=halogray!70,line width=0.7pt] (\x,-2.35) -- (\x,-2.55);
+  \node[font=\scriptsize,anchor=north] at (\x,-2.60) {\lab};
+}
+\end{tikzpicture}

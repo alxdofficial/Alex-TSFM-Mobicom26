@@ -1,0 +1,69 @@
+% =====================================================================
+% fig_tokenizer.tex  --  the physical-Hz constant-Q filterbank
+%
+% DATA PROVENANCE: band centers are the exact values the implementation
+% builds, c_k = f_min (f_max/f_min)^{k/(K-1)}, K=32, f_min=0.3, f_max=15 Hz
+% (model/tokenizer/filterbank.py); sigma_k = c_k/(2Q) with Q=4.  The Nyquist
+% guard lines are FB_NYQUIST_MARGIN * r/2 with margin 0.9.  Observable-band
+% counts (26/32 at 20 Hz, 27/32 at 25 Hz, 32/32 at 50 and 100 Hz) were
+% enumerated from the same constants on 2026-07-26.
+% =====================================================================
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[font=\scriptsize]
+
+% ---------------- pipeline strip ----------------
+\node[hplain,anchor=west,text width=13mm] (in) at (0,0)
+  {native-rate\\ patch, rate $r$};
+\node[hbox,right=2.6mm of in,text width=12mm] (win) {Hann window\\ $+$ DC split};
+\node[hbox,right=2.6mm of win,text width=15mm] (dft)
+  {zero-padded rDFT ($S{=}256$)\\[-1pt] bin $m\!\mapsto\! m r/S$\,Hz};
+\node[hbox2,right=2.6mm of dft,text width=13mm] (fb)
+  {constant-$Q$ bank\\[-1pt] centers fixed \emph{in Hz}};
+\node[hplain,right=2.6mm of fb,text width=11mm] (out)
+  {$K$ band\\ energies\\ $+$ signed DC};
+\draw[harrow] (in) -- (win); \draw[harrow] (win) -- (dft);
+\draw[harrow] (dft) -- (fb); \draw[harrow] (fb) -- (out);
+\node[below=0.5mm of dft,font=\scriptsize\itshape,color=halogray]
+  {no resampling anywhere in this path};
+
+% ---------------- filterbank response ----------------
+\begin{axis}[
+  at={(in.south west)}, anchor=north west, yshift=-9mm,
+  width=\columnwidth, height=3.5cm,
+  xmode=log, log basis x=10,
+  xmin=0.28, xmax=17, ymin=0, ymax=1.28,
+  xtick={0.3,0.5,1,2,5,10,15},
+  xticklabels={0.3,0.5,1,2,5,10,15},
+  xticklabel style={font=\scriptsize},
+  ytick=\empty,
+  xlabel={physical frequency (Hz) --- the \emph{same} axis at every sampling rate},
+  xlabel style={font=\scriptsize,yshift=2pt},
+  axis y line=none, axis x line*=bottom,
+  axis line style={draw=halogray!70},
+  scale only axis, clip=false,
+]
+% --- a representative subset of the K=32 log-spaced constant-Q bands (Q=4) ---
+\foreach \c in {0.300,0.497,0.823,1.364,2.259,3.743,6.201,10.272,15.000} {
+  % the max(-25,.) clamp keeps pgfmath's exp() from underflowing to a
+  % "Dimension too large" error in the far tails of the narrow low-Hz bands
+  \edef\tmp{\noexpand\addplot[domain=0.28:17,samples=260,smooth,draw=haloblue!75,
+      line width=0.5pt]{exp(max(-25,-((x-\c)^2)/(2*(\c/8)^2)))};}
+  \tmp
+}
+% --- Nyquist guard lines ---
+\addplot[dashed,line width=0.7pt,draw=haloorange] coordinates {(9.0,0) (9.0,1.13)};
+\addplot[dashed,line width=0.7pt,draw=haloorange!60] coordinates {(11.25,0) (11.25,1.13)};
+\node[font=\scriptsize,color=haloorange,anchor=south east,inner sep=1pt]
+  at (axis cs:8.9,1.13) {20\,Hz guard};
+\node[font=\scriptsize,color=haloorange!70!black,anchor=south west,inner sep=1pt]
+  at (axis cs:11.4,1.13) {25\,Hz};
+% --- masked-band shading ---
+\addplot[draw=none,fill=haloorange!10,forget plot]
+  coordinates {(9.0,0) (17,0) (17,1.1) (9.0,1.1)} \closedcycle;
+\node[font=\scriptsize,color=haloorange!85!black,anchor=north,align=center]
+  at (axis cs:12.4,0.72) {\textbf{masked}\\ at 20\,Hz\\ {\scriptsize(6 of 32 bands)}};
+\node[font=\scriptsize,color=haloblue!80!black,anchor=south west,align=left]
+  at (axis cs:0.30,0.86) {$K{=}32$ log-spaced bands, $Q{=}4$\\[-1pt]
+    {\scriptsize a 2\,Hz gait rhythm lands in the same band at 20, 50 and 100\,Hz}};
+\end{axis}
+\end{tikzpicture}}

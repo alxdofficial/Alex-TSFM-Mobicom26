@@ -1,0 +1,14 @@
+# LaTeX build artifacts (0_main.pdf IS tracked -- it is how co-authors read the draft)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.dvi
+*.ps
+*.ps.gz
+*.synctex.gz
+*.toc
+texput.log

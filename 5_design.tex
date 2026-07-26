@@ -1,163 +1,304 @@
 % =========================
-% 5_design.tex (merged into 3 subsections)
+% 5_design.tex  --- calibrated tokenizer + label-free Phase A + evidence engine
 % =========================
 \section{Design of HALO}
 \label{sec:design}
 
-\OUTDATED{This design section is being revised for v2. Superseded components below---the adaptive-pooling / spectral-temporal tokenizer, the two-stage self-supervised pretraining, and sinusoidal positional encoding---are flagged at their headings; the v2 replacements (a physical-frequency filterbank tokenizer, single-stage training, rotary physical-time positions, and a streamable encoder) are summarized in flagged stubs and specified in the accompanying design documents. Embedded ablation numbers reflect the v1 model and are pending re-measurement.}
+This section specifies the three components introduced in Section~\ref{sec:overview}: the
+tokenizer that supplies HALO's calibrated inductive bias (Section~\ref{sec:tokenizer_design}),
+the label-free objectives that train it (Section~\ref{sec:phaseA_design}), and the evidence
+engine that turns the frozen representation into a recogniser over a run-time label set
+(Section~\ref{sec:evidence_design}). Everything described here is implemented; where a design
+choice has not yet been isolated by an experiment we say so and name the ablation that will
+isolate it.
 
-This section details HALO's four design elements: a heterogeneity-aware encoder (Section~\ref{sec:heterogeneity}); its \emph{single-stage} language-alignment objective (Section~\ref{sec:alignment_design}); a streamable encoder that serves both offline and online recognition from one weight set (Section~\ref{sec:streaming}); and the deployment interface through which a developer applies HALO to a new device and label set without retraining (Section~\ref{sec:deployment}). The encoder is trained from scratch during alignment; there is no separate self-supervised pretraining stage.
-
-\subsection{Heterogeneity-Aware Encoder}
-\label{sec:heterogeneity}
-
-The encoder addresses the three heterogeneity challenges identified in Section~\ref{sec:motivation} through dedicated components (Figure~\ref{fig:encoder}). At inference time, a sample flows through them in sequence: tokenization produces per-channel tokens $\mathbf{H}_0$, sensor conditioning enriches them to $\mathbf{H}'$, and the channel-independent encoder fuses them into the session embedding $\mathbf{z}_{\text{imu}}$. We present each component below, grouping the encoder with its fusion mechanism before describing conditioning, since the encoder architecture is easier to understand as a self-contained unit.
-
-
-
-\subsubsection{Adaptive-Pooling Tokenization for Variable Sampling Rates}
-\label{sec:tokenization}
-
-\OUTDATED{Superseded in v2 by a \emph{physical-frequency filterbank tokenizer}. Instead of absorbing rate variation by adaptive-pooling variable-length patches, v2 reads each native-rate patch on a \emph{fixed physical-frequency axis}: a Hann-windowed, native-rate real DFT (bin $m$ maps to $m\,r/S$~Hz for rate $r$) is passed through a fixed constant-Q Gaussian filterbank whose $K{=}32$ centers are pinned in Hz ($0.3$--$15$\,Hz), so a $2$\,Hz gait rhythm deposits energy in the same band at $20$/$50$/$100$\,Hz. Because no resampling exists in the path, the tokenizer is anti-aliased \emph{by construction}; band energies are window-normalized (rate/duration independent), log-compressed and per-band standardized, a per-token Nyquist \emph{observability mask} signals which bands the rate could measure (rather than fabricating them), and a \emph{resolution flag} signals which low bands the window could resolve. A closed-form check confirms identical band energies for a pure tone at $20$/$50$/$100$\,Hz. This replaces both the adaptive-pooling scheme and the spectral-temporal CNN described below; comparative results are pending the v2 retrain.}
-
-HAR datasets are collected at different native sampling rates---for example, PAMAP2~\cite{pamap2} records at 100\,Hz while Shoaib~\cite{shoaib} uses 50\,Hz and WISDM~\cite{wisdm} operates at 20\,Hz. A conventional fixed-length tokenizer that expects $L$ samples per patch would either require resampling every dataset to a common rate (distorting high-frequency content or fabricating samples) or training separate models per rate. Rather than resampling, HALO segments sessions in \emph{seconds} rather than samples, so every patch spans the same physical duration regardless of rate. The resulting variable-length patches are then mapped to fixed-dimension tokens via adaptive pooling, decoupling the entire encoder from any specific sampling rate.
-
-\textbf{Seconds-based patching.}
-Each session is segmented into fixed-duration patches (dataset-specific, typically 0.75--2.0\,s), yielding $\mathbf{X}\in\mathbb{R}^{B\times P\times L\times C}$ where $L$ is the native patch length and $C$ the channel count. A 1-second patch at 50\,Hz contains $L{=}50$ samples while the same patch at 100\,Hz contains $L{=}100$; the variable $L$ is absorbed downstream by adaptive pooling rather than resampling.
-During training, patch durations are randomly sampled from a dataset-specific range (e.g., 0.75--1.25\,s) as a temporal augmentation; augmentation is disabled at evaluation.
-
-\textbf{Per-patch, per-channel normalization.}
-Each patch-channel pair is independently z-score normalized:
-\[
-\hat{\mathbf{X}}_{b,p,:,c}=\frac{\mathbf{X}_{b,p,:,c}-\mu_{b,p,c}}{\sigma_{b,p,c}+\epsilon},
-\]
-where $\mu_{b,p,c}$ and $\sigma_{b,p,c}$ are computed over the $L$ timesteps of patch $(b,p)$ channel $c$. This local normalization removes device- and subject-specific amplitude biases without requiring global statistics.
-
-\textbf{Spectral-temporal tokenizer.}
-\label{sec:architecture}
-Each normalized patch-channel pair is converted into a $D$-di\-men\-sion\-al token ($D{=}384$) via a hybrid feature extractor with shared weights across channels. The temporal branch applies a multi-scale 1-D CNN (kernel sizes 3, 5, 7) followed by adaptive average pooling to produce a fixed-length output regardless of~$L$; the spectral branch computes a fixed-$n$ FFT magnitude spectrum and projects it through a learned MLP\@. Combining both branches captures complementary time-domain shape and frequency-domain periodicity cues. The outputs are concatenated to form the initial token tensor $\mathbf{H}_0\in\mathbb{R}^{B\times P\times C\times D}$.\looseness=-1
-
-Because both branches use adaptive pooling, the tokenizer natively accepts any sampling rate without resampling or architectural changes---a single trained model can process 20\,Hz smartphone data and 100\,Hz clinical IMU data through the same weights. This is a key advantage over fixed-length tokenizers such as PatchTST~\cite{patchtst}, which require a predetermined number of samples per patch and therefore either resample all inputs to a common rate (distorting high-frequency content at downsampled rates and fabricating samples at upsampled rates) or maintain separate tokenizer configurations per dataset. Patch-size sensitivity analysis (Section~\ref{sec:patch_sensitivity}) confirms that the fixed 1.0\,s default is within 1.3\,pp of per-dataset optima across the full 20--100\,Hz range.
-
-\begin{figure}
-    \centering
-    \setlength{\abovecaptionskip}{2pt}
-    \setlength{\belowcaptionskip}{-4pt}
-  \includegraphics[width=\columnwidth]{figures/fig_encoder.png}
-  \caption{Heterogeneity-aware encoder. Each row shows a challenge (left) and the corresponding design in HALO (right): adaptive-pooling tokenization for variable sampling rates; channel-independent feature extraction for variable channels; and contextualized sensor conditioning for variable sensor placements.}
-  \label{fig:encoder}
-\end{figure}
-% ------------------------------------------------------------------
-\subsubsection{Channel-Independent Feature Extraction for Variable Channel Counts}
-\label{sec:encoder_fusion}
-
-Different datasets expose vastly different sensor suites: WISDM~\cite{wisdm} provides a single 3-axis accelerometer ($C{=}3$), while DSADS~\cite{dsads} uses 45 channels from accelerometers, gyroscopes, and magnetometers at five body locations. A fixed-width architecture would either waste capacity on small datasets or fail entirely on larger ones. To handle this, HALO treats every channel identically: the tokenizer, Transformer, and fusion modules all share parameters across channels, and variable-length channel dimensions are zero-padded with binary masks propagated to every attention and pooling layer so that padded channels never contribute to computation.
-
-\textbf{Dual-branch Transformer.}
-The token tensor---after sensor conditioning (Section~\ref{sec:conditioning}, below)---is processed by $L_e$ Transformer layers ($L_e{=}8$), each alternating two attention stages: (1)~\emph{temporal self-attention} over patches within each channel (reshape to $(BC,P,D)$), which captures how each individual sensor signal evolves over time, and (2)~\emph{cross-channel self-attention} over channels within each patch (reshape to $(BP,C,D)$, padded channels masked), which captures correlations between different sensors at the same time step. Each stage is followed by a shared FFN, yielding $\mathbf{H}\in\mathbb{R}^{B\times P\times C\times D}$. \STALE{Sinusoidal positional encodings~\cite{transformer} with a learnable scale parameter inject temporal order over the patch dimension.} \OUTDATED{v2 replaces the additive sinusoidal encoding with rotary position embeddings (RoPE) keyed to \emph{physical time} (each patch's start time in seconds): being relative, they are exact under a key/value cache for streaming, unbounded over long streams, and give a fixed-duration activity the same temporal code at any sampling rate---directly addressing the timestep-index limitation noted in Section~\ref{sec:motivation}.} The alternating design allows the model to first build per-sensor temporal representations and then exchange information across sensors at every layer, progressively building richer multi-sensor features.
-
-\textbf{Cross-channel fusion.}
-For each patch, a small set of learnable queries attends over the $C$ channel tokens via multi-query attention, producing a fused patch sequence $\mathbf{U}\in\mathbb{R}^{B\times P\times D}$. Channel masks prevent padded channels from influencing attention. This reduces the variable-width channel dimension to a fixed-width representation, enabling downstream modules to operate regardless of the original sensor count.
-
-\textbf{Temporal pooling and projection.}
-A lightweight Transformer over $\mathbf{U}$ followed by a second multi-query attention module pools the patch axis to yield $\mathbf{v}\in\mathbb{R}^{B\times D}$, which an MLP projection head maps to the session embedding $\mathbf{z}_{\text{imu}}\in\mathbb{R}^{B\times D_s}$ ($D_s{=}384$, $\ell_2$-normalized). HALO also supports \emph{per-patch prediction}: each fused patch token $\mathbf{U}_{b,p}$ is independently projected and scored against text labels via cosine similarity, with per-patch predictions aggregated by majority vote. All zero-shot results in this paper use per-patch majority voting; supervised fine-tuning uses the pooled global embedding $\mathbf{z}_{\text{imu}}$.
-
-The channel-independent design means the same trained weights handle 3-channel smartphone data and 45-channel full-body sensor suites with no architectural changes across all 17~datasets. At training time, channels from different datasets are mixed within each batch, exposing the encoder to diverse sensor types and body locations in every gradient step. The shared-parameter approach also acts as an implicit regularizer: the model cannot memorize channel-specific shortcuts, encouraging generalizable motion features that transfer across sensor configurations.\looseness=-1
-
-% ------------------------------------------------------------------
-\subsubsection{Contextualized Sensor Conditioning for Variable Sensor Placements}
-\label{sec:conditioning}
-
-Because the tokenizer shares weights across all channels, the tokens $\mathbf{H}_0$ carry temporal and spectral information but are agnostic to \emph{where} on the body each channel was recorded or \emph{what} type of sensor produced it. A wrist accelerometer X-axis and a waist gyroscope Z-axis may produce similar waveforms for different activities---for example, arm-swing acceleration during walking looks similar from a wrist accelerometer and a hip accelerometer, yet the two carry different biomechanical meaning. Without placement context, the encoder cannot disambiguate them. HALO addresses this by injecting sensor placement and modality context into each channel token via natural-language descriptions, using the same frozen text encoder that will later be used for activity-label alignment. This converts the heterogeneity problem into a representational advantage: the model learns that ``Accelerometer X-axis, waist-mounted smartphone'' and ``Accelerometer X-axis, wrist-mounted smartwatch'' are related but distinct, leveraging the semantic structure of natural language.
-
-Concretely, each channel token $\mathbf{H}_{0,b,p,c}$ is conditioned on a per-channel semantic description (e.g., ``Accelerometer X-axis, waist-mounted smartphone'').
-A frozen Sentence-BERT backbone~\cite{sbert} (all-MiniLM-L6-v2, 384-dim)---shared with the text encoder used in Stage~2 alignment---encodes the description, and a learned two-layer residual projection with ReLU maps it to $\mathbf{e}_c \in \mathbb{R}^D$.
-The conditioned token is:
-$\mathbf{H}'_{b,p,c} = \mathbf{H}_{0,b,p,c} + \gamma\,\mathbf{e}_c$,
-where $\gamma$ is a learnable scale initialized to~0.1 so that conditioning acts as a gentle bias early in training and grows as the model learns to exploit it.\looseness=-1
-The conditioned tokens $\mathbf{H}'$ are then passed to the dual-branch Transformer (Section~\ref{sec:encoder_fusion}).
-
-Descriptions are constructed per dataset from a simple template combining modality, axis, and placement metadata (e.g., ``Accelerometer X-axis, waist-mounted smartphone''). Each dataset's channel descriptions are specified once during data preparation and remain fixed throughout training and evaluation. For datasets without placement annotations (e.g., UCI-HAR provides only ``smartphone'' without specifying pocket vs.\ hand), we use the available metadata; datasets with no sensor metadata fall back to generic descriptions (e.g., ``IMU channel''). At inference, the model leverages rich descriptions when available and falls back to generic ones otherwise. Sensor conditioning is the single largest contributor to zero-shot transfer (\STALE{$-$19.6\,pp ZS-O when removed; Table~\ref{tab:component_ablation}}).\looseness=-1
-
-\OUTDATED{v2 refinement: the description carries only \emph{semantic} attributes (sensor type, axis, placement, gravity state). The precise continuous metadata---sampling rate and window duration---is \emph{removed} from the text, because a frozen sentence encoder cannot represent numbers reliably; instead it is consumed numerically inside the tokenizer (bin$\to$Hz mapping) and surfaced to the encoder through the per-token observability and resolution masks. In v2 the descriptions are also linguistically augmented (paraphrased) and occasionally dropped to a generic string, so the model is robust to unknown placement.}
-
-\subsubsection{Self-supervised Pretraining}
-\label{sec:pretraining}
-
-\OUTDATED{Removed in v2. HALO is trained in a single language-alignment stage---the encoder is trained from scratch during alignment---so the masked-autoencoding and patch-contrastive pretraining described in this subsection no longer applies and this subsection will be deleted. The signal augmentation discussed here is retained and unified with text augmentation (Section~\ref{sec:label_aug}). The $9.5$\,pp figure below is a v1 ablation, pending re-measurement.}
-
-Before alignment with text, the encoder must learn general-purpose IMU repre\-sen\-ta\-tions from unlabeled data across all 10 training datasets. The difficulty is that heterogeneous sensor configurations and activities can cause the encoder to overfit to dataset-specific artifacts (e.g., amplitude ranges, noise profiles) rather than learning transferable motion patterns. Stage~1 addresses this by training the encoder end-to-end with two complementary self-supervised objectives---masked autoencoding for local signal reconstruction and patch-level contrastive learning for global discriminability---combined with signal augmentation that forces the model to generalize across noise conditions.
-
-\textbf{Masked autoencoding.} A fixed fraction of patches (mask ratio 0.5) are replaced by a learned mask token, and the temporal encoder reconstructs the normalized input signal at masked positions:
-\[
-\mathcal{L}_{\text{mae}}=\frac{1}{|\mathcal{M}|}\sum_{(b,p)\in\mathcal{M}} \left\| \hat{\mathbf{u}}_{b,p} - \mathbf{u}_{b,p} \right\|_2^2.
-\]
-This objective encourages the encoder to capture fine-grained temporal patterns within each channel, such as the periodic swing phase in walking or the abrupt deceleration in sitting down. The 50\% mask ratio is chosen to balance reconstruction difficulty: lower ratios make the task too easy (the encoder can interpolate from nearby unmasked patches), while higher ratios deprive the model of sufficient context for meaningful reconstruction.
-
-\textbf{Patch-level contrastive learning.} Two augmented views of each patch (jittering, scaling, time warping) are treated as positives and other in-batch patches as negatives under an InfoNCE objective~\cite{infonce} with temperature 0.2. This objective encourages patches from similar motions to cluster in embedding space while pushing dissimilar motions apart, building discriminative structure before any labels are introduced. Both objectives are combined with equal weights ($\lambda_{\text{mae}}=\lambda_{\text{con}}=1.0$).
-
-Together, the dual objectives produce an encoder that captures both local signal fidelity (via MAE) and global motion discriminability (via contrastive learning). Signal augmentation is critical: it closes a 9.5\,pp generalization gap invisible on in-distribution validation but evident on held-out datasets (Section~\ref{sec:component_ablation}).
-
-\subsection{Single-Stage Language Alignment}
-\label{sec:alignment_design}
-
-A key challenge in multi-dataset IMU-to-text alignment is \emph{label synonym conflict}: ``walking,'' ``strolling,'' and ``ambulating'' describe the same motion, yet standard contrastive objectives treat them as unrelated negatives, producing contradictory gradients when both appear in a batch. HALO resolves this through synonym-aware label augmentation (Section~\ref{sec:label_aug}) and soft contrastive alignment (Section~\ref{sec:soft_contrastive}).
+\subsection{The Tokenizer: Calibrated Inductive Bias}
+\label{sec:tokenizer_design}
 
 \begin{figure}[t]
     \centering
-    \setlength{\abovecaptionskip}{2pt}
+    \setlength{\abovecaptionskip}{4pt}
     \setlength{\belowcaptionskip}{-4pt}
-  \includegraphics[width=\columnwidth]{figures/fig_alignment.png}
-  \caption{IMU-to-text alignment and zero-shot inference. \emph{Top:} During training, the IMU encoder is aligned with a frozen text encoder in a shared embedding space via synonym-aware contrastive learning, so that semantically related activities are clustered together. \emph{Bottom:} At inference, the IMU segment is encoded and matched against an \emph{open} label library via cosine similarity-enabling zero-shot recognition without retraining or dataset-specific classifiers.}
-  \label{fig:alignment}
+  \input{figures/fig_tokenizer.tex}
+  \caption{The physical-frequency constant-$Q$ filterbank. Each native-rate patch is
+  Hann-windowed, split into a signed quasi-DC component and an AC residual, transformed by a
+  zero-padded real DFT whose bin $m$ maps to the physical frequency $mr/S$, and read out by a
+  bank of $K{=}32$ log-spaced Gaussian bands whose centers are fixed \emph{in Hz}. Because the
+  bin$\to$Hz map absorbs the rate, the same band means the same physical frequency at $20$,
+  $50$, and $100$\,Hz, and no interpolation exists anywhere in the path. Bands whose support
+  crosses a rate's Nyquist guard are \emph{masked}, not fabricated: at $20$\,Hz six of the
+  $32$ bands are unobservable and are flagged as such to the encoder.}
+  \label{fig:tokenizer}
 \end{figure}
 
+\subsubsection{Sensors, not channels}
+\label{sec:sensor_grouping}
 
-\subsubsection{Synonym-Aware Label Augmentation}
-\label{sec:label_aug}
+HALO's first commitment is that the unit of description is the \emph{sensor}, not the scalar
+channel. Three co-located accelerometer axes on one device share a coordinate frame: they
+rotate together, they experience the same gravity vector, and no physically realisable
+transformation moves one without the others. Treating them as three independent series
+discards this and, as Section~\ref{sec:no_grammar} argued, opens the door to per-channel text
+acting as a corpus fingerprint. HALO therefore models a stream as a \emph{set of sensors},
+each an accelerometer or gyroscope triad with its own device, placement, and gravity
+convention. This grouping is what makes the augmentation physics correct as well: an $SO(3)$
+rotation is applied jointly to an accelerometer triad and its co-located gyroscope, never to a
+single axis, so every augmented sample corresponds to a device orientation that could actually
+occur.
 
-Each dataset defines a curated synonym map (e.g., \textit{walking} $\leftrightarrow$ \textit{strolling} $\leftrightarrow$ \textit{ambulating}) and natural-language templates (e.g., ``person \{\}'', ``a person is \{\}''). Synonym maps are constructed once per dataset from WordNet and common HAR naming conventions, averaging 2.3~synonyms per activity across the 87-label vocabulary. During each Stage~2 step, with probability~0.8 the original label is replaced by a randomly sampled synonym wrapped in a random template (disabled at evaluation), diversifying the text embeddings seen for each activity and preventing the text encoder from overfitting to exact label strings in any single dataset.\looseness=-1
+Accelerometer streams are gravity-aware. The quasi-static component below the analysis band is
+split off as a \emph{signed} per-axis DC feature rather than removed, so posture survives:
+lying and standing differ in the DC term even when their AC content is indistinguishable.
+Because gravity conventions differ across platforms, the convention is declared in the sensor's
+text (below) and a gravity-removal augmentation is applied with low probability so the encoder
+sees both conventions for the same underlying motion.
 
-Such label augmentation reduces synonym conflict frequency in each batch (\STALE{$-$7.0\,pp at 1\% when removed; Table~\ref{tab:component_ablation}}), but cannot eliminate it entirely---residual synonyms still appear as negatives---motivating the soft targets described next.
+\subsubsection{A physical-frequency constant-$Q$ filterbank}
+\label{sec:filterbank}
 
-\OUTDATED{In v2, label augmentation is unified with signal, physics, and \emph{channel-description} augmentation under a single configuration: alongside label synonyms/templates, the per-channel sensor descriptions are paraphrased (varying surface form while preserving placement/axis/sensor identity) and randomly dropped to a generic string, addressing an asymmetry in v1 where labels were augmented but channel text was a single fixed string.}
+Each patch of each channel is turned into one token entirely in the physical-frequency domain
+(Figure~\ref{fig:tokenizer}). The patch is Hann-windowed and its DC component removed, then
+transformed by a zero-padded real DFT of fixed length $S{=}256$. The zero-padding is what makes
+this rate-agnostic: for a patch sampled at rate $r$, DFT bin $m$ corresponds to the physical
+frequency $\phi[m] = mr/S$, so the \emph{same} matrix of bin indices maps to different Hz grids
+at different rates, and the readout can be defined once in Hz. That readout is a constant-$Q$
+Gaussian filterbank~\cite{constantq,constantqfast} with $K{=}32$ centers log-spaced over
+$[0.3, 15]$\,Hz and $\sigma_k = c_k/2Q$ at $Q{=}4$. The band limits are physically motivated
+rather than tuned: gait cadence occupies $0.5$--$3$\,Hz, limb and hand motion contribute
+harmonics to roughly $10$--$12$\,Hz, and content below $0.3$\,Hz is gravity, which the signed
+DC feature already carries. Band energies are window-normalised so they do not depend on patch
+length, log-compressed, and per-band standardised with statistics calibrated once before
+training.
 
-\subsubsection{IMU-to-Text Alignment with Soft Contrastive Learning}
-\label{sec:soft_contrastive}
+The consequence is that rate-invariance is a property of the construction, not of a learned
+approximation: a $2$\,Hz gait rhythm deposits its energy in the same band whether the device
+sampled at $20$ or $100$\,Hz, and because no interpolation exists in the path there is no
+aliasing to introduce and no fabricated sample to explain away. Note the distinction from
+rate-\emph{equivariance}~\cite{flowstate}: the model is never told the rate in order to compare
+two windows, because band $k$ denotes the same physical frequency in both. That is what allows
+exemplars from different devices to occupy one memory (Section~\ref{sec:evidence_design})
+without a per-configuration index. Zero-padding beyond the true
+patch length is frequency-domain interpolation only and does not alter band energies; we verified
+that $S{=}256$ and $S{=}512$ give band-energy cosine $1.000000$ and identical masks at $20$,
+$25$, $50$, and $100$\,Hz. Patch lengths exceeding $S$ raise an error rather than silently
+truncating.
 
-Standard CLIP-style learning uses hard one-hot targets, forcing synonymous labels apart. HALO replaces these with \emph{soft} target distributions derived from text--text similarity, so synonymous labels receive partial credit---converting synonym conflict from a source of gradient noise into a learning signal that reinforces semantic structure.
+\subsubsection{Observability: say what could not be measured}
+\label{sec:masks}
 
-\textbf{Text encoder and contrastive objective.}
-A frozen Sentence-BERT backbone~\cite{sbert} (all-MiniLM-L6-v2, 384-dim)---the same model used for sensor conditioning---encodes augmented activity labels; learnable query-based pooling over its token outputs produces $\mathbf{z}_{\text{text}}\in\mathbb{R}^{B\times D_s}$.
-Stage~2 aligns $\mathbf{z}_{\text{imu}}$ with $\mathbf{z}_{\text{text}}$ via a CLIP-style bidirectional contrastive objective. Because our batch sizes are limited by GPU memory (micro-batch 32 with gradient accumulation), we maintain FIFO queues~\cite{moco} of size $Q=256$ for both modalities to increase the effective number of negatives per step from 32 to 288, pre-filling them with a warmup pass before training begins. Similarity logits are computed as
-\[
-\mathbf{S}_{i\rightarrow t} = \alpha \, \mathbf{Z}_{\text{imu}}\, \mathbf{A}_{\text{text}}^\top, \quad
-\mathbf{S}_{t\rightarrow i} = \alpha \, \mathbf{Z}_{\text{text}}\, \mathbf{A}_{\text{imu}}^\top,
-\]
-where $\mathbf{A}$ denotes the concatenation of the current batch and queue, and $\alpha=\exp(\texttt{logit\_scale})$ is a learnable temperature (CLIP-initialized, clamped to $[1,50]$).
+Rate-invariance would be dishonest without a second mechanism. A $20$\,Hz stream simply cannot
+report energy at $12$\,Hz, and a $0.4$\,s patch cannot resolve a $0.3$\,Hz band. Rather than
+emitting a small number that the encoder might read as ``no energy here,'' each token carries
+two masks. The \emph{Nyquist observability} mask marks band $k$ observable only if
+$c_k + 2\sigma_k \le 0.9\,(r/2)$, a $10\%$ guard below Nyquist so a band's Gaussian tail does
+not straddle the aliasing edge; at $20$\,Hz this leaves $26$ of $32$ bands, at $25$\,Hz $27$,
+and at $50$ and $100$\,Hz all $32$. The \emph{resolution} mask marks band $k$ resolved only
+if at least one full cycle fits in the patch, $c_k \ge 1/D$ for patch duration $D$; a $0.5$\,s
+patch resolves $16$ of $32$ bands and a $1.5$\,s patch $25$. A band that is present but blurry
+is flagged, not zeroed. Streams whose distributed form was resampled by their publisher take
+the Nyquist bound from the \emph{acquisition} rate rather than the stored rate---upsampling
+cannot create information---which in our corpus applies to the $25$\,Hz earbud IMU stored on a
+$50$\,Hz grid.
 
-\textbf{Adaptive soft targets.}
-Raw text--text similarities cluster in a narrow range (0.4--0.9), producing near-uniform targets that collapse the embedding space. We apply \emph{adaptive sharpening}: z-score-normalize the in-batch similarity matrix $\mathbf{M}=\mathbf{Z}_{\text{text}}\mathbf{Z}_{\text{text}}^\top$, rescale with temperature $\tau_s{=}0.5$, and softmax to obtain sharpened distributions $\mathbf{T}$ (e.g., ``walking''/``strolling'' share 0.4 of target mass while ``walking''/``cycling'' share $<$0.01). Queue entries serve as hard negatives. The blended target $\mathbf{P}$ combines soft in-batch targets $\mathbf{T}$ with hard one-hot targets for queue entries. The bidirectional loss is:
-\begin{align*}
-\mathcal{L}_{i\rightarrow t} &= -\frac{1}{B}\sum_{b,j} \mathbf{P}_{b,j}\log\mathrm{softmax}(\mathbf{S}_{i\rightarrow t})_{b,j}, \\
-\mathcal{L} &= \tfrac{1}{2}\bigl(\mathcal{L}_{i\rightarrow t}+\mathcal{L}_{t\rightarrow i}\bigr).
-\end{align*}
+\subsubsection{Factored language conditioning}
+\label{sec:conditioning}
 
-\textbf{Zero-shot inference.}
-At test time, the predicted activity is $\hat{y}=\arg\max_k \cos(\mathbf{z}_{\text{imu}}, \mathbf{z}_{\text{text}}^{(k)})$ over an arbitrary candidate label set. Swapping the label library at runtime enables open-set recognition without retraining (Section~\ref{sec:overview}).
+Tokens produced by a weight-shared tokenizer are agnostic to what produced them, so acquisition
+context must be injected. HALO factors that context in two, deliberately:
 
-\STALE{Embedding-space analysis confirms 76.7\% nearest-neighbor accuracy between IMU and text centroids (Section~\ref{sec:embedding_analysis}).}
+\begin{itemize}\itemsep2pt
+\item a \textbf{role} string per channel that names \emph{only} the axis---\texttt{"x"},
+\texttt{"y"}, \texttt{"z"}---and is therefore constant across the entire corpus;
+\item a \textbf{sensor identity} string per sensor carrying device, modality, placement, and
+gravity convention, e.g.\ \texttt{"a smartwatch}\allowbreak\ \texttt{accelerometer on the}
+\allowbreak\ \texttt{wrist; includes gravity"}, or \texttt{"a phone gyroscope on a}
+\allowbreak\ \texttt{trouser pocket"}.
+\end{itemize}
 
-\OUTDATED{v2 note on the sharpening above: the z-score normalization is applied to the soft-\emph{target} similarity matrix that shapes the loss, not to the anchor label embeddings the model is scored against; v2 additionally isotropizes (whitens) the anchor label matrix. We also find that near-synonyms whose \emph{content} differs (sit vs.\ stand) separate well, but label pairs that are mirror-symmetric in language (upstairs vs.\ downstairs, left vs.\ right) are text-degenerate for any frozen sentence encoder and must be resolved by the IMU signal---so v2 does not claim zero-shot \emph{text} recognition for classes that differ only along those axes.}
+Both are embedded by the same frozen sentence encoder~\cite{sbert} and fused into the token,
+the sensor embedding through a gated residual initialised near zero so conditioning starts as a
+gentle bias and grows only if it earns its place. The factorisation is the point. Placement,
+device, and modality appear \emph{only} in the sensor string and axis \emph{only} in the role
+string, so no acquisition fact is injected twice when the two are summed. More importantly,
+the description a channel receives is now shared by every channel of that sensor and by every
+sensor of that kind across the corpus, which is precisely what makes it too coarse to identify
+a dataset. Numeric metadata---sampling rate, patch duration---is deliberately \emph{absent}
+from the text, because a frozen sentence encoder represents numbers unreliably; those values
+enter numerically through the bin$\to$Hz map and the observability masks instead. During
+training the sensor strings are paraphrased and, with some probability, dropped to a generic
+string, so the encoder must tolerate an unfamiliar or missing description at deployment.
 
-\subsection{Streamable Encoder: One Model, Offline and Online}
-\label{sec:streaming}
-\OUTDATED{New in v2; the design is finalized and verified, but streaming/accuracy numbers are pending the retrain.}
-Because the tokenizer is per-patch (it uses no cross-patch statistics) and the rotary positions are relative, the only component that mixes information across time is the temporal self-attention---so ``offline'' and ``online'' differ by nothing but the attention mask. HALO exploits this: during training the temporal mask is sampled per micro-batch from \{full, causal, causal-windowed\}, and a consistency term distills the causal (student) per-patch embeddings toward the full-context (teacher) ones computed in the same step. One weight set therefore serves both modes---offline recognition runs the full mask over a finished recording and pools the per-patch scores to a session label; online recognition runs a causal, windowed mask with a per-layer key/value cache, emitting a prediction per patch at constant per-step cost and bounded latency. We verify that the online per-patch outputs are identical to the offline causal computation (streaming-equivalence), so the two are literally the same weights, not a separately trained model. Dense per-frame and boundary supervision is left to future work, as our current training data is segmented into single-activity windows.
+Whether the factorisation actually buys the anti-memorisation property it is designed for is an
+empirical question, not a design claim, and Section~\ref{sec:experiments} tests it directly
+against a per-channel-text variant and a layout-locked variant
+(Tables~\ref{tab:tokenizer_ablation} and~\ref{tab:identity_probe}).
 
-\subsection{Deployment: HALO as a Reusable Foundation}
+\subsubsection{Set encoder over physical time}
+\label{sec:encoder}
+
+Conditioned tokens enter a dual-branch transformer~\cite{transformer} that alternates \emph{temporal}
+self-attention within a channel and \emph{cross-channel} self-attention within a patch, with
+channel masks so absent or padded channels never contribute. Channels carry no positional
+index at all---their identity is text---so the encoder is permutation- and count-invariant over
+channels by construction, and a device with three channels and one with twelve are the same
+kind of input. Temporal positions use rotary embeddings~\cite{rope} keyed to \emph{physical
+time} in seconds rather than patch index, with periods spanning $0.4$--$600$\,s. This is the
+counterpart of the filterbank on the time axis: a $1.2$\,s gesture receives the same relative
+temporal code regardless of sampling rate or patch length, and because rotary positions are
+relative they remain exact under a key/value cache. The default configuration is $d{=}256$ with
+$6$ layers and $8$ heads ($7.17$M parameters), reading $6$\,s windows tokenised at two
+resolutions drawn per batch from $0.4$--$0.8$\,s and $1.0$--$1.5$\,s.
+
+\textbf{Streaming.} Because the tokenizer uses no cross-patch statistics and the positions are
+relative, the only component mixing information across time is temporal self-attention, so
+offline and causal operation differ by nothing but the attention mask; the encoder implements
+both. We report this as a design affordance rather than a claim: this submission does not train
+a causal arm, distil offline to online, or measure streaming equivalence, and
+Section~\ref{sec:conclusion} lists it as future work.
+
+\subsection{Phase A: Label-Free Representation Pretraining}
+\label{sec:phaseA_design}
+
+Phase A trains the tokenizer and encoder with objectives that never observe an activity label.
+This is a change of principle, not an economy: as long as the objective is a closed-vocabulary
+label prediction, the model is rewarded for exploiting whatever predicts labels within the
+training corpora, and Section~\ref{sec:no_grammar} explained why that is the failure we most
+need to avoid. Removing labels from the loss also unlocks unlabelled and weakly labelled data,
+which is where the scale in wearables actually is.
+
+The objective is a weighted sum of five terms plus one rail.
+
+\textbf{(A1) Masked prediction, with two targets.} A validity-aware mask over physical time
+intervals hides a subset of tokens; the encoder predicts, at masked positions, both the
+\emph{fixed} filterbank features of the hidden content and the \emph{contextual latents} that a
+stop-gradient EMA teacher~\cite{byol,data2vec,ijepa} produces from the unmasked window. The
+fixed target grounds the representation in physical quantities; the latent target lets the
+representation become more abstract than its own input features. The same cross-resolution mask
+is used for both so the two views cannot leak into each other, and the teacher is updated only
+after an optimizer step (decay $0.996$) and is checkpointed with the model.
+
+\textbf{(A2) VICReg over augmented views.} Two independently augmented views of the same window
+are pulled together under VICReg~\cite{vicreg}---invariance, variance, and covariance terms
+reported separately---rather than under a contrastive loss. The reason is specific to this
+corpus: with NT-Xent, other windows in the batch are declared negatives, and in a multi-dataset
+corpus the batch is full of windows of the same activity from other subjects and other
+datasets, so a contrastive objective actively pushes apart things that should be together.
+VICReg needs no negatives. SimCLR~\cite{simclr} and supervised
+contrastive~\cite{supcon} remain selectable as controls. Augmentations span jitter, scaling,
+time shift and warp, magnitude warp, window cropping and length jitter, rate change, channel
+dropout, joint $SO(3)$ rotation of co-located triads, gravity add/remove, and the text
+augmentations of Section~\ref{sec:conditioning}. Text augmentation is applied with a
+\emph{shared} seed across the two views, so that a view pair never differs only in whether its
+configuration was described---an asymmetry that would otherwise teach the encoder to ignore
+conditioning entirely.
+
+\textbf{(A3) Time--frequency consistency.} An auxiliary time-domain encoder reads the raw
+samples of the same window, and its pooled output is pulled toward the main (frequency-domain)
+encoder's under a separate VICReg head. This is inspired by TF-C~\cite{tfc} but is not faithful
+to it---there is no time-to-time contrastive term, and the time encoder is discarded at
+inference---so we describe it as a cross-domain consistency rail rather than as TF-C.
+
+\textbf{(A4) Cross-placement consistency.} Where the corpus contains \emph{verified
+simultaneous} recordings---the same physical event captured at two or more body placements at
+the same instant---those pairs form an additional positive source at low weight and under a
+quota, so that the six-placement recordings cannot dominate. Positive identity comes from
+explicit physical-event identifiers written during conversion and carried into the pretraining
+index; it is never inferred from equal array lengths or row alignment, and never from an
+activity label. The training split contains $17{,}387$ paired events over $55{,}270$ paired
+windows.
+
+\textbf{(A5) A small physical grounding rail.} Two self-derived, augmentation-aware targets
+(dominant cadence and a covariance eigenstructure ratio) are regressed at low weight. They use
+no labels and act as a sanity anchor rather than a driver.
+
+Sampling is a per-window temperature draw with $P(\text{dataset}) \propto n^{\alpha}$,
+$\alpha{=}0.5$, which is the label-free counterpart of class balancing: a $144$k-window
+free-living corpus must not swamp a $1$k-window laboratory one, but neither should every source
+be forced to equal mass. Model selection uses subject-disjoint validation $k$-NN balanced
+accuracy---labels are used here, as a \emph{metric}, never in the loss. Per-objective gradient
+norms, VICReg component values, minimum feature standard deviation, effective rank, and
+positive similarity by pair type are logged every step, and non-finite values or representation
+collapse fail the run rather than being smoothed over.
+
+\subsection{Phase B: The Evidence Engine}
+\label{sec:evidence_design}
+
+The encoder is frozen. What remains is to turn its representation into a decision over label
+strings the deployment supplies at run time---without the single sensor-to-text projection that
+Section~\ref{sec:geometry} showed to be mis-specified.
+
+\textbf{Memory.} Every labelled window available---from the training corpus and, optionally,
+from the target deployment---is encoded once and written to a versioned table. An entry stores
+the patch vector together with its label, subject, dataset and acquisition configuration,
+source window, physical event, sensor group, patch center time and duration, resolution, and
+validity. Sensor streams are encoded separately and a session's patches form a query set. The
+table is append-only: adding a class, a placement, or a device is a write, not a training run.
+Every Phase-B artifact is bound to the exact Phase-A checkpoint, corpus, bank fingerprint,
+patch schema, and candidate-text vocabulary it was built from, and a behavioural probe rejects a
+bank whose encoder has since changed---silently stale memory is the most dangerous failure mode
+this design has.
+
+\textbf{Retrieval.} Each query patch retrieves independently, by similarity in \emph{sensor}
+space, under learned projections rather than hard dimension slices; each projection defines its
+own subspace with its own retrieval and its own evidence contribution, and head collapse is
+resisted by output decorrelation, projection diversity, and contribution-usage regularisation.
+An EMA copy of the projectors indexes memory while the online projectors score what comes back.
+During training the query's own window, its physical event, and its subject are excluded from
+retrieval, and contributions are capped per source window and per label so a single long
+recording cannot dominate a vote. Evidence is aggregated with physical-duration normalisation
+within a resolution before resolutions are combined, so the denser short-patch grid does not
+receive an automatic vote-count advantage.
+
+\textbf{Candidate-aware decoding.} Retrieved evidence is not simply averaged. A small set
+transformer contextualises query and evidence tokens together under learned structural roles
+(\textsc{query}, \textsc{evidence}, \textsc{candidate}), then refines each evidence item's
+label text as a residual in frozen sentence space---this is what lets a neighbour labelled
+\emph{walking} but retrieved in a stair-climbing context contribute as
+\emph{walking upstairs}---and pools evidence as a residual on the retrieval prior. Candidate
+tokens carry frozen label text plus a candidate role and attend permutation-equivariantly over
+the fixed evidence states, so neither candidate order nor evidence order carries meaning.
+Positions are window-relative continuous-time Fourier features, never a global sequence index,
+because relative time \emph{across} windows is meaningless. Every sublayer is gated by a
+LayerScale initialised near zero and the refinement and pooling residuals are zero-initialised,
+so the decoder at initialisation is exactly the untrained retrieval-plus-text-ensemble
+mechanism; any change it makes is attributable to training.
+
+\textbf{Confidence and rejection.} The decoder emits non-negative evidence per candidate with
+attribution to the patches, sensors, subspaces, and retrieved examples that produced it, which
+is what allows a prediction to be inspected rather than merely reported. There is no
+\textsc{unknown} candidate; instead a rejection confidence is estimated
+separately~\cite{selectiveclass,edl} from absolute evidence, retrieval density, patch and sensor
+agreement, normalised vote entropy, and the leading-candidate margin, and calibrated on
+truth-absent validation episodes with risk/coverage reported. Truth-present episodes require
+support, so always-reject is not a solution.
+
+\textbf{Episodic training.} The decoder is trained on episodes that vary, independently: the
+candidate budget ($10$--$100\%$ of the vocabulary); the number of true-label memory exemplars
+($0$, $1$, $2$, $4$, $8$, or all); the support available for competing labels; whether memory
+is same-configuration, cross-configuration only, or missing the query's configuration entirely;
+the kind of distractors present (random, language-near, motion-family-near, physically
+confusable); and whether the truth is present at all. Complete label \emph{families} are held
+out of decoder training and reserved for model selection, so candidate-text reasoning is
+always tested on concepts the decoder never fit.
+
+Because the decoder is identity-at-initialisation, every trained arm has an exact untrained
+control, and Section~\ref{sec:experiments} reports the two side by side rather than reporting
+the trained arm alone.
+
+\subsection{Deployment}
 \label{sec:deployment}
-The design choices above converge on a single artifact that a developer reuses without touching model internals. A deployment is specified by two pieces of \emph{configuration}, not code: the sensor layout (per-channel descriptions, sampling rate, window duration) and the candidate label set (arbitrary activity strings). Both are turned into embeddings once---the channel descriptions condition the tokenizer and are cached, and the label strings are encoded by the frozen text backbone and cached---so recognition at run time is a single encoder forward pass followed by a cosine-similarity lookup against the cached label embeddings, adding zero per-inference text cost. Swapping the label set, or moving to a different device layout, is a configuration change that recomputes these caches; it requires no retraining and no architectural modification.
 
-We expose this behind a small \texttt{predict()} interface with two modes backed by the same weights. \emph{Offline}: given a finished recording, HALO runs the full-context encoder and pools per-patch scores to a session or per-window label. \emph{Streaming}: a session object ingests samples as they arrive, maintains the per-layer key/value cache, and emits a label per patch at bounded latency (Section~\ref{sec:streaming}). Because the model is open-vocabulary, an application that later adds a new activity name simply extends its label set; because it is rate- and channel-agnostic, the same checkpoint serves a $20$\,Hz phone and a $100$\,Hz research IMU. For applications that want to specialize to a particular user or a private label set, an optional lightweight head can be fit on a few labeled seconds per class \emph{on-device}, leaving the shared encoder frozen and preserving open-vocabulary behavior for labels outside the personalized set. We package the encoder for on-device execution (Core~ML) and demonstrate the full loop---offline collection, on-device personalization, and streaming inference, including a mid-session sensor-placement change and activity labels never seen during personalization---as an iOS case study (Section~\ref{sec:case_study}).
+A deployment is two pieces of configuration and no code. The \emph{sensor layout} is one
+description string per sensor; the \emph{candidate set} is a list of activity names. Both are
+embedded once by the frozen sentence encoder and cached, so run-time cost is one encoder pass
+plus a retrieval, with no per-inference text cost. Changing the label set, or moving to a
+different device, recomputes a cache.
 
+The label-efficiency dial is the memory. At $k{=}0$ the target deployment contributes nothing
+and evidence comes from corpus exemplars and the candidate strings. At $k{>}0$ the user
+demonstrates each activity a few times; each demonstration costs one forward pass, is appended
+to the bank, and is immediately available---no gradient step, no retraining cycle, no
+revalidation of weights that did not move, and no requirement that the data leave the device.
+Where labels are plentiful, the same frozen features support a conventional supervised head. We
+expose this behind a small \texttt{predict()} interface and package the encoder for on-device
+execution (Core~ML), demonstrated in the iOS case study of Section~\ref{sec:case_study}.

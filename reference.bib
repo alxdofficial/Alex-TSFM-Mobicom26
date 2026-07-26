@@ -25,25 +25,29 @@
 }
 
 @article{crosshar,
-  author    = {Chang, Zhiqiang and Di Campli San Vito, Patrizia and Musolesi, Mirco and Mascolo, Cecilia},
+  author    = {Hong, Zhiqing and Li, Zelong and Zhong, Shuxin and Lyu, Wenjun and Wang, Haotian and Ding, Yi and He, Tian and Zhang, Desheng},
   title     = {{CrossHAR}: Generalizing Cross-dataset Human Activity Recognition via Hierarchical Self-Supervised Pretraining},
-  journal   = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies},
+  journal   = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies (IMWUT)},
   year      = {2024},
   volume    = {8},
-  number    = {1},
-  pages     = {1--27},
+  number    = {2},
+  articleno = {64},
+  pages     = {1--26},
   publisher = {ACM},
+  doi       = {10.1145/3659597},
 }
 
 @article{lanhar,
-  author    = {Li, Quan and Li, Kecheng and Hu, Yuqian and Guo, Bin and Yu, Zhiwen},
-  title     = {{LanHAR}: Language-Based Zero-Shot Human Activity Recognition via Large Language Models},
-  journal   = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies},
-  year      = {2024},
-  volume    = {8},
+  author    = {Yan, Hua and Tan, Heng and Ding, Yi and Zhou, Pengfei and Namboodiri, Vinod and Yang, Yu},
+  title     = {Large Language Model-guided Semantic Alignment for Human Activity Recognition},
+  journal   = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies (IMWUT)},
+  year      = {2025},
+  volume    = {9},
   number    = {4},
   pages     = {1--25},
   publisher = {ACM},
+  doi       = {10.1145/3770652},
+  note      = {System name: LanHAR},
 }
 
 % ---- Contrastive / self-supervised learning ----
@@ -73,8 +77,9 @@
   title     = {Momentum Contrast for Unsupervised Visual Representation Learning},
   booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
   year      = {2020},
-  pages     = {9729--9738},
+  pages     = {9726--9735},
   publisher = {IEEE},
+  doi       = {10.1109/CVPR42600.2020.00975},
   address   = {Seattle, WA},
 }
 
@@ -97,7 +102,6 @@
   year      = {2023},
   address   = {Kigali, Rwanda},
   publisher = {OpenReview.net},
-  pages     = {1--22},
 }
 
 @article{deepconvlstm,
@@ -150,6 +154,7 @@
   title     = {A Public Domain Dataset for Human Activity Recognition Using Smartphones},
   booktitle = {Proceedings of the European Symposium on Artificial Neural Networks, Computational Intelligence and Machine Learning (ESANN)},
   year      = {2013},
+  pages     = {437--442},
   address   = {Bruges, Belgium},
 }
 
@@ -179,9 +184,12 @@
   title     = {{mHealthDroid}: A Novel Framework for Agile Development of Mobile Health Applications},
   booktitle = {Proceedings of the 6th International Work-conference on Ambient Assisted Living and Daily Activities (IWAAL)},
   year      = {2014},
+  volume    = {8868},
+  series    = {LNCS},
   pages     = {91--98},
   publisher = {Springer},
   address   = {Belfast, UK},
+  doi       = {10.1007/978-3-319-13105-4_14},
 }
 
 @inproceedings{pamap2,
@@ -194,26 +202,29 @@
   address   = {Newcastle, UK},
 }
 
+% NOTE: the corpus uses the WISDM-2019 phone+watch release (acc+gyro, 20 Hz; UCI #507),
+% NOT Kwapisz et al. 2011 (phone accelerometer only). Cite the 2019 paper.
 @article{wisdm,
-  author    = {Kwapisz, Jennifer R. and Weiss, Gary M. and Moore, Samuel A.},
-  title     = {Activity Recognition Using Cell Phone Accelerometers},
-  journal   = {ACM SIGKDD Explorations Newsletter},
-  year      = {2011},
-  volume    = {12},
-  number    = {2},
-  pages     = {74--82},
-  publisher = {ACM},
+  author    = {Weiss, Gary M. and Yoneda, Kenichi and Hayajneh, Thaier},
+  title     = {Smartphone and Smartwatch-Based Biometrics Using Activities of Daily Living},
+  journal   = {IEEE Access},
+  year      = {2019},
+  volume    = {7},
+  pages     = {133190--133202},
+  publisher = {IEEE},
+  doi       = {10.1109/ACCESS.2019.2940729},
 }
 
 @article{dsads,
-  author    = {Barshan, Billur and Y{\"u}ksek, Murat C.},
-  title     = {Recognizing Daily and Sports Activities in Two Open-Source Machine Learning Environments Using Body-Worn Sensor Units},
+  author    = {Barshan, Billur and Y{\"u}ksek, Murat Cihan},
+  title     = {Recognizing Daily and Sports Activities in Two Open Source Machine Learning Environments Using Body-Worn Sensor Units},
   journal   = {The Computer Journal},
   year      = {2014},
   volume    = {57},
   number    = {11},
   pages     = {1649--1667},
   publisher = {Oxford University Press},
+  doi       = {10.1093/comjnl/bxt075},
 }
 
 @article{hapt,
@@ -227,13 +238,14 @@
 }
 
 @article{kuhar,
-  author    = {Sikder, Nilufar and Chowdhury, Muhammad Sakib Ibne and Nahid, Abdullah-Al},
+  author    = {Sikder, Niloy and Nahid, Abdullah-Al},
   title     = {{KU-HAR}: An Open Dataset for Heterogeneous Human Activity Recognition},
   journal   = {Pattern Recognition Letters},
   year      = {2021},
   volume    = {146},
   pages     = {46--54},
   publisher = {Elsevier},
+  doi       = {10.1016/j.patrec.2021.02.024},
 }
 
 % ---- Datasets (test) ----
@@ -291,9 +303,11 @@
 @inproceedings{llasa,
   author    = {Imran, Sheikh Asif and Khan, Mohammad Nur Hossain and Biswas, Subrata and Islam, Bashima},
   title     = {{LLaSA}: A Sensor-Aware {LLM} for Natural Language Reasoning of Human Activity from {IMU} Data},
-  booktitle = {Companion of the 2025 ACM International Joint Conference on Pervasive and Ubiquitous Computing (UbiComp)},
+  booktitle = {Companion of the 2025 ACM International Joint Conference on Pervasive and Ubiquitous Computing (UbiComp/ISWC Companion)},
   year      = {2025},
+  pages     = {893--899},
   publisher = {ACM},
+  doi       = {10.1145/3714394.3756187},
 }
 
 @inproceedings{unimts,
@@ -308,6 +322,11 @@
   title     = {{GOAT}: A Generalized Cross-Dataset Activity Recognition Framework with Natural Language Supervision},
   journal   = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies (IMWUT)},
   year      = {2024},
+  volume    = {8},
+  number    = {4},
+  articleno = {184},
+  pages     = {1--28},
+  publisher = {ACM},
   doi       = {10.1145/3699736},
 }
 
@@ -367,30 +386,99 @@
   title   = {{HARTH}: A Human Activity Recognition Dataset for Machine Learning},
   journal = {Sensors},
   volume  = {21},
-  number  = {21},
-  pages   = {7261},
+  number  = {23},
+  pages   = {7853},
   year    = {2021},
   publisher = {MDPI},
+  doi     = {10.3390/s21237853},
 }
 
-@article{vttconiot,
-  author  = {M{\"a}kel{\"a}, Satu-Marja and L{\"a}ms{\"a}, Ari and Ker{\"a}nen, Joonas S. and Liikka, Jari and Ronkainen, Jari and Peltola, Jari and H{\"a}iki{\"o}, Jukka and J{\"a}rvinen, Sami and L{\'o}pez, Miguel Bordallo},
-  title   = {Introducing {VTT-ConIoT}: A Realistic Dataset for Activity Recognition of Construction Workers Using {IMU} Devices},
-  journal = {Sustainability},
-  volume  = {14},
-  number  = {1},
-  pages   = {220},
-  year    = {2021},
-  publisher = {MDPI},
-  doi     = {10.3390/su14010220},
-}
+% VTT-ConIoT removed: dropped from the benchmark in v2 and no longer cited.
 
 @misc{recgym,
-  author       = {Zhaxidele and Bian, Jiawei and others},
+  author       = {Bian, Sizhen and Lukowicz, Paul},
   title        = {{RecGym}: Gym Workouts Recognition Dataset with {IMU} and Capacitive Sensor},
   howpublished = {UCI Machine Learning Repository},
-  year         = {2022},
+  year         = {2025},
+  doi          = {10.24432/C5PW4K},
   note         = {\url{https://archive.ics.uci.edu/dataset/1128}},
+}
+
+% ---- Datasets added in v2 (training corpus + held-out evaluation) ----
+
+@article{sp_sw_har,
+  author  = {Matey-Sanz, Miguel and Casteleyn, Sven and Granell, Carlos},
+  title   = {Dataset of Inertial Measurements of Smartphones and Smartwatches for Human Activity Recognition},
+  journal = {Data in Brief},
+  volume  = {51},
+  pages   = {109809},
+  year    = {2023},
+  publisher = {Elsevier},
+  doi     = {10.1016/j.dib.2023.109809},
+}
+
+@article{nfi_fared,
+  author  = {McCarthy, Conor and Quirijnen, Loes and van Zandwijk, Jan Peter and Geradts, Zeno and Worring, Marcel},
+  title   = {{Hi-OSCAR}: Hierarchical Open-set Classifier for Human Activity Recognition},
+  journal = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies (IMWUT)},
+  volume  = {9},
+  number  = {4},
+  articleno = {199},
+  pages   = {1--27},
+  year    = {2025},
+  publisher = {ACM},
+  doi     = {10.1145/3770681},
+}
+
+@article{harmes,
+  author  = {Burchard, Robin and Br{\"u}ckner, Pascal-Andr{\'e} and Bock, Marius and Gall, Juergen and Van Laerhoven, Kristof},
+  title   = {{HARMES}: A Multi-Modal Dataset for Wearable Human Activity Recognition with Motion, Environmental Sensing and Sound},
+  journal = {arXiv preprint arXiv:2605.02596},
+  year    = {2026},
+}
+
+@article{xrf_v2,
+  author  = {Lan, Bo and Li, Pei and Yin, Jiaxi and Song, Yunpeng and Wang, Ge and Ding, Han and Han, Jinsong and Wang, Fei},
+  title   = {{XRF V2}: A Dataset for Action Summarization with {Wi-Fi} Signals, and {IMUs} in Phones, Watches, Earbuds, and Glasses},
+  journal = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies (IMWUT)},
+  volume  = {9},
+  number  = {3},
+  pages   = {1--41},
+  year    = {2025},
+  publisher = {ACM},
+  doi     = {10.1145/3749521},
+}
+
+@inproceedings{usc_had,
+  author    = {Zhang, Mi and Sawchuk, Alexander A.},
+  title     = {{USC-HAD}: A Daily Activity Dataset for Ubiquitous Activity Recognition Using Wearable Sensors},
+  booktitle = {Proceedings of the 2012 ACM Conference on Ubiquitous Computing (UbiComp)},
+  pages     = {1036--1043},
+  year      = {2012},
+  publisher = {ACM},
+  address   = {Pittsburgh, PA},
+  doi       = {10.1145/2370216.2370438},
+}
+
+@article{ut_complex,
+  author  = {Shoaib, Muhammad and Bosch, Stephan and Incel, Ozlem Durmaz and Scholten, Hans and Havinga, Paul J. M.},
+  title   = {Complex Human Activity Recognition Using Smartphone and Wrist-Worn Motion Sensors},
+  journal = {Sensors},
+  volume  = {16},
+  number  = {4},
+  pages   = {426},
+  year    = {2016},
+  publisher = {MDPI},
+  doi     = {10.3390/s16040426},
+}
+
+@misc{tnda_har,
+  author       = {Yan, Yan and Chen, Dali and Liu, Yushi and Zhao, Jinjin and Wang, Bo and Wu, Xuankun and Jiao, Xiaohao and Chen, Yuqian and Li, Huihui and Ren, Xuchao},
+  title        = {{TNDA-HAR}},
+  howpublished = {IEEE DataPort},
+  year         = {2021},
+  doi          = {10.21227/4epb-pg26},
+  url          = {https://dx.doi.org/10.21227/4epb-pg26},
 }
 
 @inproceedings{unihar,
@@ -398,7 +486,8 @@
   title     = {Practically Adopting Human Activity Recognition},
   booktitle = {Proceedings of the 29th Annual International Conference on Mobile Computing and Networking (ACM MobiCom)},
   year      = {2023},
-  pages     = {10--21},
+  articleno = {85},
+  pages     = {1--15},
   publisher = {ACM},
   doi       = {10.1145/3570361.3613299},
 }
@@ -408,13 +497,13 @@
   title     = {{ClusterFL}: A Similarity-Aware Federated Learning System for Human Activity Recognition},
   booktitle = {Proceedings of the 19th Annual International Conference on Mobile Systems, Applications, and Services (ACM MobiSys)},
   year      = {2021},
-  pages     = {54--67},
+  pages     = {54--66},
   publisher = {ACM},
   doi       = {10.1145/3458864.3467681},
 }
 
 @inproceedings{mitra,
-  author    = {Zhang, Xiyuan and Maddix, Danielle and Wang, Hao and Gupta, Megha and Mahoney, Michael and Goyal, Priyank and Shchur, Oleksandr and Merrill, Andrew and Turkmen, Caner and Wen, Qingsong and Rajan, Vasudev and Luo, Renqian and Faloutsos, Christos and Wang, Yuyang},
+  author    = {Zhang, Xiyuan and Maddix, Danielle C. and Yin, Junming and Erickson, Nick and Ansari, Abdul Fatir and Han, Boran and Zhang, Shuai and Akoglu, Leman and Faloutsos, Christos and Mahoney, Michael W. and Hu, Cuixiong and Rangwala, Huzefa and Karypis, George and Wang, Bernie},
   title     = {{Mitra}: Mixed Synthetic Priors for Enhancing Tabular Foundation Models},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
   year      = {2025},
@@ -422,7 +511,7 @@
 }
 
 @article{chan2024capture24,
-  author    = {Chan, Shing and Hang, Yuan and Tong, Catherine and Acquah, Aidan and Schonfeldt, Andrew and Gershuny, Jonathan and Doherty, Aiden},
+  author    = {Chan, Shing and Yuan, Hang and Tong, Catherine and Acquah, Aidan and Schonfeldt, Abram and Gershuny, Jonathan and Doherty, Aiden},
   title     = {{CAPTURE-24}: A large dataset of wrist-worn activity tracker data collected in the wild for human activity recognition},
   journal   = {Scientific Data},
   volume    = {11},
@@ -448,10 +537,25 @@
   title     = {Self-supervised learning for human activity recognition using 700,000 person-days of wearable data},
   journal   = {npj Digital Medicine},
   volume    = {7},
-  pages     = {91},
+  number    = {1},
+  articleno = {91},
+  pages     = {1--10},
   year      = {2024},
   doi       = {10.1038/s41746-024-01062-3},
   note      = {arXiv:2206.02909},
+}
+
+@article{normwear,
+  author    = {Luo, Yunfei and Chen, Yuliang and Salekin, Asif and Rahman, Tauhidur},
+  title     = {Toward Foundation Model for Multivariate Wearable Sensing of Physiological Signals},
+  journal   = {ACM Transactions on Computing for Healthcare},
+  year      = {2026},
+  volume    = {7},
+  number    = {3},
+  pages     = {1--43},
+  publisher = {ACM},
+  doi       = {10.1145/3803808},
+  note      = {Preprint: arXiv:2412.09758},
 }
 
 @inproceedings{conse,
@@ -460,4 +564,484 @@
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2014},
   note      = {arXiv:1312.5650},
+}
+
+% =============================================================================
+% v2 additions: SSL objectives, architecture, retrieval/evidence, zero-shot
+% (verified against DBLP / PMLR / NeurIPS proceedings / Crossref, 2026-07-26)
+% =============================================================================
+
+% ---- Self-supervised objectives ----
+
+@inproceedings{vicreg,
+  author    = {Bardes, Adrien and Ponce, Jean and LeCun, Yann},
+  title     = {{VICReg}: Variance-Invariance-Covariance Regularization for Self-Supervised Learning},
+  booktitle = {The Tenth International Conference on Learning Representations (ICLR)},
+  year      = {2022},
+  publisher = {OpenReview.net},
+  address   = {Virtual},
+}
+
+@inproceedings{barlowtwins,
+  author    = {Zbontar, Jure and Jing, Li and Misra, Ishan and LeCun, Yann and Deny, St{\'e}phane},
+  title     = {Barlow Twins: Self-Supervised Learning via Redundancy Reduction},
+  booktitle = {Proceedings of the 38th International Conference on Machine Learning (ICML)},
+  year      = {2021},
+  pages     = {12310--12320},
+  publisher = {PMLR},
+  address   = {Virtual},
+}
+
+@inproceedings{byol,
+  author    = {Grill, Jean-Bastien and Strub, Florian and Altch{\'e}, Florent and Tallec, Corentin and Richemond, Pierre H. and Buchatskaya, Elena and Doersch, Carl and {\'A}vila Pires, Bernardo and Guo, Zhaohan and Gheshlaghi Azar, Mohammad and Piot, Bilal and Kavukcuoglu, Koray and Munos, R{\'e}mi and Valko, Michal},
+  title     = {Bootstrap Your Own Latent: A New Approach to Self-Supervised Learning},
+  booktitle = {Advances in Neural Information Processing Systems 33 (NeurIPS)},
+  year      = {2020},
+  pages     = {21271--21284},
+  publisher = {Curran Associates},
+  address   = {Virtual},
+}
+
+@inproceedings{ijepa,
+  author    = {Assran, Mahmoud and Duval, Quentin and Misra, Ishan and Bojanowski, Piotr and Vincent, Pascal and Rabbat, Michael and LeCun, Yann and Ballas, Nicolas},
+  title     = {Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2023},
+  pages     = {15619--15629},
+  publisher = {IEEE},
+  address   = {Vancouver, Canada},
+  doi       = {10.1109/CVPR52729.2023.01499},
+}
+
+@inproceedings{data2vec,
+  author    = {Baevski, Alexei and Hsu, Wei-Ning and Xu, Qiantong and Babu, Arun and Gu, Jiatao and Auli, Michael},
+  title     = {data2vec: A General Framework for Self-supervised Learning in Speech, Vision and Language},
+  booktitle = {Proceedings of the 39th International Conference on Machine Learning (ICML)},
+  year      = {2022},
+  pages     = {1298--1312},
+  publisher = {PMLR},
+  address   = {Baltimore, MD},
+}
+
+@inproceedings{supcon,
+  author    = {Khosla, Prannay and Teterwak, Piotr and Wang, Chen and Sarna, Aaron and Tian, Yonglong and Isola, Phillip and Maschinot, Aaron and Liu, Ce and Krishnan, Dilip},
+  title     = {Supervised Contrastive Learning},
+  booktitle = {Advances in Neural Information Processing Systems 33 (NeurIPS)},
+  year      = {2020},
+  pages     = {18661--18673},
+  publisher = {Curran Associates},
+  address   = {Virtual},
+}
+
+@inproceedings{tfc,
+  author    = {Zhang, Xiang and Zhao, Ziyuan and Tsiligkaridis, Theodoros and Zitnik, Marinka},
+  title     = {Self-Supervised Contrastive Pre-Training for Time Series via Time-Frequency Consistency},
+  booktitle = {Advances in Neural Information Processing Systems 35 (NeurIPS)},
+  year      = {2022},
+  pages     = {3988--4003},
+  publisher = {Curran Associates},
+  address   = {New Orleans, LA},
+}
+
+% ---- Architecture ----
+
+@article{rope,
+  author    = {Su, Jianlin and Ahmed, Murtadha and Lu, Yu and Pan, Shengfeng and Bo, Wen and Liu, Yunfeng},
+  title     = {{RoFormer}: Enhanced Transformer with Rotary Position Embedding},
+  journal   = {Neurocomputing},
+  year      = {2024},
+  volume    = {568},
+  pages     = {127063},
+  publisher = {Elsevier},
+  doi       = {10.1016/j.neucom.2023.127063},
+}
+
+@article{constantq,
+  author    = {Brown, Judith C.},
+  title     = {Calculation of a Constant {Q} Spectral Transform},
+  journal   = {The Journal of the Acoustical Society of America},
+  year      = {1991},
+  volume    = {89},
+  number    = {1},
+  pages     = {425--434},
+  publisher = {Acoustical Society of America},
+  doi       = {10.1121/1.400476},
+}
+
+@article{constantqfast,
+  author    = {Brown, Judith C. and Puckette, Miller S.},
+  title     = {An Efficient Algorithm for the Calculation of a Constant {Q} Transform},
+  journal   = {The Journal of the Acoustical Society of America},
+  year      = {1992},
+  volume    = {92},
+  number    = {5},
+  pages     = {2698--2701},
+  publisher = {Acoustical Society of America},
+  doi       = {10.1121/1.404385},
+}
+
+@inproceedings{film,
+  author    = {Perez, Ethan and Strub, Florian and de Vries, Harm and Dumoulin, Vincent and Courville, Aaron},
+  title     = {{FiLM}: Visual Reasoning with a General Conditioning Layer},
+  booktitle = {Proceedings of the 32nd AAAI Conference on Artificial Intelligence (AAAI)},
+  year      = {2018},
+  pages     = {3942--3951},
+  publisher = {AAAI Press},
+  address   = {New Orleans, LA},
+  doi       = {10.1609/aaai.v32i1.11671},
+}
+
+% ---- Retrieval / evidence / few-shot ----
+
+@inproceedings{matchingnet,
+  author    = {Vinyals, Oriol and Blundell, Charles and Lillicrap, Timothy and Kavukcuoglu, Koray and Wierstra, Daan},
+  title     = {Matching Networks for One Shot Learning},
+  booktitle = {Advances in Neural Information Processing Systems 29 (NIPS)},
+  year      = {2016},
+  pages     = {3630--3638},
+  publisher = {Curran Associates},
+  address   = {Barcelona, Spain},
+}
+
+@inproceedings{protonet,
+  author    = {Snell, Jake and Swersky, Kevin and Zemel, Richard},
+  title     = {Prototypical Networks for Few-shot Learning},
+  booktitle = {Advances in Neural Information Processing Systems 30 (NIPS)},
+  year      = {2017},
+  pages     = {4077--4087},
+  publisher = {Curran Associates},
+  address   = {Long Beach, CA},
+}
+
+@inproceedings{knnlm,
+  author    = {Khandelwal, Urvashi and Levy, Omer and Jurafsky, Dan and Zettlemoyer, Luke and Lewis, Mike},
+  title     = {Generalization through Memorization: Nearest Neighbor Language Models},
+  booktitle = {The Eighth International Conference on Learning Representations (ICLR)},
+  year      = {2020},
+  publisher = {OpenReview.net},
+  address   = {Addis Ababa, Ethiopia},
+}
+
+@inproceedings{rag,
+  author    = {Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and K{\"u}ttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rockt{\"a}schel, Tim and Riedel, Sebastian and Kiela, Douwe},
+  title     = {Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
+  booktitle = {Advances in Neural Information Processing Systems 33 (NeurIPS)},
+  year      = {2020},
+  pages     = {9459--9474},
+  publisher = {Curran Associates},
+  address   = {Virtual},
+}
+
+@inproceedings{retro,
+  author    = {Borgeaud, Sebastian and Mensch, Arthur and Hoffmann, Jordan and Cai, Trevor and Rutherford, Eliza and Millican, Katie and van den Driessche, George and Lespiau, Jean-Baptiste and Damoc, Bogdan and Clark, Aidan and de Las Casas, Diego and Guy, Aurelia and Menick, Jacob and Ring, Roman and Hennigan, Tom and Huang, Saffron and Maggiore, Loren and Jones, Chris and Cassirer, Albin and Brock, Andy and Paganini, Michela and Irving, Geoffrey and Vinyals, Oriol and Osindero, Simon and Simonyan, Karen and Rae, Jack W. and Elsen, Erich and Sifre, Laurent},
+  title     = {Improving Language Models by Retrieving from Trillions of Tokens},
+  booktitle = {Proceedings of the 39th International Conference on Machine Learning (ICML)},
+  year      = {2022},
+  pages     = {2206--2240},
+  publisher = {PMLR},
+  address   = {Baltimore, MD},
+}
+
+@inproceedings{knnvision,
+  author    = {Nakata, Kengo and Ng, Youyang and Miyashita, Daisuke and Maki, Asuka and Lin, Yu-Chieh and Deguchi, Jun},
+  title     = {Revisiting a {kNN}-Based Image Classification System with High-Capacity Storage},
+  booktitle = {Computer Vision -- ECCV 2022, 17th European Conference, Proceedings, Part XXXVII},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {13697},
+  year      = {2022},
+  pages     = {457--474},
+  publisher = {Springer},
+  address   = {Tel Aviv, Israel},
+  doi       = {10.1007/978-3-031-19836-6_26},
+}
+
+@inproceedings{reco,
+  author    = {Iscen, Ahmet and Caron, Mathilde and Fathi, Alireza and Schmid, Cordelia},
+  title     = {Retrieval-Enhanced Contrastive Vision-Text Models},
+  booktitle = {The Twelfth International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  publisher = {OpenReview.net},
+  address   = {Vienna, Austria},
+}
+
+@inproceedings{edl,
+  author    = {Sensoy, Murat and Kaplan, Lance and Kandemir, Melih},
+  title     = {Evidential Deep Learning to Quantify Classification Uncertainty},
+  booktitle = {Advances in Neural Information Processing Systems 31 (NeurIPS)},
+  year      = {2018},
+  pages     = {3183--3193},
+  publisher = {Curran Associates},
+  address   = {Montreal, Canada},
+}
+
+@inproceedings{selectiveclass,
+  author    = {Geifman, Yonatan and El-Yaniv, Ran},
+  title     = {Selective Classification for Deep Neural Networks},
+  booktitle = {Advances in Neural Information Processing Systems 30 (NIPS)},
+  year      = {2017},
+  pages     = {4878--4887},
+  publisher = {Curran Associates},
+  address   = {Long Beach, CA},
+}
+
+% ---- Zero-shot / open-vocabulary ----
+
+@inproceedings{devise,
+  author    = {Frome, Andrea and Corrado, Greg S. and Shlens, Jonathon and Bengio, Samy and Dean, Jeffrey and Ranzato, Marc'Aurelio and Mikolov, Tomas},
+  title     = {{DeViSE}: A Deep Visual-Semantic Embedding Model},
+  booktitle = {Advances in Neural Information Processing Systems 26 (NIPS)},
+  year      = {2013},
+  pages     = {2121--2129},
+  publisher = {Curran Associates},
+  address   = {Lake Tahoe, NV},
+}
+
+@article{zslgbu,
+  author    = {Xian, Yongqin and Lampert, Christoph H. and Schiele, Bernt and Akata, Zeynep},
+  title     = {Zero-Shot Learning---A Comprehensive Evaluation of the Good, the Bad and the Ugly},
+  journal   = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year      = {2019},
+  volume    = {41},
+  number    = {9},
+  pages     = {2251--2265},
+  publisher = {IEEE},
+  doi       = {10.1109/TPAMI.2018.2857768},
+}
+
+% =============================================================================
+% Closest prior art (verified against AAAI/ACL/ICML/NeurIPS/DBLP/Crossref, 2026-07-26)
+% =============================================================================
+
+@inproceedings{zerohar,
+  author    = {Chowdhury, Ranak Roy and Kapila, Ritvik and Panse, Ameya and Zhang, Xiyuan and Teng, Diyan and Kulkarni, Rashmi and Hong, Dezhi and Gupta, Rajesh K. and Shang, Jingbo},
+  title     = {{ZeroHAR}: Sensor Context Augments Zero-Shot Wearable Action Recognition},
+  booktitle = {Proceedings of the 39th AAAI Conference on Artificial Intelligence (AAAI)},
+  year      = {2025},
+  volume    = {39},
+  number    = {15},
+  pages     = {16046--16054},
+  publisher = {AAAI Press},
+  address   = {Philadelphia, PA},
+  doi       = {10.1609/aaai.v39i15.33762},
+}
+
+@inproceedings{sensorsvoice,
+  author    = {Dutta, Utsav and Pastrana, Gerardo and Khoshfetrat Pakazad, Sina and Ohlsson, Henrik},
+  title     = {Giving Sensors a Voice: Multimodal {JEPA} for Semantic Time-Series Embeddings},
+  booktitle = {Proceedings of the 43rd International Conference on Machine Learning (ICML)},
+  year      = {2026},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {306},
+  publisher = {PMLR},
+  address   = {Seoul, South Korea},
+  note      = {arXiv:2605.31580},
+}
+
+@article{charm,
+  author  = {Dutta, Utsav and Khoshfetrat Pakazad, Sina and Ohlsson, Henrik},
+  title   = {Time to Embed: Unlocking Foundation Models for Time Series with Channel Descriptions},
+  journal = {arXiv preprint arXiv:2505.14543},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2505.14543},
+  note    = {System name: CHARM},
+}
+
+@inproceedings{sensorllm,
+  author    = {Li, Zechen and Deldari, Shohreh and Chen, Linyao and Xue, Hao and Salim, Flora D.},
+  title     = {{SensorLLM}: Aligning Large Language Models with Motion Sensors for Human Activity Recognition},
+  booktitle = {Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  year      = {2025},
+  pages     = {354--379},
+  publisher = {Association for Computational Linguistics},
+  address   = {Suzhou, China},
+  doi       = {10.18653/v1/2025.emnlp-main.19},
+}
+
+@article{onehar,
+  author    = {Wei, Qingxin and Huang, Jiaming and Gao, Yi and Dong, Wei},
+  title     = {One Model to Fit Them All: Universal {IMU}-based Human Activity Recognition with {LLM}-assisted Cross-dataset Representation},
+  journal   = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies (IMWUT)},
+  year      = {2025},
+  volume    = {9},
+  number    = {3},
+  articleno = {139},
+  pages     = {1--22},
+  publisher = {ACM},
+  doi       = {10.1145/3749509},
+}
+
+@inproceedings{flowstate,
+  author    = {Graf, Lars and Ortner, Thomas and Wo{\'z}niak, Stanis{\l}aw and Pantazi, Angeliki},
+  title     = {{FlowState}: Sampling-Rate-Equivariant Time-Series Forecasting},
+  booktitle = {Proceedings of the 43rd International Conference on Machine Learning (ICML)},
+  year      = {2026},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {306},
+  publisher = {PMLR},
+  address   = {Seoul, South Korea},
+  note      = {arXiv:2508.05287},
+}
+
+@inproceedings{spectraltok,
+  author    = {Shen, Jeff and Lanusse, Francois and Parker, Liam Holden and Liu, Ollie and Hehir, Tom and Sarra, Leopoldo and Meyer, Lucas and Bowles, Micah and Wagner-Carena, Sebastian and Qu, Helen and Golkar, Siavash and Bietti, Alberto and Cho, Kyunghyun and Cranmer, Miles and Ho, Shirley},
+  title     = {Universal Spectral Tokenization via Self-Supervised Panchromatic Representation Learning},
+  booktitle = {NeurIPS 2025 Workshop on Machine Learning and the Physical Sciences (ML4PS)},
+  year      = {2025},
+  address   = {San Diego, CA},
+  note      = {arXiv:2510.17959},
+}
+
+@inproceedings{rateinvae,
+  author    = {Koneripalli, Kaushik and Lohit, Suhas and Anirudh, Rushil and Turaga, Pavan},
+  title     = {Rate-Invariant Autoencoding of Time-Series},
+  booktitle = {Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+  year      = {2020},
+  pages     = {3732--3736},
+  publisher = {IEEE},
+  address   = {Barcelona, Spain},
+  doi       = {10.1109/ICASSP40776.2020.9053983},
+}
+
+@inproceedings{mopformer,
+  author    = {Zhang, Hao and Zhuang, Zhan and Wang, Xuehao and Yang, Xiaodong and Zhang, Yu},
+  title     = {{MoPFormer}: Motion-Primitive Transformer for Wearable-Sensor Activity Recognition},
+  booktitle = {Advances in Neural Information Processing Systems 38 (NeurIPS)},
+  year      = {2025},
+  publisher = {Curran Associates},
+  address   = {San Diego, CA},
+  note      = {arXiv:2505.20744},
+}
+
+@article{memorymodular,
+  author  = {Kang, Dahyun and Iscen, Ahmet and Jo, Eunchan and Choi, Sua and Cho, Minsu and Schmid, Cordelia},
+  title   = {Memory-Modular Classification: Learning to Generalize with Memory Replacement},
+  journal = {Transactions on Machine Learning Research (TMLR)},
+  year    = {2025},
+  note    = {arXiv:2504.06021},
+}
+
+@inproceedings{raghar,
+  author    = {Sivaroopan, Nirhoshan and Karunarathna, Hansi and Madarasingha, Chamara and Jayasumana, Anura and Thilakarathna, Kanchana},
+  title     = {{RAG-HAR}: Retrieval Augmented Generation-based Human Activity Recognition},
+  booktitle = {Proceedings of the IEEE International Conference on Pervasive Computing and Communications (PerCom)},
+  year      = {2026},
+  publisher = {IEEE},
+  note      = {arXiv:2512.08984},
+}
+
+@inproceedings{zara,
+  author    = {Li, Zechen and Chen, Baiyu and Xue, Hao and Salim, Flora D.},
+  title     = {{ZARA}: Training-Free Motion Time-Series Reasoning via Evidence-Grounded {LLM} Agents},
+  booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year      = {2026},
+  publisher = {Association for Computational Linguistics},
+  note      = {arXiv:2508.04038},
+}
+
+@article{timee,
+  author  = {K{\"u}ken, Jaris and Hoo, Shi Bin and Mr{\'a}z, Martin and Hutter, Frank and Purucker, Lennart},
+  title   = {{TimEE}: End-to-end Time Series Classification via In-Context Learning},
+  journal = {arXiv preprint arXiv:2607.07500},
+  year    = {2026},
+}
+
+@article{ticfm,
+  author  = {Fang, Juntao and Xie, Shifeng and Nie, Shengbin and Ling, Yuhui and Liu, Yuming and Li, Zijian and Zhang, Keli and Pan, Lujia and Palpanas, Themis and Cai, Ruichu},
+  title   = {Rethinking Zero-Shot Time Series Classification: From Task-specific Classifiers to In-Context Inference},
+  journal = {arXiv preprint arXiv:2602.00620},
+  year    = {2026},
+  note    = {System name: TIC-FM},
+}
+
+@article{uwave,
+  author    = {Liu, Jiayang and Zhong, Lin and Wickramasuriya, Jehan and Vasudevan, Venu},
+  title     = {{uWave}: Accelerometer-based personalized gesture recognition and its applications},
+  journal   = {Pervasive and Mobile Computing},
+  year      = {2009},
+  volume    = {5},
+  number    = {6},
+  pages     = {657--675},
+  publisher = {Elsevier},
+  doi       = {10.1016/j.pmcj.2009.07.007},
+}
+
+@article{warpinglcss,
+  author  = {Nguyen-Dinh, Long-Van and Calatroni, Alberto and Tr{\"o}ster, Gerhard},
+  title   = {Robust Online Gesture Recognition with Crowdsourced Annotations},
+  journal = {Journal of Machine Learning Research (JMLR)},
+  year    = {2014},
+  volume  = {15},
+  number  = {1},
+  pages   = {3187--3220},
+}
+
+@article{junker,
+  author    = {Junker, Holger and Amft, Oliver and Lukowicz, Paul and Tr{\"o}ster, Gerhard},
+  title     = {Gesture spotting with body-worn inertial sensors to detect user activities},
+  journal   = {Pattern Recognition},
+  year      = {2008},
+  volume    = {41},
+  number    = {6},
+  pages     = {2010--2024},
+  publisher = {Elsevier},
+  doi       = {10.1016/j.patcog.2007.11.016},
+}
+
+@inproceedings{sensorlm,
+  author    = {Zhang, Yuwei and Ayush, Kumar and Qiao, Siyuan and Heydari, A. Ali and Narayanswamy, Girish and Xu, Maxwell A. and Metwally, Ahmed A. and Xu, Shawn and Garrison, Jake and Xu, Xuhai and Althoff, Tim and Liu, Yun and Kohli, Pushmeet and Zhan, Jiening and Malhotra, Mark and Patel, Shwetak and Mascolo, Cecilia and Liu, Xin and McDuff, Daniel and Yang, Yuzhe},
+  title     = {{SensorLM}: Learning the Language of Wearable Sensors},
+  booktitle = {Advances in Neural Information Processing Systems 38 (NeurIPS)},
+  year      = {2025},
+  publisher = {Curran Associates},
+  address   = {San Diego, CA},
+  note      = {arXiv:2506.09108},
+}
+
+@inproceedings{lsm1,
+  author    = {Narayanswamy, Girish and Liu, Xin and Ayush, Kumar and Yang, Yuzhe and Xu, Xuhai and Liao, Shun and Garrison, Jake and Tailor, Shyam A. and Sunshine, Jacob E. and Liu, Yun and Althoff, Tim and Narayanan, Shrikanth and Kohli, Pushmeet and Zhan, Jiening and Malhotra, Mark and Patel, Shwetak N. and Abdel-Ghaffar, Samy and McDuff, Daniel},
+  title     = {Scaling Wearable Foundation Models},
+  booktitle = {The Thirteenth International Conference on Learning Representations (ICLR)},
+  year      = {2025},
+  publisher = {OpenReview.net},
+  address   = {Singapore},
+  note      = {arXiv:2410.13638},
+}
+
+@article{lsm2,
+  author  = {Xu, Maxwell A. and Narayanswamy, Girish and Ayush, Kumar and Spathis, Dimitris and Liao, Shun and Tailor, Shyam A. and Metwally, Ahmed and Heydari, A. Ali and Zhang, Yuwei and Garrison, Jake and Abdel-Ghaffar, Samy and Xu, Xuhai and Gu, Ken and Sunshine, Jacob E. and Poh, Ming-Zher and Liu, Yun and Althoff, Tim and Narayanan, Shrikanth and Kohli, Pushmeet and Malhotra, Mark and Patel, Shwetak N. and Yang, Yuzhe and Rehg, James M. and Liu, Xin and McDuff, Daniel},
+  title   = {{LSM-2}: Learning from Incomplete Wearable Sensor Data},
+  journal = {arXiv preprint arXiv:2506.05321},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2506.05321},
+}
+
+@article{inertia1,
+  author  = {Xu, Zongzhe and Anand, Aakarsh and Jiang, Sarah and Zhuang, Chuntung and Shuai, Zitao and Sankararaman, Sriram and Yang, Yuzhe},
+  title   = {{Inertia-1}: An Open Exploration of Wearable Motion Foundation Models},
+  journal = {arXiv preprint arXiv:2607.06617},
+  year    = {2026},
+}
+
+@inproceedings{relcon,
+  author    = {Xu, Maxwell A. and Narain, Jaya and Darnell, Gregory and Hallgr{\'i}msson, Haraldur T{\'o}mas and Jeong, Hyewon and Forde, Darren and Fineman, Richard and Raghuram, Karthik Jayaraman and Rehg, James M. and Ren, Shirley You},
+  title     = {{RelCon}: Relative Contrastive Learning for a Motion Foundation Model for Wearable Data},
+  booktitle = {The Thirteenth International Conference on Learning Representations (ICLR)},
+  year      = {2025},
+  publisher = {OpenReview.net},
+  address   = {Singapore},
+  note      = {arXiv:2411.18822},
+}
+
+@article{harfmsurvey,
+  author    = {Bian, Sizhen and Liu, Mengxi and Ray, Lala Shakti Swarup and Zhou, Bo and Guo, Bin and Yu, Zhiwen and Pl{\"o}tz, Thomas and Lukowicz, Paul and Yuan, Siyu and Fortes Rey, Vitor},
+  title     = {Foundation Models Defining a New Era in Sensor-based Human Activity Recognition: A Survey and Outlook},
+  journal   = {Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies (IMWUT)},
+  year      = {2026},
+  volume    = {10},
+  number    = {2},
+  articleno = {31},
+  pages     = {1--38},
+  publisher = {ACM},
+  doi       = {10.1145/3810230},
+  note      = {arXiv:2604.02711},
 }
