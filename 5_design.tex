@@ -20,14 +20,18 @@ isolate it.
     \setlength{\abovecaptionskip}{4pt}
     \setlength{\belowcaptionskip}{-4pt}
   \input{figures/fig_tokenizer.tex}
-  \caption{The physical-frequency constant-$Q$ filterbank. Each native-rate patch is
-  Hann-windowed, split into a signed quasi-DC component and an AC residual, transformed by a
-  zero-padded real DFT whose bin $m$ maps to the physical frequency $mr/S$, and read out by a
-  bank of $K{=}32$ log-spaced Gaussian bands whose centers are fixed \emph{in Hz}. Because the
-  bin$\to$Hz map absorbs the rate, the same band means the same physical frequency at $20$,
-  $50$, and $100$\,Hz, and no interpolation exists anywhere in the path. Bands whose support
-  crosses a rate's Nyquist guard are \emph{masked}, not fabricated: at $20$\,Hz six of the
-  $32$ bands are unobservable and are flagged as such to the encoder.}
+  \caption{\textbf{The physical-frequency constant-$Q$ filterbank, and what a token carries.}
+  \emph{Top:} the analysis bank---$K{=}32$ Gaussian bands, log-spaced over $0.3$--$15$\,Hz at
+  $Q{=}4$, with centres fixed \emph{in Hz}. Because a native-rate zero-padded rDFT maps bin $m$
+  to $mr/S$, the same bank reads every sampling rate without resampling, so a band denotes the
+  same physical frequency on every device. Dashed lines mark the Nyquist guard
+  $0.9\,(r/2)$ for the two lowest rates in the corpus. \emph{Bottom:} the real observability
+  and resolution vectors the tokenizer emits alongside the energies, for three
+  configurations---these are part of the token, not diagnostics. A $20$\,Hz stream loses six
+  high bands it physically cannot measure; a $0.5$\,s patch cannot resolve nine low bands
+  because fewer than one cycle fits in the window. In both cases the affected bands are
+  \emph{declared}, so the encoder can tell an unmeasured band from a genuinely quiet one
+  rather than reading a fabricated zero as silence.}
   \label{fig:tokenizer}
 \end{figure}
 
@@ -47,11 +51,41 @@ single axis, so every augmented sample corresponds to a device orientation that 
 occur.
 
 Accelerometer streams are gravity-aware. The quasi-static component below the analysis band is
-split off as a \emph{signed} per-axis DC feature rather than removed, so posture survives:
-lying and standing differ in the DC term even when their AC content is indistinguishable.
+split off as a \emph{signed} per-axis DC feature rather than removed, so posture survives.
+Figure~\ref{fig:gravity} shows why this matters and, equally, where it stops helping. Averaged
+over $200$ real waist-phone windows each, standing, sitting and lying deposit almost no energy
+in the frequency path at all---peak band energy is around $3\times10^{-3}$, three orders of
+magnitude below the gravity term---and what little structure remains separates no pair
+distinctly, with all three pairwise cosines falling in a narrow $0.84$--$0.88$ range. In the
+signed DC term the same windows separate sharply: standing and lying are essentially orthogonal
+(cosine $-0.04$), because gravity has moved off one axis and onto two. A design that achieves orientation robustness by \emph{invariance}
+discards precisely this quantity, and with it the distinction between lying down and standing
+still---an activity pair that matters in every sleep, posture and fall application. The same
+figure is honest about the limit: standing and sitting remain close in DC ($0.99$) at a waist
+placement, so that pair is not recoverable this way and must come from elsewhere.
 Because gravity conventions differ across platforms, the convention is declared in the sensor's
 text (below) and a gravity-removal augmentation is applied with low probability so the encoder
 sees both conventions for the same underlying motion.
+
+\begin{figure*}[t]
+    \centering
+    \setlength{\abovecaptionskip}{4pt}
+    \setlength{\belowcaptionskip}{-6pt}
+  \input{figures/fig_gravity.tex}
+  \caption{\textbf{Why gravity is conditioned on rather than normalised away.} Three static
+  postures from the UCI-HAR waist-phone stream ($200$ windows each, $1.5$\,s patches, real
+  tokenizer DSP path). \emph{Left:} a static posture deposits almost
+  nothing in the frequency path---note the $\times10^{-3}$ axis, three orders of magnitude below
+  the gravity term on the right---and the residual structure separates no pair distinctly (all
+  three pairwise cosines sit within $0.84$--$0.88$). \emph{Right:} the signed per-axis DC the band path removes places lying almost
+  orthogonal to standing (cosine $-0.04$), because gravity has redistributed across axes. Any
+  design that buys orientation robustness through rotation \emph{invariance} throws this away
+  and cannot distinguish lying down from standing still. The figure also shows the limit of the
+  mechanism: standing and sitting stay close in DC at the waist ($0.99$), so that distinction
+  is not available here---which is the same pair Section~\ref{sec:geometry} finds inseparable
+  in text, and is why neither channel alone is sufficient.}
+  \label{fig:gravity}
+\end{figure*}
 
 \subsubsection{A physical-frequency constant-$Q$ filterbank}
 \label{sec:filterbank}

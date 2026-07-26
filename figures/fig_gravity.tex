@@ -1,0 +1,60 @@
+% =====================================================================
+% fig_gravity.tex --- why the signed DC term is kept instead of being
+% normalised away (or discarded by rotation invariance).
+%
+% PROVENANCE: UCI-HAR waist-phone stream (gravity PRESENT per the corpus
+% deployment policy), 50 Hz.  For each of the three static postures we take the
+% first 200 windows, cut a 1.5 s patch, and run the REAL tokenizer DSP path
+% (_spectral_power -> _apply_filterbank), then average.  Left = the band
+% energies the AC path produces (mean over the 3 accelerometer channels).
+% Right = the signed per-axis DC the band path removes.  Cosines in the caption
+% are measured over those same vectors.  Generated 2026-07-26.
+% =====================================================================
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}
+
+% -------- LEFT: the AC spectrum says almost nothing ----------------
+\begin{axis}[
+  name=acax,
+  width=0.40\textwidth, height=3.3cm,
+  xmode=log, log basis x=10, xmin=0.28, xmax=17, ymin=0, ymax=4.110,
+  xtick={0.3,1,3,10}, xticklabels={0.3,1,3,10},
+  xlabel={band centre (Hz)}, ylabel={band energy ($\times 10^{-3}$)},
+  xlabel style={font=\scriptsize,yshift=2pt}, ylabel style={font=\scriptsize,yshift=-4pt},
+  xticklabel style={font=\scriptsize}, yticklabel style={font=\scriptsize},
+  axis line style={draw=halogray!60}, tick style={draw=halogray!60},
+  title={\scriptsize\bfseries what the AC path sees}, title style={yshift=-2pt},
+  scale only axis,
+]
+\addplot[draw=haloblue,line width=0.8pt]                  coordinates {(0.3000,0.0610) (0.3404,0.4468) (0.3861,0.8872) (0.4381,0.6423) (0.4970,0.6031) (0.5638,1.0999) (0.6397,1.1154) (0.7257,1.2727) (0.8233,1.4017) (0.9341,1.4417) (1.0597,1.4164) (1.2022,1.3346) (1.3639,1.2502) (1.5474,1.2286) (1.7555,1.3037) (1.9916,1.4560) (2.2595,1.6595) (2.5634,1.9484) (2.9082,2.3506) (3.2993,2.7159) (3.7431,2.8342) (4.2466,2.6803) (4.8177,2.3485) (5.4657,2.0460) (6.2009,1.9317) (7.0349,1.8383) (7.9811,1.5986) (9.0546,1.3035) (10.2725,0.9996) (11.6541,0.7133) (13.2217,0.4885) (15.0000,0.3438)};
+\addplot[draw=haloorange,line width=0.8pt]                coordinates {(0.3000,0.1478) (0.3404,1.0519) (0.3861,2.0411) (0.4381,1.4931) (0.4970,1.3630) (0.5638,2.3938) (0.6397,2.3890) (0.7257,2.6052) (0.8233,2.7596) (0.9341,2.6883) (1.0597,2.4827) (1.2022,2.1785) (1.3639,1.9034) (1.5474,1.7756) (1.7555,1.8360) (1.9916,2.0422) (2.2595,2.2914) (2.5634,2.4228) (2.9082,2.3406) (3.2993,2.1353) (3.7431,1.9597) (4.2466,1.9046) (4.8177,1.8735) (5.4657,1.6638) (6.2009,1.3949) (7.0349,1.2050) (7.9811,1.0597) (9.0546,0.9446) (10.2725,0.7683) (11.6541,0.5156) (13.2217,0.3158) (15.0000,0.2042)};
+\addplot[draw=halogreen,line width=0.8pt,densely dashed]  coordinates {(0.3000,0.0541) (0.3404,0.3896) (0.3861,0.7707) (0.4381,0.5589) (0.4970,0.5245) (0.5638,0.9542) (0.6397,0.9803) (0.7257,1.1589) (0.8233,1.3309) (0.9341,1.4770) (1.0597,1.6083) (1.2022,1.7268) (1.3639,1.8449) (1.5474,1.9799) (1.7555,2.1451) (1.9916,2.3314) (2.2595,2.4749) (2.5634,2.4720) (2.9082,2.3015) (3.2993,2.1280) (3.7431,2.1633) (4.2466,2.4378) (4.8177,2.7007) (5.4657,2.6873) (6.2009,2.4803) (7.0349,2.1702) (7.9811,1.8640) (9.0546,1.7945) (10.2725,1.6168) (11.6541,1.1058) (13.2217,0.6040) (15.0000,0.3516)};
+\node[font=\scriptsize,anchor=north east,align=right] at (rel axis cs:0.99,0.99)
+  {\textcolor{haloblue}{standing} \textcolor{haloorange}{sitting}
+   \textcolor{halogreen}{lying}};
+\node[font=\scriptsize\itshape,color=halogray,anchor=south,align=center]
+  at (rel axis cs:0.52,0.04) {note the $\times 10^{-3}$ axis --- the DC term\\
+   on the right is $\sim\!1$\,g, a thousandfold larger};
+\end{axis}
+
+% -------- RIGHT: the signed DC separates posture -------------------
+\begin{axis}[
+  at={(acax.right of east)}, anchor=left of west, xshift=10mm,
+  width=0.36\textwidth, height=3.3cm,
+  ybar, bar width=4.2pt,
+  symbolic x coords={acc x,acc y,acc z}, xtick=data,
+  xticklabel style={font=\scriptsize}, yticklabel style={font=\scriptsize},
+  ymin=-0.35, ymax=1.35, ylabel={signed DC (g)},
+  ylabel style={font=\scriptsize,yshift=-4pt},
+  axis line style={draw=halogray!60}, tick style={draw=halogray!60},
+  title={\scriptsize\bfseries what the DC term sees}, title style={yshift=-2pt},
+  scale only axis, clip=false,
+]
+\draw[draw=halogray!50,thin] (rel axis cs:0,0) -- (rel axis cs:1,0);
+\addplot[draw=haloblue,fill=haloblue!55]     coordinates {(acc x,1.001) (acc y,-0.114) (acc z,0.086)};
+\addplot[draw=haloorange,fill=haloorange!55] coordinates {(acc x,0.954) (acc y,0.026) (acc z,0.143)};
+\addplot[draw=halogreen,fill=halogreen!55]   coordinates {(acc x,-0.014) (acc y,0.424) (acc z,0.449)};
+\node[font=\scriptsize,anchor=north east,align=right] at (rel axis cs:1.02,1.02)
+  {standing\,/\,lying\\ DC cosine $=-0.04$};
+\end{axis}
+\end{tikzpicture}}
