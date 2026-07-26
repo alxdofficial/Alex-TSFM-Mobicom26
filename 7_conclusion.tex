@@ -15,13 +15,13 @@ space.
 contribution---padding with a mask is one line of preprocessing---and recognising unseen label
 \emph{strings} is not one either, which is why every closed-vocabulary baseline gets ConSE. Where
 labels are plentiful and the configuration is fixed and known in advance, we do not expect
-retrieval to beat supervised fitting. Our corpus is roughly $570$ hours, orders of magnitude
+retrieval to beat supervised fitting. Our corpus is $572$ hours, orders of magnitude
 smaller than the largest released accelerometer models; the evidence engine's ceiling is its
 encoder, since no decoder recovers from retrieving the wrong activity; windows are
 single-activity, so the model recognises segments rather than finding boundaries; and the encoder
 supports causal operation but this submission does not measure it. The most valuable direction is
 the one Phase~A makes free: needing no labels, the corpus can grow into unlabelled free-living
-data. The curve also carries a pre-registered kill criterion: if a linear probe on frozen
+data. The label-efficiency curve also carries a pre-registered kill criterion: if a linear probe on frozen
 features dominates retrieval at \emph{every} budget, the non-parametric mechanism has no regime
 of its own, leaving only operational properties---append-only updates, on-device enrollment,
 inspectable decisions---and we would report that rather than reframe the metric.

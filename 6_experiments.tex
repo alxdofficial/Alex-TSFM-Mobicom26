@@ -39,7 +39,7 @@ discards the model being tested. CrossHAR and LiMU-BERT release no checkpoint co
 corpus, so we pretrain them on \emph{our} data with their own published objectives, making their
 data identical to ours; harnet, UniMTS and NormWear are used as released, which is faithful but
 means their pretraining corpora differ from ours and from each other. This distinction is
-material---harnet is pretrained on roughly $700$k person-days against our ${\sim}570$
+material---harnet is pretrained on roughly $700$k person-days against our $572$
 hours---and we state it wherever a comparison could be read as data-matched. Closed-vocabulary
 models are bridged to arbitrary label strings with ConSE~\cite{conse}, so that ``can predict an
 unseen label'' is available to every model and is not something HALO is credited for.
@@ -69,8 +69,8 @@ description---against the best member of each baseline group (Appendix~\ref{app:
 \subsection{Q1: The Label-Efficiency Curve}
 \label{sec:label_efficiency}
 
-This is the headline experiment. At each budget $k$ of labelled target windows per class we
-compare three mechanisms on identical data: HALO's memory, given the exemplars as an append with
+This is the headline experiment (Table~\ref{tab:label_efficiency}). At each budget $k$ of
+labelled target windows per class we compare three mechanisms on identical data: HALO's memory, given the exemplars as an append with
 \emph{no gradient update}; a probe on HALO's frozen features; and the same probe on frozen harnet
 features. We additionally report \emph{retrieval over harnet features}---the same mechanism on a
 different encoder---because without it a win could be credited to the mechanism when it belongs

@@ -7,7 +7,7 @@
 HALO is organised as two phases with a hard boundary (Figure~\ref{fig:overview}).
 \textbf{Phase~A} learns a representation using no activity labels whatsoever; \textbf{Phase~B}
 turns that frozen representation into a recogniser for whatever label set a deployment declares,
-using labels only as annotations on stored exemplars. The boundary is where
+using labels only as annotations on stored exemplars. The boundary is where the argument of
 Section~\ref{sec:motivation} lands: L1 says compatibility must be structural, so it belongs in
 the encoder before any label is involved; L2 says the label decision must not be a projection
 into text space, so it belongs after the encoder, in a component swappable per deployment.
@@ -44,9 +44,10 @@ $200$ real waist-phone windows each of standing, sitting and lying, the frequenc
 no pair distinctly (all pairwise cosines within $0.84$--$0.88$) while signed DC places lying
 nearly orthogonal to standing (cosine $-0.04$); a design achieving orientation robustness through
 \emph{invariance} discards that quantity entirely, and with it the distinction between lying down
-and standing still. Figure~\ref{fig:gravity} shows this and its limit---standing and sitting stay
-at $0.99$ in DC, the same pair Section~\ref{sec:geometry} finds inseparable in text, which is why
-neither channel alone suffices. Because gravity conventions differ across platforms, the
+and standing still. Appendix~\ref{app:gravity}, Figure~\ref{fig:gravity} shows this and its
+limit---standing and sitting stay at $0.99$ in DC, the same pair Section~\ref{sec:geometry} finds
+inseparable in text, so neither the frequency path nor the DC term suffices on its own. Because
+gravity conventions differ across platforms, the
 convention is declared in the sensor's text and a gravity-removal augmentation is applied with
 low probability, so the encoder sees both conventions for the same motion.
 
@@ -54,7 +55,8 @@ low probability, so the encoder sees both conventions for the same motion.
 \label{sec:filterbank}
 
 Each patch of each channel becomes one token entirely in the physical-frequency domain
-(Figure~\ref{fig:tokenizer}). The patch is Hann-windowed and its DC component removed, then
+(Appendix~\ref{app:tokenizer}, Figure~\ref{fig:tokenizer}). The patch is Hann-windowed and its DC
+component removed, then
 transformed by a zero-padded real DFT of fixed length $S{=}256$. The zero-padding is what makes
 this rate-agnostic: for a patch sampled at rate $r$, DFT bin $m$ corresponds to physical frequency
 $\phi[m] = mr/S$, so the \emph{same} matrix of bin indices maps to different Hz grids at different
