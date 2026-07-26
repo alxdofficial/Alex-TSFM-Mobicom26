@@ -1,0 +1,284 @@
+% =========================
+% 8_appendix.tex --- follows the bibliography; does not count towards the 12-page limit.
+% Nothing load-bearing for the argument lives here: reviewers are not obligated to read it.
+% =========================
+\appendix
+
+\section{The Dependency Structure Behind the Combination}
+\label{app:entailment}
+
+Section~\ref{sec:combination} claims HALO's four choices are \emph{mutually entailed} rather than
+independently attractive. The four dependencies, in full.
+
+\textbf{Rate anchoring is a precondition for the memory, not a parallel feature.} A
+non-parametric memory only works if a query and a stored exemplar recorded on different devices
+are comparable \emph{as vectors}. If the encoder is rate-\emph{equivariant}---told the rate and
+adapting---then two windows at different rates are related by a learned transformation, and the
+memory must either be indexed per configuration or trust that transformation to be exact. Because
+HALO's band $k$ denotes the same physical frequency for every device, one flat memory is
+well-posed. L1 exists in the form it does because of Phase~B.
+
+\textbf{The granularity of the language conditioning is forced by the retrieval.} Per-channel
+free text~\cite{charm,sensorsvoice,sensorllm} is the natural choice if the conditioning feeds a
+classifier: it is maximally expressive and the head can ignore what it does not need. It is the
+wrong choice if the conditioning feeds a memory, because a description nearly unique to a corpus
+makes \emph{same-corpus} neighbours the nearest ones---precisely the shortcut cross-dataset
+evaluation exists to catch. Attaching identity to the \emph{sensor} keeps the description
+expressive enough to name an unseen device and too coarse to name a dataset. That is why the
+dataset-identity probe is in the paper.
+
+\textbf{Preserving gravity is forced by the geometry finding.} Rotation
+invariance~\cite{unimts} is the standard answer to unknown mounting, and it is lossy in one
+specific way: it discards the gravity direction, and with it posture. Section~\ref{sec:geometry}
+shows that the label pairs a text projection cannot separate are exactly the posture-versus-
+transition pairs (\emph{sitting}/\emph{sitting down}, \emph{lying}/\emph{standing}). A system
+that gives up on the text geometry \emph{must} therefore keep posture in the signal, so
+conditioning rather than invariance is not a preference here but a requirement.
+
+\textbf{Label-free pretraining is forced by the same shortcut argument.} Any closed-vocabulary
+objective over a multi-corpus training set rewards inferring the corpus and predicting its
+marginal. That is survivable for a parametric head, which can be refitted per deployment; it is
+not survivable for a frozen encoder feeding a memory, because the shortcut is baked into the
+stored vectors.
+
+So the four choices form a chain: removing any one invalidates another. That is a different and
+more falsifiable claim than ``we do all of these,'' and Section~\ref{sec:bias_experiments} is
+built to test it---each ablation in Table~\ref{tab:tokenizer_ablation} removes one link and asks
+whether the rest still stand.
+
+\section{Corpus}
+\label{app:corpus}
+
+Table~\ref{tab:datasets} lists the training corpus and the held-out evaluation sets, and
+Figure~\ref{fig:corpus} plots them by placement and native rate.
+
+\begin{figure}[h]
+    \centering
+    \setlength{\abovecaptionskip}{2pt}
+  \input{figures/fig_corpus.tex}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \caption{Corpus. \emph{\#Str} is the number of distinct sensor streams (one per device
+  placement); \emph{Ch} the number of core channels reaching the model (3 = accelerometer only).
+  Window counts are six-second windows on the native-rate grid after physical-plausibility
+  filtering. InclusiveHAR comprises 10 able-bodied and 10 physically disabled subjects.
+  TNDA-HAR is distributed without per-window subject identifiers (see
+  Section~\ref{sec:eval_protocol}).}
+  \label{tab:datasets}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}l r r c r l@{}}
+    \toprule
+    Dataset & Hz & \#Str & Ch & \#Win & Placement(s) \\
+    \midrule
+    \multicolumn{6}{l}{\textit{Training corpus (12 datasets, 20 streams)}}\\
+    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 3 & 144{,}142 & wrist, free-living \\
+    WISDM~\cite{wisdm}                  &  20 & 2 & 6 &  70{,}201 & pocket $+$ wrist \\
+    XRF~V2~\cite{xrf_v2}                &  50 & 6 & 6 &  34{,}764 & pockets, wrists, glasses \\
+    NFI-FARED~\cite{nfi_fared}          & 100 & 2 & 6 &  26{,}520 & wrist $+$ lower back \\
+    HARMES~\cite{harmes}                &  50 & 1 & 6 &  18{,}576 & wrist \\
+    UniMiB~SHAR~\cite{unimibi}          &  50 & 1 & 3 &  11{,}771 & trouser pocket \\
+    UCI-HAR~\cite{ucihar}               &  50 & 1 & 6 &  10{,}299 & waist \\
+    HHAR~\cite{hhar}                    &  50 & 1 & 6 &   9{,}587 & waist \\
+    KU-HAR~\cite{kuhar}                 & 100 & 1 & 6 &   9{,}233 & waist \\
+    SP-SW-HAR~\cite{sp_sw_har}          & 100 & 2 & 6 &   3{,}757 & pocket $+$ wrist \\
+    PAMAP2~\cite{pamap2}                & 100 & 1 & 6 &   3{,}186 & wrist \\
+    MHEALTH~\cite{mhealth}              &  50 & 1 & 6 &   1{,}104 & wrist \\
+    \midrule
+    \multicolumn{6}{l}{\textit{Held-out evaluation (7 datasets, never trained on)}}\\
+    RealWorld~\cite{realworld}          &  50 & 1 & 6 & 11{,}237 & waist \\
+    MotionSense~\cite{motionsense}      &  50 & 1 & 6 &  4{,}534 & trouser pocket \\
+    USC-HAD~\cite{usc_had}              & 100 & 1 & 6 &  4{,}350 & hip \\
+    UT-Complex~\cite{ut_complex}        &  50 & 1 & 6 &  3{,}900 & wrist \\
+    TNDA-HAR~\cite{tnda_har}            &  50 & 1 & 6 &  3{,}353 & wrist \\
+    Shoaib~\cite{shoaib}                &  50 & 1 & 6 &  2{,}100 & 5 body positions \\
+    InclusiveHAR~\cite{inclusivehar}    &  50 & 1 & 6 &  1{,}260 & waist, mixed abilities \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Deliberate exclusions.} Six datasets were excluded from both splits.
+DSADS~\cite{dsads}, HARTH~\cite{harth}, and Opportunity~\cite{opportunity} use torso and limb IMU
+harnesses rather than phone or watch placements. RecGym~\cite{recgym} is distributed per-axis
+min--max normalised, which destroys the physical scale and gravity component the tokenizer
+depends on. MobiAct~\cite{mobiact} was never materialised into grids. And HAPT~\cite{hapt} is
+excluded because it re-records the same 30 subjects as UCI-HAR~\cite{ucihar}, so including both
+would place the same people on both sides of a supposedly subject-disjoint boundary.
+
+\section{Per-Dataset Results}
+\label{app:perdataset}
+
+\begin{table}[h]
+  \centering
+  \caption{Per-dataset HALO performance at the two ends of the enrollment regime. InclusiveHAR is
+  stratified by ability, because a model that works only for able-bodied users is not a
+  foundation for rehabilitation applications. $^\S$\,TNDA-HAR carries no subject identifiers, so
+  it sits outside the subject-disjoint mean.}
+  \label{tab:per_dataset_app}
+  \scriptsize
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}l cc cc@{}}
+    \toprule
+    & \multicolumn{2}{c}{$k{=}0$} & \multicolumn{2}{c}{$k{=}10$} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    Dataset & Acc & F1 & Acc & F1 \\
+    \midrule
+    MotionSense   & \PH & \PH & \PH & \PH \\
+    RealWorld     & \PH & \PH & \PH & \PH \\
+    Shoaib        & \PH & \PH & \PH & \PH \\
+    InclusiveHAR  & \PH & \PH & \PH & \PH \\
+    \quad\emph{able-bodied} & \PH & \PH & \PH & \PH \\
+    \quad\emph{disabled}    & \PH & \PH & \PH & \PH \\
+    USC-HAD       & \PH & \PH & \PH & \PH \\
+    UT-Complex    & \PH & \PH & \PH & \PH \\
+    \midrule
+    \textbf{Mean} (subject-disjoint) & \PH & \PH & \PH & \PH \\
+    \midrule
+    TNDA-HAR\rlap{$^\S$}     & \PH & \PH & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Baselines}
+\label{app:baselines}
+
+\begin{table}[h]
+  \centering
+  \caption{Baselines and where each sits on the heterogeneity stack. ``Blind'' means the model
+  receives no information about where the sensor was worn. Two baselines are pretrained by us on
+  our corpus with their published objectives (data-matched); three are used as released
+  (faithful, but pretrained on their own, larger corpora). We report the two groups separately
+  rather than averaging over them.}
+  \label{tab:baselines}
+  \scriptsize
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{@{}l l l l l@{}}
+    \toprule
+    Model & Weights & Rate & Channels / placement & Labels \\
+    \midrule
+    LiMU-BERT~\cite{limubert}   & we pretrain & 20\,Hz & 6-ch pad$+$mask; blind & ConSE \\
+    CrossHAR~\cite{crosshar}    & we pretrain & 20\,Hz & 6-ch pad$+$mask; blind & ConSE \\
+    harnet~\cite{sslwearables}  & released    & 30\,Hz & 3-ch acc; wrist & ConSE \\
+    UniMTS~\cite{unimts}        & released    & resamp. & joint-graph placement & native \\
+    NormWear~\cite{normwear}    & released    & 65\,Hz & variable ch; blind & native \\
+    \midrule
+    \textbf{HALO} (ours)        & we train    & \textbf{native} & \textbf{per-sensor language} & \textbf{native} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Parity Control}
+\label{app:parity}
+
+\begin{table}[h]
+  \centering
+  \caption{Parity control: HALO under its native inputs versus baseline-equivalent inputs.
+  Baselines are split by whether their weights were trained on our corpus or released by their
+  authors.}
+  \label{tab:parity}
+  \scriptsize
+  \setlength{\tabcolsep}{6pt}
+  \begin{tabular}{l cc}
+    \toprule
+    Configuration & $k{=}0$ & $k{=}10$ \\
+    \midrule
+    HALO (native Hz, per-sensor text)          & \PH & \PH \\
+    HALO \emph{parity} (20\,Hz, neutral text)  & \PH & \PH \\
+    \midrule
+    Best baseline (data-matched group)         & \PH & \PH \\
+    Best baseline (released-checkpoint group)  & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Gravity as a Signed DC Feature}
+\label{app:gravity}
+
+\begin{figure}[h]
+    \centering
+    \setlength{\abovecaptionskip}{4pt}
+  \resizebox{\columnwidth}{!}{\input{figures/fig_gravity.tex}}
+  \caption{\textbf{Why gravity is conditioned on rather than normalised away.} Three static
+  postures, UCI-HAR waist phone, $200$ windows each through the real tokenizer path.
+  \emph{Left:} the frequency path receives almost nothing (note the $\times10^{-3}$ axis) and
+  separates no pair distinctly---all pairwise cosines fall within $0.84$--$0.88$. \emph{Right:}
+  signed DC places lying nearly orthogonal to standing ($-0.04$), because gravity has
+  redistributed across axes. The limit is shown too: standing and sitting stay at $0.99$ in DC,
+  the same pair Section~\ref{sec:geometry} finds inseparable in text.}
+  \label{fig:gravity}
+\end{figure}
+
+\section{Tokenizer Guardrails}
+\label{app:tokenizer}
+
+\begin{figure}[h]
+    \centering
+    \setlength{\abovecaptionskip}{4pt}
+  \input{figures/fig_tokenizer.tex}
+  \caption{\textbf{The filterbank, and what a token carries.} \emph{Top:} $K{=}32$ Gaussian bands
+  log-spaced over $0.3$--$15$\,Hz; because a native-rate zero-padded rDFT maps bin $m$ to $mr/S$,
+  one bank reads every rate without resampling. Dashed lines mark the Nyquist guard for the two
+  lowest corpus rates. \emph{Bottom:} the real observability and resolution vectors emitted
+  alongside the energies---part of the token, not diagnostics.}
+  \label{fig:tokenizer}
+\end{figure}
+
+Zero-padding beyond the true patch length is frequency-domain interpolation only and does not
+alter band energies; we verified that $S{=}256$ and $S{=}512$ give band-energy cosine $1.000000$
+and identical masks at $20$, $25$, $50$, and $100$\,Hz. Patch lengths exceeding $S$ raise an error
+rather than silently truncating.
+
+\section{Phase-A Specification}
+\label{app:phasea}
+
+The EMA teacher is updated only after an optimizer step (decay $0.996$) and is checkpointed with
+the model. Cross-placement positives are drawn under a quota so that the six-placement recordings
+cannot dominate; positive identity comes from explicit physical-event identifiers written during
+conversion and carried into the pretraining index, never inferred from equal array lengths or row
+alignment, and never from an activity label. Per-objective gradient norms, VICReg component
+values, minimum feature standard deviation, effective rank, and positive similarity by pair type
+are logged every step; non-finite values or representation collapse fail the run rather than
+being smoothed over.
+
+\section{Phase-A Objective Ablation}
+\label{app:objectives}
+
+\begin{table}[h]
+  \centering
+  \caption{Phase-A objective ablation, macro-F1 over the held-out datasets. The last two rows are
+  controls, not variants: they test whether the non-contrastive and label-free choices were worth
+  making.}
+  \label{tab:objective_ablation}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{l cc}
+    \toprule
+    Phase-A configuration & $k{=}0$ & $k{=}10$ \\
+    \midrule
+    Full (A1 fixed$+$EMA, VICReg, TF, placement, rail) & \PH & \PH \\
+    \quad$-$ EMA-latent target (fixed A1 only)      & \PH & \PH \\
+    \quad$-$ augmentation VICReg                    & \PH & \PH \\
+    \quad$-$ time--frequency consistency            & \PH & \PH \\
+    \quad$-$ cross-placement positives              & \PH & \PH \\
+    \quad$-$ physical grounding rail                & \PH & \PH \\
+    \midrule
+    VICReg $\rightarrow$ NT-Xent (contrastive control) & \PH & \PH \\
+    Label-supervised recipe (SupCon; \emph{uses labels}) & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Phase-B Episodic Training}
+\label{app:phaseb}
+
+The decoder is trained on episodes that vary, independently: the candidate budget
+($10$--$100\%$ of the vocabulary); the number of true-label memory exemplars
+($0$, $1$, $2$, $4$, $8$, or all); the support available for competing labels; whether memory is
+same-configuration, cross-configuration only, or missing the query's configuration entirely; the
+kind of distractors present (random, language-near, motion-family-near, physically confusable);
+and whether the truth is present at all. Complete label \emph{families} are held out of decoder
+training and reserved for model selection, so candidate-text reasoning is always tested on
+concepts the decoder never fit. Head collapse in the retrieval projections is resisted by output
+decorrelation, projection diversity, and contribution-usage regularisation.

@@ -4,169 +4,102 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\PENDING{The corpus, protocol, baseline roster, and table structure in this section are final
-and describe what is implemented. Result cells are reserved space, shown in orange, and are
-filled once the training run completes.}
+\PENDING{Corpus, protocol, and table structure are final; orange cells are reserved for results.}
 
 \subsection{Methodology}
 \label{sec:methodology}
 
-We ask four questions. \textbf{(Q1)} Along the label-efficiency curve---$k$ target
-exemplars per class, for $k$ from zero up to full supervision---where does HALO stand against
-strong frozen encoders, and is there a regime it owns? \textbf{(Q2)} Does the tokenizer's inductive bias do
-what Section~\ref{sec:no_grammar} claims---is the representation genuinely rate-invariant, is
-the conditioning too coarse to identify a corpus, and, decisively, does anchoring let one flat
-memory serve devices it was not built from? \textbf{(Q3)} Which Phase-A
-objectives carry the transfer, and does any of them beat its own untrained control?
-\textbf{(Q4)} Does the system run on a phone, and does it behave in a real deployment?
+We ask four questions. \textbf{(Q1)} Along the label-efficiency curve, where does HALO stand
+against strong frozen encoders, and is there a regime it owns? \textbf{(Q2)} Does the tokenizer's
+inductive bias do what Section~\ref{sec:no_grammar} claims---and, decisively, does anchoring let
+one flat memory serve devices it was not built from? \textbf{(Q3)} Which Phase-A objectives carry
+the transfer? \textbf{(Q4)} Does the system run on a phone?
 
 \subsubsection{Data}
 \label{sec:datasets}
 
-We train on 12 public HAR datasets contributing 20 distinct sensor streams
-(Table~\ref{tab:datasets}, top), and evaluate on 7 datasets never seen by any model during
-training (bottom). After conversion to native-rate grids and the removal of 95 windows whose
-values exceed physically possible sensor rails, the corpus is $343{,}140$ non-overlapping
-six-second windows---$572$ hours of signal---over $93$ activity labels, split subject-disjointly
-into $300{,}231$ training and $42{,}909$ validation windows. The validation split is constructed by a greedy label-cover procedure so
-that all $93$ labels are represented.
-
-\begin{table}[t]
-  \centering
-  \resizebox{\columnwidth}{!}{
-  \begin{tabular}{l r r c r l}
-    \toprule
-    Dataset & Hz & \#Str & Ch & \#Win & Placement(s) \\
-    \midrule
-    \multicolumn{6}{l}{\textit{Training corpus (12 datasets, 20 streams)}}\\
-    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 3 & 144{,}142 & wrist, free-living \\
-    WISDM~\cite{wisdm}                  &  20 & 2 & 6 &  70{,}201 & pocket $+$ wrist \\
-    XRF~V2~\cite{xrf_v2}                &  50 & 6 & 6 &  34{,}764 & pockets, wrists, glasses, earbuds \\
-    NFI-FARED~\cite{nfi_fared}          & 100 & 2 & 6 &  26{,}520 & wrist $+$ lower back \\
-    HARMES~\cite{harmes}                &  50 & 1 & 6 &  18{,}576 & wrist \\
-    UniMiB~SHAR~\cite{unimibi}          &  50 & 1 & 3 &  11{,}771 & trouser pocket \\
-    UCI-HAR~\cite{ucihar}               &  50 & 1 & 6 &  10{,}299 & waist \\
-    HHAR~\cite{hhar}                    &  50 & 1 & 6 &   9{,}587 & waist \\
-    KU-HAR~\cite{kuhar}                 & 100 & 1 & 6 &   9{,}233 & waist \\
-    SP-SW-HAR~\cite{sp_sw_har}          & 100 & 2 & 6 &   3{,}757 & pocket $+$ wrist \\
-    PAMAP2~\cite{pamap2}                & 100 & 1 & 6 &   3{,}186 & wrist \\
-    MHEALTH~\cite{mhealth}              &  50 & 1 & 6 &   1{,}104 & wrist \\
-    \midrule
-    \multicolumn{6}{l}{\textit{Held-out evaluation (7 datasets, never trained on)}}\\
-    MotionSense~\cite{motionsense}      &  50 & 1 & 6 & --- & trouser pocket \\
-    RealWorld~\cite{realworld}          &  50 & 1 & 6 & --- & waist \\
-    Shoaib~\cite{shoaib}                &  50 & 1 & 6 & --- & 5 body positions \\
-    InclusiveHAR~\cite{inclusivehar}    &  50 & 1 & 6 & --- & waist, mixed abilities \\
-    USC-HAD~\cite{usc_had}              & 100 & 1 & 6 & --- & hip \\
-    TNDA-HAR~\cite{tnda_har}            &  50 & 1 & 6 & --- & wrist \\
-    UT-Complex~\cite{ut_complex}        &  50 & 1 & 6 & --- & wrist \\
-    \bottomrule
-  \end{tabular}}
-  \caption{Corpus. \emph{\#Str} is the number of distinct sensor streams (one per device
-  placement); \emph{Ch} is the number of core channels reaching the model
-  (3 = accelerometer only). Window counts are six-second windows on the native-rate grid after
-  physical-plausibility filtering. InclusiveHAR comprises 10 able-bodied and 10 physically
-  disabled subjects and is additionally reported with an ability-stratified breakdown.
-  Six datasets were deliberately excluded from both splits. DSADS~\cite{dsads},
-  HARTH~\cite{harth}, and Opportunity~\cite{opportunity} use torso and limb IMU harnesses
-  rather than phone or watch placements; RecGym~\cite{recgym} is distributed per-axis
-  min--max normalised, which destroys the physical scale and gravity component the tokenizer
-  depends on; MobiAct~\cite{mobiact} was never materialised into grids; and
-  HAPT~\cite{hapt} is excluded because it re-records the same 30 subjects as
-  UCI-HAR~\cite{ucihar}, so including both would place the same people on both sides of a
-  supposedly subject-disjoint boundary.}
-  \label{tab:datasets}
-   \vspace{-1em}
-\end{table}
+We train on 12 public HAR datasets contributing 20 distinct sensor streams and evaluate on 7
+never seen during training; Appendix~\ref{app:corpus} lists both with per-dataset rates,
+placements, and window counts, and records the six datasets deliberately excluded and why. After
+conversion to native-rate grids and removal of 95 windows exceeding physically possible sensor
+rails, the corpus is $343{,}140$ non-overlapping six-second windows---$572$ hours---over $93$
+labels, split subject-disjointly into $300{,}231$ training and $42{,}909$ validation windows, the
+latter built by a greedy label-cover procedure so all $93$ labels are represented. Training rates
+span $20$--$100$\,Hz over placements at the wrist, waist, pocket, lower back, ear, and head; the
+held-out sets range from $1{,}260$ to $11{,}237$ windows over $6$ to $13$ labels.
 
 \subsubsection{Baselines and the fairness contract}
 \label{sec:baselines}
 
-Cross-model comparison in this setting is easy to get wrong, because the models do not accept
-the same inputs. We therefore state a single contract and apply it uniformly
-(Table~\ref{tab:baselines}). Each model occupies a \emph{level} on each of four tiers---base
-architecture, sampling rate, channels/placement, and label vocabulary---and we never modify a
-released checkpoint's input contract, because doing so discards the model being tested. Two
-baselines (CrossHAR, LiMU-BERT) release no checkpoint compatible with our corpus, so we
-pretrain them ourselves on \emph{our} training data with their own published objectives, which
-makes their data identical to ours; three (harnet, UniMTS, NormWear) are used as released,
-which is faithful but means their pretraining corpora differ from ours and from each other.
-This distinction is material---harnet is pretrained on roughly $700$k person-days against our
-$\sim\!570$ hours of windowed signal---and we state it wherever a comparison could be read as a like-for-like
-data-matched result. Closed-vocabulary models are bridged to arbitrary label strings with
-ConSE~\cite{conse}, which projects a classifier's softmax over its training labels into the
-text-embedding space, so that ``can predict an unseen label'' is available to every model and
-is not something HALO is credited for.
-
-\begin{table}[t]
-  \centering
-  \resizebox{\columnwidth}{!}{
-  \small
-  \begin{tabular}{l l l l l}
-    \toprule
-    Model & Weights & Rate & Channels / placement & Labels \\
-    \midrule
-    LiMU-BERT~\cite{limubert}   & we pretrain & fixed 20\,Hz & 6-ch pad$+$mask; blind & ConSE \\
-    CrossHAR~\cite{crosshar}    & we pretrain & fixed 20\,Hz & 6-ch pad$+$mask; blind & ConSE \\
-    harnet~\cite{sslwearables}  & released    & fixed 30\,Hz & 3-ch acc; wrist-implied & ConSE \\
-    UniMTS~\cite{unimts}        & released    & resampled    & joint-graph placement, 3-ch & native text \\
-    NormWear~\cite{normwear}    & released    & fixed 65\,Hz & variable ch $+$ mask; blind & native text \\
-    \midrule
-    \textbf{HALO} (ours)        & we train    & \textbf{native} & \textbf{per-sensor language} & \textbf{native} \\
-    \bottomrule
-  \end{tabular}}
-  \caption{Baselines and where each sits on the heterogeneity stack. ``Blind'' means the model
-  receives no information about where the sensor was worn. \emph{Weights}: two baselines are
-  pretrained by us on our corpus with their published objectives (data-matched); three are used
-  as released (faithful, but pretrained on their own, larger, corpora---harnet on
-  ${\sim}700$k person-days). We report both groups separately rather than averaging over them.}
-  \label{tab:baselines}
-  \vspace{-1em}
-\end{table}
+Cross-model comparison here is easy to get wrong, because the models do not accept the same
+inputs. We state one contract and apply it uniformly (Appendix~\ref{app:baselines}): each model
+occupies a \emph{level} on each of four tiers---architecture, rate, channels/placement, and label
+vocabulary---and we never modify a released checkpoint's input contract, because doing so
+discards the model being tested. CrossHAR and LiMU-BERT release no checkpoint compatible with our
+corpus, so we pretrain them on \emph{our} data with their own published objectives, making their
+data identical to ours; harnet, UniMTS and NormWear are used as released, which is faithful but
+means their pretraining corpora differ from ours and from each other. This distinction is
+material---harnet is pretrained on roughly $700$k person-days against our ${\sim}570$
+hours---and we state it wherever a comparison could be read as data-matched. Closed-vocabulary
+models are bridged to arbitrary label strings with ConSE~\cite{conse}, so that ``can predict an
+unseen label'' is available to every model and is not something HALO is credited for.
 
 \subsubsection{Protocol}
 \label{sec:eval_protocol}
 
-\emph{Scoring.} Following the good-practice arguments of the zero-shot evaluation
-literature~\cite{zslgbu}, every held-out dataset is scored against its \emph{own} label
-strings, never a shared training-wide ontology, so a prediction counts only if it retrieves that dataset's exact
-activity name. Macro-F1 is primary, with accuracy alongside, because held-out label
-distributions are imbalanced.
+\emph{Scoring.} Following the zero-shot evaluation literature~\cite{zslgbu}, every held-out
+dataset is scored against its \emph{own} label strings, never a shared training-wide ontology, so
+a prediction counts only if it retrieves that dataset's exact activity name. Macro-F1 is primary,
+with accuracy alongside, because held-out label distributions are imbalanced.
 
-\emph{Splits.} All few-shot fits and all memory writes use subjects disjoint from those
-evaluated. Where a cohort is small enough that a single split is unstable, we rotate over
-grouped folds and report a confidence interval.
+\emph{Splits.} All few-shot fits and memory writes use subjects disjoint from those evaluated,
+rotating over grouped folds with a confidence interval where a cohort is small enough that one
+split is unstable. TNDA-HAR is distributed without per-window subject identifiers, so a
+subject-disjoint boundary cannot be constructed for it; we report it separately and exclude it
+from the subject-disjoint mean rather than implying a guarantee we cannot honour.
 
-\emph{Label leakage.} The label-text ensemble used at inference is purged of synonyms drawn
-from the evaluation datasets, so that no evaluation vocabulary is smuggled in through
-paraphrase. Retrieval hyper-parameters are selected on held-out \emph{training} configurations,
-never on evaluation cells.
+\emph{Label leakage.} The inference-time label-text ensemble is purged of synonyms drawn from the
+evaluation datasets, so no evaluation vocabulary enters through paraphrase, and retrieval
+hyper-parameters are selected on held-out \emph{training} configurations.
 
 \emph{Parity control.} To separate the architecture from its native-rate and rich-text inputs,
-HALO is additionally evaluated under baseline-equivalent inputs: common $20$\,Hz resampling and
-a neutral sensor description (Table~\ref{tab:parity}).
+HALO is also evaluated under baseline-equivalent inputs---$20$\,Hz resampling, neutral sensor
+description---against the best member of each baseline group (Appendix~\ref{app:parity}).
 
 \subsection{Q1: The Label-Efficiency Curve}
 \label{sec:label_efficiency}
 
-This is the headline experiment. For each held-out dataset and each budget $k$ of labelled
-target windows per class, we compare three mechanisms on identical data: HALO's memory, given
-the $k$ exemplars as an append with \emph{no gradient update}; a probe fitted on the same $k$
-exemplars over HALO's frozen features; and the same probe over frozen harnet features, which
-is the strong-representation control. We additionally report \emph{retrieval over harnet
-features}---the same memory mechanism on a different encoder---because without it a win could
-be attributed to the mechanism when it belongs to the representation, or the reverse.
+This is the headline experiment. At each budget $k$ of labelled target windows per class we
+compare three mechanisms on identical data: HALO's memory, given the exemplars as an append with
+\emph{no gradient update}; a probe on HALO's frozen features; and the same probe on frozen harnet
+features. We additionally report \emph{retrieval over harnet features}---the same mechanism on a
+different encoder---because without it a win could be credited to the mechanism when it belongs
+to the representation, or the reverse.
+
+The budget is reported in two units, because neither alone is honest: per-class $k$ is what a
+deployment controls, while the fraction of the target dataset makes the numbers comparable to the
+$1\%$/$5\%$/$10\%$ convention of the transfer literature. On our held-out sets the two coincide
+closely---$k{=}10$ per class is $0.7$--$4.8\%$ of a dataset---and the grid stops at $k{=}100$
+because beyond it the budget exceeds what the smaller sets contain.
 
 \begin{table}[t]
   \centering
-  \resizebox{\columnwidth}{!}{
-  \small
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{l cccccc}
+  \caption{Macro-F1 versus label budget, averaged over the held-out datasets, subject-disjoint
+  throughout. $k{=}0$ is the zero-shot point and $k{=}\text{full}$ the supervised one; they are
+  ends of one curve, not separate experiments, and every row uses \emph{one} frozen encoder
+  across all $k$. The second header row converts $k$ into the mean fraction of a target dataset
+  it represents. $^\dagger$\,The mechanism-versus-representation control: if retrieval helps only
+  on HALO features the contribution is the encoder; if it helps equally on harnet's, it is the
+  memory. We pre-register that we report this control regardless of which way it falls.}
+  \label{tab:label_efficiency}
+  \scriptsize
+  \setlength{\tabcolsep}{1.5pt}
+  \begin{tabular}{@{}l cccccc@{}}
     \toprule
     & \multicolumn{6}{c}{labelled target windows per class ($k$)} \\
     \cmidrule(lr){2-7}
-    Mechanism & 0 & 1 & 5 & 10 & 50 & full \\
+    Mechanism & 0 & 5 & 10 & 25 & 100 & full \\
+    \emph{(mean \% of target)} & \emph{0} & \emph{1.3} & \emph{2.7} & \emph{6.6} & \emph{27} & \emph{100} \\
     \midrule
     HALO memory (no gradient step)   & \PH & \PH & \PH & \PH & \PH & \PH \\
     HALO frozen $+$ probe            & \PH & \PH & \PH & \PH & \PH & \PH \\
@@ -178,55 +111,17 @@ be attributed to the mechanism when it belongs to the representation, or the rev
     LiMU-BERT $+$ ConSE              & \PH & \PH & \PH & \PH & \PH & \PH \\
     NormWear (native text)           & \PH & \PH & \PH & \PH & \PH & \PH \\
     \bottomrule
-  \end{tabular}}
-  \caption{Macro-F1 versus label budget,
-  averaged over the 7 held-out datasets, subject-disjoint throughout. $k{=}0$ is the zero-shot
-  point and $k{=}\text{full}$ the supervised one; they are ends of one curve, not separate
-  experiments, and every row uses \emph{one} frozen encoder across all $k$.
-  $^\dagger$\,The mechanism-versus-representation control: if retrieval helps only on HALO
-  features, the contribution is the encoder; if it helps equally on harnet's, it is the memory.
-  We pre-register that we will report this control regardless of which way it falls.}
-  \label{tab:label_efficiency}
-  \vspace{-1em}
+  \end{tabular}
 \end{table}
 
 \textbf{Pre-registered hypothesis and kill criterion.} We expect retrieval to win at small $k$,
 where a nearest-neighbour decision beats a linear fit on a handful of points, and the probe to
-overtake somewhere between $k{=}10$ and $k{=}50$. If that holds, the regime HALO owns is
-$k \le 10$, which is exactly the enrollment setting a user can perform in under a minute. If
-the probe dominates at \emph{every} $k$ including $k{=}1$, retrieval has no regime of its own;
-we will report that outcome plainly.
-
-\begin{table}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{l cc cc}
-    \toprule
-    & \multicolumn{2}{c}{$k{=}0$} & \multicolumn{2}{c}{$k{=}10$} \\
-    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-    Dataset & Acc & F1 & Acc & F1 \\
-    \midrule
-    MotionSense   & \PH & \PH & \PH & \PH \\
-    RealWorld     & \PH & \PH & \PH & \PH \\
-    Shoaib        & \PH & \PH & \PH & \PH \\
-    InclusiveHAR  & \PH & \PH & \PH & \PH \\
-    \quad\emph{able-bodied} & \PH & \PH & \PH & \PH \\
-    \quad\emph{disabled}    & \PH & \PH & \PH & \PH \\
-    USC-HAD       & \PH & \PH & \PH & \PH \\
-    TNDA-HAR      & \PH & \PH & \PH & \PH \\
-    UT-Complex    & \PH & \PH & \PH & \PH \\
-    \midrule
-    \textbf{Mean} & \PH & \PH & \PH & \PH \\
-    \bottomrule
-  \end{tabular}
-  \caption{Per-dataset HALO performance at the
-  two ends of the enrollment regime. InclusiveHAR is reported stratified by ability, because a
-  model that works only for able-bodied users is not a foundation for rehabilitation
-  applications.}
-  \label{tab:per_dataset}
-  \vspace{-1em}
-\end{table}
+overtake somewhere between $k{=}10$ and $k{=}25$---roughly the $3$--$7\%$ band. If that holds,
+the regime HALO owns is $k \le 10$, which is the enrollment setting a user can perform in under a
+minute. If the probe dominates at \emph{every} $k$ including the smallest, retrieval has no
+regime of its own; we will report that outcome plainly. Appendix~\ref{app:perdataset} reports the
+per-dataset breakdown, including InclusiveHAR stratified by ability, because a model that works
+only for able-bodied users is not a foundation for rehabilitation applications.
 
 \subsection{Q2: Does the Inductive Bias Do What It Claims?}
 \label{sec:bias_experiments}
@@ -234,52 +129,43 @@ we will report that outcome plainly.
 Section~\ref{sec:no_grammar} made two falsifiable claims about the tokenizer. Both are tested
 directly rather than inferred from end-task accuracy.
 
-\textbf{Rate-invariance is measured, not assumed.} A closed-form check confirms that a pure
-tone deposits identical band energies at $20$, $50$, and $100$\,Hz, and that changing the DFT
-padding from $S{=}256$ to $512$ leaves band energies and masks unchanged. The end-task version
-of the claim is Table~\ref{tab:tokenizer_ablation}: the same encoder trained on the same data
-but reading a common $20$\,Hz resampling of every stream. This is the experiment that
-distinguishes a physical-frequency \emph{anchoring} from mere resolution flexibility---if the
-$50$ and $100$\,Hz streams carry discriminative content above $10$\,Hz, resampling must destroy
-it, and the gap is the measurement of how much.
+\textbf{Rate-invariance is measured, not assumed.} A closed-form check confirms a pure tone
+deposits identical band energies at $20$, $50$, and $100$\,Hz. The end-task version is
+Table~\ref{tab:tokenizer_ablation}: the same encoder on the same data but reading a common
+$20$\,Hz resampling of every stream. If the faster streams carry discriminative content above
+$10$\,Hz, resampling must destroy it, and the gap measures how much.
 
-\textbf{Does anchoring actually make one cross-device memory well-posed?} This is the
-experiment that decides whether HALO is an assembly of known parts or an enabling result, so we
-state it precisely. A flat memory shared across devices is only meaningful if a query encoded
-from one configuration retrieves useful neighbours stored from a \emph{different}
-configuration. Table~\ref{tab:crossconfig} measures exactly that: rows are the configuration a
-query comes from, columns the configuration the memory is restricted to, and cells report
-retrieval quality. The diagonal is same-configuration retrieval, which every system can do; the
-off-diagonal is the claim.
+\textbf{Does anchoring actually make one cross-device memory well-posed?} This experiment decides
+whether HALO is an assembly of known parts or an enabling result. A flat memory shared across
+devices is only meaningful if a query encoded from one configuration retrieves useful neighbours
+stored from a \emph{different} one, which is what Table~\ref{tab:crossconfig} measures. The
+measurement is unusually clean because parts of our corpus contain \emph{verified simultaneous}
+recordings---the same person, activity, and instant, captured by two or more devices at different
+placements---so querying one stream against a memory built only from its simultaneous partner
+isolates configuration from subject, session, and activity entirely. We report the same matrix
+for a resample-to-common-rate variant of our own encoder and for the frozen baselines, so the
+comparison is of mechanisms rather than corpora.
 
-The measurement is unusually clean because parts of our corpus contain \emph{verified
-simultaneous} recordings---the same person performing the same activity at the same instant,
-captured by two or more devices at different placements (XRF~V2 at six placements, SP-SW-HAR
-phone and watch, NFI-FARED wrist and lower back, WISDM pocket and watch). Querying with one
-stream against a memory built only from its simultaneous partner isolates acquisition
-configuration from subject, session, and activity entirely: any degradation off the diagonal is
-attributable to the configuration change and to nothing else. We report the same matrix for a
-resample-to-common-rate variant of our own encoder, and for the frozen baselines, so that the
-comparison is of mechanisms rather than of corpora.
-
-\textbf{Is the naive assembly enough?} The components HALO uses have individually appeared
-before: variable channel counts, variable rates, and language-mediated label interfaces all
-have prior solutions. The claim that they must be assembled \emph{this particular way} is
-therefore an empirical one, and Table~\ref{tab:tokenizer_ablation} includes the obvious
-alternative assembly as a row: resample every stream to a common rate, attach free text per
-channel, and put the same retrieval mechanism on top. If that arm matches HALO, the
-architecture is a combination and we will say so; the mutual-entailment argument of
-Section~\ref{sec:combination} predicts it will not, and predicts a specific reason---the
-per-channel conditioning should show up as elevated dataset identifiability in
-Table~\ref{tab:identity_probe}, and the resampling should show up as a rate gap in
-Table~\ref{tab:tokenizer_ablation}.
+\textbf{Is the naive assembly enough?} Since HALO's components have individually appeared before,
+the claim that they must be assembled \emph{this particular way} is empirical.
+Table~\ref{tab:tokenizer_ablation} includes the obvious alternative as a row: resample every
+stream to a common rate, attach free text per channel, same retrieval on top. If that arm matches
+HALO the architecture is a combination and we will say so; mutual entailment predicts it will
+not, and predicts a reason---per-channel conditioning showing up as elevated dataset
+identifiability, resampling as a rate gap.
 
 \begin{table}[t]
   \centering
-  \resizebox{\columnwidth}{!}{
-  \footnotesize
-  \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{l cc cc}
+  \caption{\textbf{Cross-configuration retrieval: the enabling claim.} Each row queries with one
+  acquisition configuration against a memory containing \emph{only} a different one. Because
+  these pairs are verified simultaneous recordings, the only thing that varies is the
+  configuration, so off-diagonal degradation is attributable to it alone. \emph{Retention} is
+  cross divided by same: features that denote the same physical quantity across devices should
+  retain most of their quality; one that resamples or conditions on the rate should not.}
+  \label{tab:crossconfig}
+  \scriptsize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}l cc cc@{}}
     \toprule
     & \multicolumn{2}{c}{HALO} & \multicolumn{2}{c}{resample-to-20\,Hz} \\
     \cmidrule(lr){2-3}\cmidrule(lr){4-5}
@@ -293,165 +179,68 @@ Table~\ref{tab:tokenizer_ablation}.
     \midrule
     \textbf{cross/same retention}            & \multicolumn{2}{c}{\PH} & \multicolumn{2}{c}{\PH} \\
     \bottomrule
-  \end{tabular}}
-  \caption{\textbf{Cross-configuration retrieval: the enabling claim.} Each row queries with one
-  acquisition configuration against a memory containing \emph{only} a different one. Because
-  these pairs are verified simultaneous recordings---same subject, same activity, same
-  instant---the only thing that varies is the configuration, so off-diagonal degradation is
-  attributable to it alone. \emph{Retention} is cross divided by same: a system whose features
-  denote the same physical quantity across devices should retain most of its quality, while one
-  that resamples or conditions on the rate should not. This is what a flat, device-agnostic
-  memory requires, and it is the property that no prior retrieval-based HAR system has needed to
-  have.}
-  \label{tab:crossconfig}
-  \vspace{-1em}
+  \end{tabular}
 \end{table}
 
-\textbf{Conditioning must not be a corpus fingerprint.} Table~\ref{tab:identity_probe} reports
-a dataset-identity probe: a linear classifier fitted on frozen embeddings to predict which
-\emph{source dataset} a window came from, on held-out subjects. A representation that has
-absorbed the acquisition description as a corpus identifier will make this easy; one whose
-conditioning is genuinely compositional will not. We report it for HALO's factored per-sensor
-conditioning, for a per-channel free-text variant, and for the baselines, and we report it
-whether or not it favours us. It is cheap---frozen features and a linear fit---and it is the
-only direct evidence we have for the ``too little bias'' failure mode.
+\textbf{Conditioning must not be a corpus fingerprint.} The right-hand columns of
+Table~\ref{tab:tokenizer_ablation} report a dataset-identity probe: a linear classifier fitted on
+frozen embeddings of held-out subjects to predict which \emph{source dataset} a window came from.
+A representation that has absorbed the acquisition description as a corpus identifier makes this
+easy; one whose conditioning is genuinely compositional does not. It is the only direct evidence
+we have for the ``too little bias'' failure mode, so we report it whether or not it favours us.
 
 \begin{table}[t]
   \centering
-  \resizebox{\columnwidth}{!}{
-  \footnotesize
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{l ccc}
-    \toprule
-    Tokenizer configuration & $k{=}0$ & $k{=}10$ & rate gap\rlap{$^\ddagger$} \\
-    \midrule
-    Physical-Hz filterbank, sensor-grouped, factored text & \PH & \PH & \PH \\
-    \quad$-$ filterbank (resample all streams to 20\,Hz)  & \PH & \PH & \PH \\
-    \quad$-$ sensor grouping (per-channel free text)      & \PH & \PH & \PH \\
-    \quad$-$ language conditioning (layout-locked input)  & \PH & \PH & \PH \\
-    \quad$-$ observability / resolution masks             & \PH & \PH & \PH \\
-    \quad$-$ signed DC (gravity) feature                  & \PH & \PH & \PH \\
-    \midrule
-    \emph{naive assembly}: resample $+$ per-channel text  & \PH & \PH & \PH \\
-    \bottomrule
-  \end{tabular}}
-  \caption{Tokenizer inductive-bias ablation
-  (macro-F1 over the 7 held-out datasets), each component removed independently. The last row is
-  not an ablation but a \emph{rival assembly}: the same retrieval mechanism over an encoder built
-  the conventional way---every stream resampled to a common rate, free text attached per
-  channel. It is the arm that tests whether HALO is a combination of known parts.
-  $^\ddagger$\,\emph{Rate gap} is performance on the $100$\,Hz held-out cell minus performance
-  on the same data downsampled to $20$\,Hz---the direct measurement of what resampling costs.}
+  \caption{Tokenizer inductive-bias ablation (macro-F1 over the held-out datasets), each
+  component removed independently, with the dataset-identity probe alongside. The
+  \emph{naive assembly} row is not an ablation but a \emph{rival}: the same retrieval mechanism
+  over an encoder built the conventional way. It is the arm that tests whether HALO is a
+  combination of known parts. $^\ddagger$\,\emph{Rate gap} is performance on the $100$\,Hz
+  held-out cell minus the same data downsampled to $20$\,Hz---what resampling costs.
+  \emph{ds-ID} is dataset-identity accuracy; lower is better.}
   \label{tab:tokenizer_ablation}
-\end{table}
-
-\begin{table}[t]
-  \centering
-  \footnotesize
-  \setlength{\tabcolsep}{5pt}
-  \resizebox{\columnwidth}{!}{
-  \begin{tabular}{l cc}
+  \scriptsize
+  \setlength{\tabcolsep}{1.5pt}
+  \begin{tabular}{@{}l cc cc@{}}
     \toprule
-    Encoder & dataset-ID acc.\ $\downarrow$ & activity F1 $\uparrow$ \\
+    & \multicolumn{2}{c}{transfer} & \multicolumn{2}{c}{probe} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    Tokenizer configuration & $k{=}0$ & $k{=}10$ & rate gap\rlap{$^\ddagger$} & ds-ID $\downarrow$ \\
     \midrule
-    HALO (factored per-sensor text)   & \PH & \PH \\
-    HALO (per-channel free text)      & \PH & \PH \\
-    HALO (no language conditioning)   & \PH & \PH \\
-    harnet~\cite{sslwearables}        & \PH & \PH \\
-    UniMTS~\cite{unimts}              & \PH & \PH \\
+    Physical-Hz, sensor-grouped, factored text & \PH & \PH & \PH & \PH \\
+    \quad$-$ filterbank (resample to 20\,Hz)   & \PH & \PH & \PH & \PH \\
+    \quad$-$ sensor grouping (per-chan.\ text) & \PH & \PH & \PH & \PH \\
+    \quad$-$ language conditioning (locked)    & \PH & \PH & \PH & \PH \\
+    \quad$-$ observability / resolution masks  & \PH & \PH & \PH & \PH \\
+    \quad$-$ signed DC (gravity) feature       & \PH & \PH & \PH & \PH \\
     \midrule
-    chance                            & \PH & --- \\
-    \bottomrule
-  \end{tabular}}
-  \caption{\textbf{Dataset-identity probe.} A
-  linear classifier predicting the \emph{source dataset} from frozen embeddings of held-out
-  subjects. High accuracy here means the representation encodes corpus provenance---the
-  ``too little inductive bias'' failure of Section~\ref{sec:no_grammar}---and predicts poor
-  cross-dataset transfer. Lower is better; the activity column confirms the representation has
-  not simply been degraded.}
-  \label{tab:identity_probe}
-\end{table}
-
-\begin{table}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{l cc}
-    \toprule
-    Configuration & $k{=}0$ & $k{=}10$ \\
+    \emph{naive}: resample $+$ per-chan.\ text & \PH & \PH & \PH & \PH \\
     \midrule
-    HALO (native Hz, per-sensor text)          & \PH & \PH \\
-    HALO \emph{parity} (20\,Hz, neutral text)  & \PH & \PH \\
-    \midrule
-    Best baseline (data-matched group)         & \PH & \PH \\
-    Best baseline (released-checkpoint group)  & \PH & \PH \\
+    harnet~\cite{sslwearables} / UniMTS~\cite{unimts} & \PH & \PH & --- & \PH \\
+    chance                                     & --- & --- & --- & \PH \\
     \bottomrule
   \end{tabular}
-  \caption{Parity control: HALO under its native
-  inputs versus baseline-equivalent inputs, so that any remaining margin is attributable to the
-  architecture rather than to input advantages. Baselines are split by whether their weights
-  were trained on our corpus or released by their authors.}
-  \label{tab:parity}
 \end{table}
 
 \subsection{Q3: Which Phase-A Objectives Carry the Transfer?}
 \label{sec:objective_ablation}
 
 Each Phase-A term is removed independently with all others held fixed
-(Table~\ref{tab:objective_ablation}). Two controls matter more than the ablation itself. First,
-the \emph{untrained control}: the evidence decoder is identity-at-initialisation by
-construction, so for every trained arm we report the same architecture untrained; a trained
-component that does not beat its own initialisation is reported as such. Second, the
-\emph{label-supervised control}: the original supervised recipe (masked prediction $+$
-label-SupCon $+$ grounding rail) remains selectable, so the claim that going fully label-free
-helps is measured, not asserted.
-
-\begin{table}[t]
-  \centering
-  \resizebox{\columnwidth}{!}{
-  \footnotesize
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{l cc}
-    \toprule
-    Phase-A configuration & $k{=}0$ & $k{=}10$ \\
-    \midrule
-    Full (A1 fixed $+$ EMA, VICReg, TF, placement, rail) & \PH & \PH \\
-    \quad$-$ EMA-latent target (fixed A1 only)      & \PH & \PH \\
-    \quad$-$ augmentation VICReg                    & \PH & \PH \\
-    \quad$-$ time--frequency consistency            & \PH & \PH \\
-    \quad$-$ cross-placement positives              & \PH & \PH \\
-    \quad$-$ physical grounding rail                & \PH & \PH \\
-    \midrule
-    VICReg $\rightarrow$ NT-Xent (contrastive control) & \PH & \PH \\
-    Label-supervised recipe (SupCon; \emph{uses labels}) & \PH & \PH \\
-    \bottomrule
-  \end{tabular}}
-  \caption{Phase-A objective ablation, macro-F1
-  over the 7 held-out datasets. The last two rows are controls, not variants: they test whether
-  the non-contrastive and label-free choices were worth making.}
-  \label{tab:objective_ablation}
-\end{table}
+(Appendix~\ref{app:objectives}). Two controls matter more than the ablation itself. The
+\emph{untrained control}: the decoder is identity-at-initialisation by construction, so every
+trained arm is reported against the same architecture untrained, and a component that does not
+beat its own initialisation is reported as such. The \emph{label-supervised control}: the
+original supervised recipe remains selectable, so the claim that going label-free helps is
+measured, not asserted.
 
 \subsection{Q4: On-Device Cost and a Real Deployment}
 \label{sec:deployment_experiments}
 \label{sec:case_study}
 
-\PENDING{On-device latency, peak memory, retrieval cost as a function of memory-bank size, and
-the case-study numbers, once the encoder is compiled and profiled.}
+We implement the full pipeline as an iOS application and will report encoder latency and peak
+memory under Core~ML, retrieval latency against bank size, and a case study in which a user
+enrolls activities by demonstration, changes body placement mid-session, and introduces names
+never enrolled---the deployment form of the label-efficiency argument.
 
-We implement the full pipeline as an iOS application and will report: encoder latency and peak
-memory under Core~ML; retrieval latency as a function of bank size; and a continuous
-case study in which a user enrolls activities by demonstration, changes the device's body
-placement mid-session, and introduces activity names that were never enrolled. That case study
-is the deployment form of the label-efficiency argument: enrollment by demonstration is what
-$k \le 10$ means to a user.
-
-\begin{figure}[tbp]
-    \centering
-    \setlength{\abovecaptionskip}{4pt}
-    \setlength{\belowcaptionskip}{-4pt}
-    \PHFIG{Reserved for the case-study figure: enrollment by demonstration,\\
-      the mid-session placement change, and the streamed prediction trace.}{34mm}
-    \caption{\PENDING{Deployment setting of the smartphone case study.}}
-    \label{fig:demo_setting}
-\end{figure}
+\PENDING{On-device latency, peak memory, retrieval cost versus bank size, and the case-study
+figure are added here once the encoder is compiled and profiled.}

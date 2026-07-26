@@ -2,226 +2,126 @@
 \section{Related Work}
 \label{sec:related}
 
-HALO sits at the intersection of four literatures, and in each of them some part of what we do
-already exists. We name the closest work in each and state what is left.
+HALO sits at the intersection of three literatures, and in each some part of what we do already
+exists. We name the closest work and state what is left.
 
 \textbf{Cross-dataset and foundation models for IMU sensing.}
-Deep HAR has moved from single-dataset CNN--LSTM models~\cite{deepconvlstm} through methods that
-attack one axis of heterogeneity at a time---contrastive fusion for small-data multimodal
-HAR~\cite{cosmo}, physics-informed augmentation for cross-user and cross-device
-transfer~\cite{unihar}, federated modelling of inter-user structure~\cite{clusterfl}---to
-self-supervised encoders intended to transfer: LiMU-BERT~\cite{limubert} pretrains by span-masked
-reconstruction at $20$\,Hz, CrossHAR~\cite{crosshar} combines masked reconstruction with
-contrastive learning, and ssl-wearables~\cite{sslwearables} scales multi-task self-supervision to
-roughly $700$k person-days of wrist accelerometry. A second wave targets foundation-scale
-wearable modelling: LSM~\cite{lsm1} establishes the label-efficiency argument (up to $8\times$
-fewer labelled examples), LSM-2~\cite{lsm2} learns directly from incomplete recordings,
-RelCon~\cite{relcon} learns a motion-similarity metric over $\sim\!10^9$ windows, and
-SensorLM~\cite{sensorlm} pairs sensor data with hierarchical captions and reports zero-shot,
-few-shot, and cross-modal retrieval together. General time-series models~\cite{moment,patchtst}
-and tabular ones~\cite{mitra} trade domain-specific bias for breadth. A recent survey maps this
-space~\cite{harfmsurvey}, and Inertia-1~\cite{inertia1} runs a controlled lifecycle study over
-modality, placement, rate, and window length. \emph{What is left:} all of these treat sampling
-rate as a preprocessing decision to be normalised away. Our argument is that this is where the
-information loss happens, and Section~\ref{sec:bias_experiments} measures it rather than
-asserting it.
+Deep HAR has moved from single-dataset CNN--LSTM models~\cite{deepconvlstm} through methods
+attacking one axis of heterogeneity at a time~\cite{cosmo,unihar,clusterfl} to self-supervised
+encoders intended to transfer: LiMU-BERT~\cite{limubert} pretrains by span-masked reconstruction
+at $20$\,Hz, CrossHAR~\cite{crosshar} adds contrastive learning, and
+ssl-wearables~\cite{sslwearables} scales multi-task self-supervision to ${\sim}700$k person-days
+of wrist accelerometry. A second wave targets foundation scale, establishing the label-efficiency
+argument and learning from incomplete recordings~\cite{lsm1,lsm2}, learning motion-similarity
+metrics at ${\sim}10^9$ windows~\cite{relcon}, and pairing sensor data with
+captions~\cite{sensorlm}; general time-series and tabular models~\cite{moment,patchtst,mitra}
+trade domain bias for breadth, and Inertia-1~\cite{inertia1} runs a controlled lifecycle study
+over modality, placement, rate, and window length~\cite{harfmsurvey}. \emph{What is left:} all of
+these treat sampling rate as a preprocessing decision to be normalised away. We argue that is
+where the information loss happens, and Section~\ref{sec:bias_experiments} measures it.
 
-\textbf{Sampling-rate and resolution invariance.}
-This is the literature closest to our L1 mechanism, and it is not in HAR. Rate-invariant
-autoencoding~\cite{rateinvae} learns representations quotiented by temporal warping;
-FlowState~\cite{flowstate} builds a sampling-rate-\emph{equivariant} forecasting model on a
-state-space encoder with a functional-basis decoder; universal spectral
-tokenization~\cite{spectraltok} ingests native, irregular wavelength grids without resampling and
-explicitly proposes the same idea for multiresolution time series. Within IMU sensing,
-MoPFormer~\cite{mopformer} tokenizes into learned motion primitives to make datasets comparable,
-but resamples every dataset to $100$\,Hz before quantising, so its codebook is defined over a
-fixed-rate grid. \emph{What is left:} FlowState conditions on the rate---it is equivariant,
-adapting its computation---whereas HALO's features are \emph{anchored} to physical Hz, so a band
-denotes the same physical frequency for every device and no conditioning is required to compare
-across them; and the astronomical setting of~\cite{spectraltok} has no gravity, no Nyquist
-guard tied to a wearable's firmware, and no anti-aliasing consequence to demonstrate. To our
-knowledge no prior HAR system claims rate-invariance by construction, and none measures what
-resampling costs on held-out data---which is the experiment we run, and which we regard as the
-load-bearing evidence for L1 rather than the mechanism itself.
-
-\textbf{Language as an interface to sensors.}
-Two distinct uses of language must be separated. On the \emph{output} side, aligning a modality
-to sentence embeddings for open-vocabulary recognition descends from
-DeViSE~\cite{devise}, ConSE~\cite{conse}, and CLIP~\cite{clip}; ImageBind~\cite{imagebind} extends
-it to IMU among other modalities, and LanHAR~\cite{lanhar} and LLaSA~\cite{llasa} bring it to
-HAR. On the \emph{input} side---describing the sensor rather than the activity---the lane is
-crowded and recently so. GOAT~\cite{goat} supervises with natural language over both activity
-labels and device on-body positions. ZeroHAR~\cite{zerohar} conditions on textual sensor
-context---sensor type, Cartesian axis, body position---and aligns the motion latent to it before
-aligning to activity text. CHARM and its successor~\cite{charm,sensorsvoice} feed channel-level
-textual descriptions into a channel-order-equivariant transformer, and their ablation finds that
-conditioning on channel identity via text is one of the largest performance drivers.
-SensorLLM~\cite{sensorllm} generates per-channel descriptions to teach an LLM the sensor layout;
-oneHAR~\cite{onehar} handles variable combinations of sensor positions with LLM assistance;
-UniMTS~\cite{unimts} takes the complementary route of encoding placement structurally as a joint
-graph with rotation-invariant augmentation. \emph{What is left, honestly:} ``sensor identity as
-natural language'' is not ours to claim. Our differences are specific and narrower than the
-general idea. First, granularity: ZeroHAR conditions on a fixed, closed set of categorical
-attributes, whereas ours is free text and therefore composes to descriptions never seen; the
-channel-description line~\cite{charm,sensorsvoice,sensorllm} is free text but attaches it
-per-channel, which is exactly the configuration whose corpus-identifiability we argue against and
-test in Table~\ref{tab:identity_probe}. Second, what the conditioning feeds: in all of the above
-it feeds a parametric head, whereas ours feeds a non-parametric memory. Third, invariance versus
-conditioning: UniMTS's rotation invariance discards orientation, and with it gravity and posture,
-which conditioning preserves.
+\textbf{Absorbing acquisition heterogeneity: resolution and language.}
+Two lines address the input side. The first, and the closest to our L1 mechanism, is not in HAR:
+rate-invariant autoencoding~\cite{rateinvae} quotients out temporal warping,
+FlowState~\cite{flowstate} builds a sampling-rate-\emph{equivariant} forecaster, and universal
+spectral tokenization~\cite{spectraltok} ingests native, irregular grids without resampling.
+Within IMU sensing, MoPFormer~\cite{mopformer} tokenizes into learned motion primitives but
+resamples every dataset to $100$\,Hz first, so its codebook is defined over a fixed-rate grid.
+The second describes the sensor in language, and is crowded: GOAT~\cite{goat} supervises over
+labels and on-body positions; ZeroHAR~\cite{zerohar} conditions on categorical sensor context;
+CHARM and its successor~\cite{charm,sensorsvoice} feed channel-level descriptions into a
+channel-order-equivariant transformer, finding text conditioning on channel identity among their
+largest drivers; SensorLLM~\cite{sensorllm} and oneHAR~\cite{onehar} take related routes;
+UniMTS~\cite{unimts} instead encodes placement structurally as a joint graph with
+rotation-invariant augmentation. \emph{What is left, honestly:} ``sensor identity as natural
+language'' is not ours to claim, and our differences are narrower than the general idea. FlowState
+conditions on the rate---it is equivariant, adapting its computation---whereas HALO's features
+are \emph{anchored} to physical Hz, so no conditioning is required to compare across devices. And
+the channel-description line~\cite{charm,sensorsvoice,sensorllm} attaches free text \emph{per
+channel}, exactly the configuration whose corpus-identifiability we argue against and test
+(Table~\ref{tab:tokenizer_ablation}); ZeroHAR's attributes are a fixed closed set, whereas free
+text composes to descriptions never seen.
 
 \textbf{Retrieval, memory, and few-shot recognition.}
 Deciding by comparison to stored examples is old in this field and new in its current form. The
-ubicomp lineage recognises gestures by template: uWave~\cite{uwave} needs a single example per
-gesture and matches by dynamic time warping; Junker et al.~\cite{junker} preselect candidate
-segments by similarity search before classifying, which is structurally the retrieve-then-decide
-shape we use; WarpingLCSS~\cite{warpinglcss} does robust online template spotting from
-crowdsourced annotations. The modern lineage is episodic and parametric---matching
-networks~\cite{matchingnet}, prototypical networks~\cite{protonet}---and, in language and vision,
-non-parametric memory attached to a frozen model~\cite{knnlm,rag,retro,knnvision,reco}.
-Memory-modular classification~\cite{memorymodular} states our Phase-B property as its
-contribution: generalise to new classes by replacing memory contents, without retraining. In
-sensing specifically, RAG-HAR~\cite{raghar} performs training-free retrieval over signal
-descriptors and lets an LLM decide, recognising unseen activities; ZARA~\cite{zara} retrieves
-multi-sensor evidence into an LLM agent, under the same ``evidence-grounded'' name we use for a
-different mechanism; and in-context time-series classifiers~\cite{timee,ticfm} take a labelled
-support set and a query in one forward pass with no gradient step, collapsing zero-shot and
-few-shot into a single inference mode. \emph{What is left:} not ``we retrieve.'' The specific
-claim is that retrieval is performed in a space where similarity is \emph{sensor} similarity
-between encoded exemplar \emph{patches}, produced by an encoder that was conditioned on
+ubicomp lineage recognises gestures by template~\cite{uwave,junker,warpinglcss}; the modern one
+is episodic and parametric~\cite{matchingnet,protonet}, and in language and vision attaches
+non-parametric memory to a frozen model~\cite{knnlm,rag,retro,knnvision,reco}. Memory-modular
+classification~\cite{memorymodular} states our Phase-B property as its contribution: generalise
+to new classes by replacing memory contents, without retraining. In sensing,
+RAG-HAR~\cite{raghar} retrieves over signal descriptors and lets an LLM decide;
+ZARA~\cite{zara} retrieves multi-sensor evidence into an LLM agent, under the same
+``evidence-grounded'' name we use for a different mechanism; and in-context time-series
+classifiers~\cite{timee,ticfm} collapse zero- and few-shot into one forward pass.
+\emph{What is left:} not ``we retrieve,'' but that retrieval happens where similarity is
+\emph{sensor} similarity between encoded exemplar \emph{patches}, from an encoder conditioned on
 acquisition configuration---which is what lets a wrist query at an unusual rate retrieve
-comparable evidence, and which descriptor-space~\cite{raghar}, LLM-agent~\cite{zara}, and
-CLIP-space~\cite{sensorlm} retrieval cannot do. To that we add calibrated
-rejection~\cite{selectiveclass,edl}, which none of the retrieval-based HAR systems above
-provide. Section~\ref{sec:label_efficiency} reports the control that decides whether this
-distinction is real: the same memory mechanism on a competitor's frozen encoder.
-
-\textbf{Self-supervised objectives.}
-Phase~A composes established pieces: contrastive~\cite{simclr,infonce} and supervised
-contrastive~\cite{supcon} learning as controls; non-contrastive objectives that avoid declaring
-in-batch negatives~\cite{vicreg,barlowtwins}; masked modelling from language and
-vision~\cite{bert,mae}; and latent-target prediction against a momentum
-teacher~\cite{byol,data2vec,ijepa}. Our time--frequency term is inspired by TF-C~\cite{tfc} but
-is not faithful to it, and we say so where it is described. The contribution here is not a new
-objective but the choice to remove activity labels from all of them, and the cross-placement
-positives that a corpus with verified simultaneous multi-device recordings makes available.
+comparable evidence, and which descriptor-space, LLM-agent, and CLIP-space retrieval cannot do.
+To that we add calibrated rejection~\cite{selectiveclass,edl}.
+Section~\ref{sec:label_efficiency} reports the control that decides whether the distinction is
+real: the same memory mechanism on a competitor's encoder.
 
 \subsection{The Combination, and Why It Is Not a List}
 \label{sec:combination}
 
-Table~\ref{tab:coverage} summarises which axes each of the closest systems explicitly addresses.
-No prior system addresses all of them, which is true but is also the least interesting thing to
-say about it: ``we combine more components'' is not a contribution, and a reviewer is right to
-be unmoved by a filled-in row. Variable channel counts have known solutions; variable sampling
-rates have known solutions; language as a bridge to an open label vocabulary has known
-solutions. We claim none of those as novel.
-
-We make a different kind of claim: that physical-Hz \emph{anchoring} is what makes a single,
-flat, cross-device memory well-posed in the first place---an \emph{enabling} result rather than
-an assembly. A non-parametric memory shared across deployments requires that a query encoded on
-one device and an exemplar encoded on another be comparable \emph{as vectors}, with no
-per-configuration index and no conditioning step to reconcile them. Resampling does not provide
-this (it discards content the two devices do not share), and rate-equivariance does not provide
-it either (it relates the two by a learned transformation rather than making them the same
-quantity). This is why the existing retrieval-based sensing systems retrieve somewhere
-else---in hand-designed descriptor space~\cite{raghar}, through an LLM
-agent~\cite{zara}, or in CLIP space~\cite{sensorlm}---and why none of them needs the property
-we are claiming. Section~\ref{sec:bias_experiments} tests it directly, using recordings in
-which two devices captured the same person performing the same activity at the same instant, so
-that configuration is the only variable (Table~\ref{tab:crossconfig}).
-
-Once that claim is in view, the remaining choices stop looking like options. They are
-\emph{mutually entailed}---each one is what makes another valid---so the set is a consequence of
-L1 and L2 rather than a collection of independently attractive features. And because ``it is
-just a combination'' is an empirical objection, we answer it empirically as well: the
-conventional assembly of the same ingredients---resample to a common rate, attach free text per
-channel, put retrieval on top---is run as a rival arm in
-Table~\ref{tab:tokenizer_ablation}, not merely argued against.
+Table~\ref{tab:coverage} summarises which axes the closest systems address. No prior system
+addresses all of them, which is true and also the least interesting thing to say: ``we combine
+more components'' is not a contribution. Variable channel counts, variable rates, and language as
+a bridge to an open vocabulary all have known solutions, and we claim none as novel. Our claim is
+different---that physical-Hz \emph{anchoring} is what makes a single, flat, cross-device memory
+well-posed in the first place, an \emph{enabling} result rather than an assembly. Such a memory
+requires that a query encoded on one device and an exemplar encoded on another be comparable
+\emph{as vectors}, with no per-configuration index to reconcile them; neither resampling nor
+rate-equivariance provides that, which is why existing retrieval-based sensing systems retrieve
+somewhere else---descriptor space~\cite{raghar}, an LLM agent~\cite{zara}, CLIP
+space~\cite{sensorlm}---and why none needs the property we claim. Once it is in view the
+remaining choices stop looking like options: they are \emph{mutually entailed}, so the set
+follows from L1 and L2 rather than being a collection of independently attractive features
+(Appendix~\ref{app:entailment}). Section~\ref{sec:bias_experiments} tests this directly, and
+because ``it is just a combination'' is an empirical objection, the conventional assembly is run
+as a rival arm.
 
 \begin{table}[t]
   \centering
-  \resizebox{\columnwidth}{!}{
-  \footnotesize
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{l ccccc}
-    \toprule
-    & \multicolumn{2}{c}{acquisition} & orient./ & label &$k$-curve \\
-    \cmidrule(lr){2-3}
-    System & rate & placement & gravity & interface & (no grad.) \\
-    \midrule
-    LiMU-BERT~\cite{limubert}, CrossHAR~\cite{crosshar} &        &        &        &        &  \\
-    harnet~\cite{sslwearables}, LSM~\cite{lsm1,lsm2}    &        &        &        &        & \checkmark \\
-    NormWear~\cite{normwear}                            &        & $\circ$ &    & \checkmark &  \\
-    UniMTS~\cite{unimts}                                &        & \checkmark & $\circ$ & \checkmark &  \\
-    ZeroHAR~\cite{zerohar}                              &        & $\circ$ &        & \checkmark &  \\
-    GOAT~\cite{goat}, oneHAR~\cite{onehar}              &        & \checkmark &        & \checkmark &  \\
-    CHARM~\cite{charm,sensorsvoice}                     &        & \checkmark &        &        &  \\
-    MoPFormer~\cite{mopformer}                          &        & $\circ$ &        &        &  \\
-    FlowState~\cite{flowstate}                          & $\circ$ &    &        &        &  \\
-    RAG-HAR~\cite{raghar}, ZARA~\cite{zara}             &        &        &        & \checkmark & \checkmark \\
-    SensorLM~\cite{sensorlm}                            &        &        &        & \checkmark & \checkmark \\
-    \midrule
-    \textbf{HALO}                                       & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
-    \bottomrule
-  \end{tabular}}
-  \caption{Which axes each system \emph{explicitly claims} to address. $\checkmark$~= addressed
-  in the form we argue is needed; $\circ$~= addressed in a weaker or lossy form (rate
-  \emph{equivariance} rather than physical-Hz anchoring; \emph{categorical} rather than free-text
-  placement; rotation \emph{invariance}, which discards gravity and therefore posture); blank =
-  not claimed by that work. A blank is not a criticism---these are different papers solving
-  different problems---and the table reports stated scope, not measured performance. The point
-  last column marks works that report performance across a range of label budgets; HALO's mark
-  there differs in kind rather than degree, in that one frozen model traverses every budget with
-  no gradient update at any point, whereas the other marked rows fit something at each budget.
-  The point of the table is not the bottom row's length; it is the dependency structure
-  described below.}
+  \caption{Which axes each system \emph{explicitly claims} to address. $\checkmark$~= in the form
+  we argue is needed; $\circ$~= a weaker form (rate \emph{equivariance} rather than physical-Hz
+  anchoring; \emph{categorical} rather than free-text placement; rotation \emph{invariance},
+  which discards gravity). The last column marks systems reporting a range of label budgets with
+  no gradient update. Blank is not a criticism---these are different papers solving different
+  problems---and the table reports stated scope, not measured performance. The point is not the
+  bottom row's length but the dependency structure (Appendix~\ref{app:entailment}).}
   \label{tab:coverage}
-  \vspace{-1em}
+  \scriptsize
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{@{}l ccccc@{}}
+    \toprule
+    & \multicolumn{2}{c}{acquisition} & orient./ & label & $k$-curve \\
+    \cmidrule(lr){2-3}
+    System & rate & place & grav. & interf. & \\
+    \midrule
+    LiMU-BERT~\cite{limubert}, CrossHAR~\cite{crosshar}\hspace*{-4pt} &   &   &   &   &  \\
+    harnet~\cite{sslwearables}, LSM~\cite{lsm1,lsm2}    &   &   &   &   & \checkmark \\
+    NormWear~\cite{normwear}                &         & $\circ$ &    & \checkmark &  \\
+    UniMTS~\cite{unimts}                    &         & \checkmark & $\circ$ & \checkmark &  \\
+    ZeroHAR~\cite{zerohar}                  &         & $\circ$ &        & \checkmark &  \\
+    GOAT~\cite{goat}, oneHAR~\cite{onehar}  &         & \checkmark &     & \checkmark &  \\
+    CHARM~\cite{charm,sensorsvoice}         &         & \checkmark &     &        &  \\
+    MoPFormer~\cite{mopformer}              &         & $\circ$ &        &        &  \\
+    FlowState~\cite{flowstate}              & $\circ$ &         &        &        &  \\
+    RAG-HAR~\cite{raghar}, ZARA~\cite{zara} &         &         &        & \checkmark & \checkmark \\
+    SensorLM~\cite{sensorlm}                &         &         &        & \checkmark & \checkmark \\
+    \midrule
+    \textbf{HALO}                           & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
-\textbf{Rate anchoring is a precondition for the memory, not a parallel feature.} A
-non-parametric memory only works if a query and a stored exemplar recorded on different devices
-are comparable \emph{as vectors}. If the encoder is rate-\emph{equivariant}---told the rate and
-adapting---then two windows at different rates are related by a learned transformation, and the
-memory must either be indexed per configuration or trust that transformation to be exact. Because
-HALO's band $k$ denotes the same physical frequency for every device, one flat memory is
-well-posed. L1 exists in the form it does because of Phase~B.
-
-\textbf{The granularity of the language conditioning is forced by the retrieval, too.}
-Per-channel free text~\cite{charm,sensorsvoice,sensorllm} is the natural choice if the
-conditioning feeds a classifier: it is maximally expressive and the head can ignore what it does
-not need. It is the wrong choice if the conditioning feeds a memory, because a description that
-is nearly unique to a corpus makes \emph{same-corpus} neighbours the nearest ones, which is
-precisely the shortcut cross-dataset evaluation exists to catch. Attaching identity to the
-\emph{sensor} keeps the description expressive enough to name an unseen device and too coarse to
-name a dataset. That is why Table~\ref{tab:identity_probe} is in the paper.
-
-\textbf{Preserving gravity is forced by the geometry finding.} Rotation
-invariance~\cite{unimts} is the standard answer to unknown mounting, and it is lossy in one
-specific way: it discards the gravity direction, and with it posture. Section~\ref{sec:geometry}
-shows that the label pairs a text projection cannot separate are exactly the posture-versus-
-transition pairs (\emph{sitting}/\emph{sitting down}, \emph{lying}/\emph{standing}). A system
-that gives up on the text geometry \emph{must} therefore keep posture in the signal, so
-conditioning rather than invariance is not a preference here but a requirement.
-
-\textbf{Label-free pretraining is forced by the same shortcut argument.} Any closed-vocabulary
-objective over a multi-corpus training set rewards inferring the corpus and predicting its
-marginal. That is survivable for a parametric head, which can be refitted per deployment; it is
-not survivable for a frozen encoder feeding a memory, because the shortcut is baked into the
-stored vectors.
-
-So the four choices form a chain: removing any one of them invalidates another. That is a
-different and more falsifiable claim than ``we do all of these,'' and
-Section~\ref{sec:bias_experiments} is built to test it---each ablation in
-Table~\ref{tab:tokenizer_ablation} removes one link and asks whether the rest still stand.
-
-\textbf{A note on scale.} We do not think the scale-first programme is naive, and we do not
-claim it fails on its own terms. On population-scale health outcomes, models trained on tens of
-millions of hours~\cite{sslwearables,lsm1,sensorlm} are the right instrument and we would not
-beat them. The disagreement is about which axis a corpus can close. Scale reduces surprise along
-the axes a corpus \emph{samples}---subjects, activities, sessions. It cannot close the axes that
-are \emph{generated at deployment time} by a continuous, composable chain of mounting,
-placement, filtering, and convention choices, because those are not drawn from the corpus
-distribution at all. Our position is not ``less data, cleverer model''; it is that these two axes
-call for different remedies, and that the second one has been under-served because it is
-invisible to the benchmark protocols the field uses.
+\textbf{A note on scale.} We do not claim the scale-first programme fails on its own terms: on
+population-scale health outcomes, models trained on tens of millions of
+hours~\cite{sslwearables,lsm1,sensorlm} are the right instrument and we would not beat them. The
+disagreement is about which axis a corpus can close. Scale reduces surprise along the axes a
+corpus \emph{samples}---subjects, activities, sessions---but cannot close the axes
+\emph{generated at deployment time} by a composable chain of mounting, placement, filtering, and
+convention choices, because those are not drawn from the corpus distribution at all. Our position
+is not ``less data, cleverer model''; it is that the two axes call for different remedies, and
+the second is under-served because it is invisible to the benchmark protocols the field uses.

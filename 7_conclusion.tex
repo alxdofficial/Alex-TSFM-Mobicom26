@@ -2,55 +2,26 @@
 \section{Conclusion and Discussion}
 \label{sec:conclusion}
 
-We argued that the obstacle to a reusable IMU foundation model is not a shortage of data but
-two structural facts about the modality. Inertial signals admit no closed grammar: the map from
-a motion to a recording is composed at deployment time from continuous, composable nuisance
-factors, so cross-configuration compatibility has to be supplied as calibrated inductive bias
-rather than accumulated as coverage. And sensor similarity does not track linguistic
-similarity---measured on our own vocabulary, the ordering is not merely noisy but inverted---so
-projecting sensor features into a sentence-embedding space is a mis-specified target that
-rewards dataset memorisation. HALO responds with a tokenizer that commits to the physics that
-does not vary (rigid sensor triads, a physical-frequency axis, signed gravity) and defers
-everything that does to per-sensor language and per-token observability masks; and with an
-evidence engine that retrieves in sensor space and votes in label space, so the two geometries
-never meet in one projection. Representation pretraining uses no activity labels at all;
-labels enter only as annotations on retrieved memory entries, which is what makes the amount of
-target supervision a dial rather than a mode.
+We argued that the obstacle to a reusable IMU foundation model is not a shortage of data but two
+structural facts about the modality: inertial signals admit no closed grammar, so
+cross-configuration compatibility must be built in as calibrated inductive bias rather than
+accumulated as coverage; and sensor similarity does not track linguistic similarity---on our own
+vocabulary the ordering is inverted---making a sentence-embedding projection a mis-specified
+target that rewards dataset memorisation. HALO answers with a tokenizer committing to the physics
+that does not vary, and an evidence engine that retrieves in sensor space and votes in label
+space.
 
-\textbf{What we are not claiming.} Three things, stated plainly so they are not read into the
-work. We do not claim that accepting a variable number or order of channels is a contribution;
-padding with a mask is one line of preprocessing, and our own corpus spans only three to six
-channels per device. We do not claim that recognising unseen label \emph{strings} is a
-contribution; ConSE has done that since 2014, which is exactly why we equip every
-closed-vocabulary baseline with it. And where labels are plentiful and a single fixed
-configuration is known in advance, we do not expect retrieval to beat supervised fitting---that
-is a solved problem and the honest place to concede it is here rather than in a rebuttal.
-
-\textbf{Limitations.} Our training corpus is roughly $570$ hours of windowed signal, several orders of magnitude
-smaller than the largest released accelerometer models, and no design choice compensates for
-that on tasks where scale is what matters. The evidence engine's ceiling is its encoder: if
-retrieval returns neighbours of the wrong activity, no decoder recovers, and we measure
-retrieval purity precisely because it bounds everything downstream. The cross-placement
-objective depends on datasets with verified simultaneous recordings, of which there are few.
-Windows are single-activity, so the model learns to recognise segments and not to find
-boundaries. And the encoder supports causal operation but this submission does not train or
-measure it, so streaming remains a design affordance rather than a demonstrated capability.
-
-\textbf{Future work.} Four directions follow directly. \emph{Dense supervision}: per-frame
-labels from concatenated or free-living streams would teach onset and transition detection,
-which single-activity windows cannot. \emph{Streaming, properly}: train a causal arm, distil
-offline to online, and verify streaming equivalence, converting the affordance into a claim.
-\emph{Scale on the axis that is actually free}: because Phase~A needs no labels, the corpus can
-grow into unlabelled free-living data, which is where the hours are. \emph{Controlled-shift
-evaluation}: the corpus contains simultaneous multi-placement recordings of the same person at
-the same instant, which isolate placement from subject, session, and activity---a cleanly
-controlled axis that a blended cross-dataset average hides, and the right way to measure the
-compatibility claim one nuisance factor at a time.
-
-Finally, a note on what a negative result would mean. The label-efficiency curve
-(Section~\ref{sec:label_efficiency}) has a pre-registered kill criterion: if a linear probe on
-frozen features dominates retrieval at every budget including a single example per class, then
-the non-parametric mechanism has no regime of its own and the argument reduces to its
-operational properties---one encoder across many deployments, append-only updates without
-revalidation, on-device enrollment, and inspectable decisions. Those are real, but they are
-engineering properties, and we would say so rather than reframe the metric.
+\textbf{What we are not claiming.} Accepting a variable number or order of channels is not a
+contribution---padding with a mask is one line of preprocessing---and recognising unseen label
+\emph{strings} is not one either, which is why every closed-vocabulary baseline gets ConSE. Where
+labels are plentiful and the configuration is fixed and known in advance, we do not expect
+retrieval to beat supervised fitting. Our corpus is roughly $570$ hours, orders of magnitude
+smaller than the largest released accelerometer models; the evidence engine's ceiling is its
+encoder, since no decoder recovers from retrieving the wrong activity; windows are
+single-activity, so the model recognises segments rather than finding boundaries; and the encoder
+supports causal operation but this submission does not measure it. The most valuable direction is
+the one Phase~A makes free: needing no labels, the corpus can grow into unlabelled free-living
+data. The curve also carries a pre-registered kill criterion: if a linear probe on frozen
+features dominates retrieval at \emph{every} budget, the non-parametric mechanism has no regime
+of its own, leaving only operational properties---append-only updates, on-device enrollment,
+inspectable decisions---and we would report that rather than reframe the metric.
