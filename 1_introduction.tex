@@ -1,21 +1,29 @@
 
 \section{Introduction}
 
-Inertial measurement units (IMUs) are among the most widely deployed sensors in consumer
-electronics. Every smartphone and smartwatch carries one, and the applications that would
-follow from reading them well are not exotic: confirming that a patient actually performed
-the prescribed rehabilitation exercises~\cite{pamap2}, flagging the repeated overhead reach
-that will injure a warehouse worker, telling a physiotherapist which of two similar-looking
-squats was the bad one, or scoring sleep and posture over a week of ordinary
-life~\cite{chan2024capture24}. What these share is that the activity of interest is defined
-\emph{by the deployment}, not by a benchmark: it is a specific exercise for a specific
-patient, or a task vocabulary particular to one workplace. Yet nearly every such application
-is built from scratch---collect a bespoke dataset, hire annotators, train a dataset-specific
-classifier, and hard-code a fixed sensor layout and a fixed label set. Human activity
-recognition (HAR) still has no foundation model a developer can simply pick up: one
-pretrained model that ingests whatever sensors a device exposes, recognizes the
-application's own activity names, and asks for as little labelled target data as the
-deployment can afford.
+A physiotherapist discharges a patient after knee surgery with six prescribed exercises, and
+wants to know whether they were actually done. The patient already owns a phone and a watch;
+the six exercises were chosen for this patient from a long tail of clinical options; and
+nobody---not the clinic, not the patient---is going to collect and annotate a training set.
+This is the ordinary case for inertial sensing, and it is not what the field builds for.
+Almost every deployed IMU system today is constructed the other way round: fix the sensor
+layout, fix the label set, collect a bespoke annotated corpus, train a classifier for it.
+That pipeline works, and it has to be paid for again from scratch for the next clinic, the
+next exercise list, and the next phone model.
+
+Three properties of the situation above are what make it hard, and each is a property of the
+\emph{deployment} rather than of the recognition problem. The label set is
+\textbf{open}---defined per patient, per workplace, per study, and containing activities no
+public corpus has ever recorded. The sensing is
+\textbf{heterogeneous}---whatever hardware the user happens to own, worn wherever they put
+it, sampled at whatever rate the firmware chooses. And the supervision budget is
+\textbf{small and fixed}---a clinician can demonstrate an exercise a handful of times inside
+one appointment, and cannot label five hundred repetitions. Human activity recognition (HAR)
+has no foundation model that meets all three at once: one pretrained model a developer picks
+up, points at whatever sensors a device exposes, tells the application's own activity names,
+and asks for only as much labelled target data as the deployment can actually afford.
+Section~\ref{sec:why} argues these three demands from concrete deployments, and why they are
+not a wish-list but the minimum for the work to be reusable at all.
 
 The field's dominant answer has been scale. We argue that scale alone cannot deliver this,
 for two reasons that are specific to inertial sensing, and that these two reasons dictate

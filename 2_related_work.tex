@@ -112,11 +112,31 @@ positives that a corpus with verified simultaneous multi-device recordings makes
 Table~\ref{tab:coverage} summarises which axes each of the closest systems explicitly addresses.
 No prior system addresses all of them, which is true but is also the least interesting thing to
 say about it: ``we combine more components'' is not a contribution, and a reviewer is right to
-be unmoved by a filled-in row.
+be unmoved by a filled-in row. Variable channel counts have known solutions; variable sampling
+rates have known solutions; language as a bridge to an open label vocabulary has known
+solutions. We claim none of those as novel.
 
-The claim we actually make is that these choices are \emph{mutually entailed}---each one is what
-makes another one valid---so that the set is a consequence of L1 and L2 rather than a
-collection of independently attractive features.
+We make a different kind of claim: that physical-Hz \emph{anchoring} is what makes a single,
+flat, cross-device memory well-posed in the first place---an \emph{enabling} result rather than
+an assembly. A non-parametric memory shared across deployments requires that a query encoded on
+one device and an exemplar encoded on another be comparable \emph{as vectors}, with no
+per-configuration index and no conditioning step to reconcile them. Resampling does not provide
+this (it discards content the two devices do not share), and rate-equivariance does not provide
+it either (it relates the two by a learned transformation rather than making them the same
+quantity). This is why the existing retrieval-based sensing systems retrieve somewhere
+else---in hand-designed descriptor space~\cite{raghar}, through an LLM
+agent~\cite{zara}, or in CLIP space~\cite{sensorlm}---and why none of them needs the property
+we are claiming. Section~\ref{sec:bias_experiments} tests it directly, using recordings in
+which two devices captured the same person performing the same activity at the same instant, so
+that configuration is the only variable (Table~\ref{tab:crossconfig}).
+
+Once that claim is in view, the remaining choices stop looking like options. They are
+\emph{mutually entailed}---each one is what makes another valid---so the set is a consequence of
+L1 and L2 rather than a collection of independently attractive features. And because ``it is
+just a combination'' is an empirical objection, we answer it empirically as well: the
+conventional assembly of the same ingredients---resample to a common rate, attach free text per
+channel, put retrieval on top---is run as a rival arm in
+Table~\ref{tab:tokenizer_ablation}, not merely argued against.
 
 \begin{table}[t]
   \centering

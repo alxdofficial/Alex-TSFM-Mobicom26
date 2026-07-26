@@ -14,8 +14,9 @@ filled once the training run completes.}
 We ask four questions. \textbf{(Q1)} Along the label-efficiency curve---$k$ target
 exemplars per class, for $k$ from zero up to full supervision---where does HALO stand against
 strong frozen encoders, and is there a regime it owns? \textbf{(Q2)} Does the tokenizer's inductive bias do
-what Section~\ref{sec:no_grammar} claims: is the representation genuinely rate-invariant, and
-is the conditioning genuinely too coarse to identify a corpus? \textbf{(Q3)} Which Phase-A
+what Section~\ref{sec:no_grammar} claims---is the representation genuinely rate-invariant, is
+the conditioning too coarse to identify a corpus, and, decisively, does anchoring let one flat
+memory serve devices it was not built from? \textbf{(Q3)} Which Phase-A
 objectives carry the transfer, and does any of them beat its own untrained control?
 \textbf{(Q4)} Does the system run on a phone, and does it behave in a real deployment?
 
@@ -242,6 +243,70 @@ distinguishes a physical-frequency \emph{anchoring} from mere resolution flexibi
 $50$ and $100$\,Hz streams carry discriminative content above $10$\,Hz, resampling must destroy
 it, and the gap is the measurement of how much.
 
+\textbf{Does anchoring actually make one cross-device memory well-posed?} This is the
+experiment that decides whether HALO is an assembly of known parts or an enabling result, so we
+state it precisely. A flat memory shared across devices is only meaningful if a query encoded
+from one configuration retrieves useful neighbours stored from a \emph{different}
+configuration. Table~\ref{tab:crossconfig} measures exactly that: rows are the configuration a
+query comes from, columns the configuration the memory is restricted to, and cells report
+retrieval quality. The diagonal is same-configuration retrieval, which every system can do; the
+off-diagonal is the claim.
+
+The measurement is unusually clean because parts of our corpus contain \emph{verified
+simultaneous} recordings---the same person performing the same activity at the same instant,
+captured by two or more devices at different placements (XRF~V2 at six placements, SP-SW-HAR
+phone and watch, NFI-FARED wrist and lower back, WISDM pocket and watch). Querying with one
+stream against a memory built only from its simultaneous partner isolates acquisition
+configuration from subject, session, and activity entirely: any degradation off the diagonal is
+attributable to the configuration change and to nothing else. We report the same matrix for a
+resample-to-common-rate variant of our own encoder, and for the frozen baselines, so that the
+comparison is of mechanisms rather than of corpora.
+
+\textbf{Is the naive assembly enough?} The components HALO uses have individually appeared
+before: variable channel counts, variable rates, and language-mediated label interfaces all
+have prior solutions. The claim that they must be assembled \emph{this particular way} is
+therefore an empirical one, and Table~\ref{tab:tokenizer_ablation} includes the obvious
+alternative assembly as a row: resample every stream to a common rate, attach free text per
+channel, and put the same retrieval mechanism on top. If that arm matches HALO, the
+architecture is a combination and we will say so; the mutual-entailment argument of
+Section~\ref{sec:combination} predicts it will not, and predicts a specific reason---the
+per-channel conditioning should show up as elevated dataset identifiability in
+Table~\ref{tab:identity_probe}, and the resampling should show up as a rate gap in
+Table~\ref{tab:tokenizer_ablation}.
+
+\begin{table}[t]
+  \centering
+  \resizebox{\columnwidth}{!}{
+  \footnotesize
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{l cc cc}
+    \toprule
+    & \multicolumn{2}{c}{HALO} & \multicolumn{2}{c}{resample-to-20\,Hz} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    Query $\rightarrow$ memory & same & \textbf{cross} & same & \textbf{cross} \\
+    \midrule
+    wrist $\rightarrow$ pocket (SP-SW-HAR)   & \PH & \PH & \PH & \PH \\
+    wrist $\rightarrow$ lower back (NFI)     & \PH & \PH & \PH & \PH \\
+    pocket $\rightarrow$ watch (WISDM)       & \PH & \PH & \PH & \PH \\
+    wrist $\rightarrow$ ear/glasses (XRF~V2) & \PH & \PH & \PH & \PH \\
+    100\,Hz $\rightarrow$ 20\,Hz memory      & \PH & \PH & \PH & \PH \\
+    \midrule
+    \textbf{cross/same retention}            & \multicolumn{2}{c}{\PH} & \multicolumn{2}{c}{\PH} \\
+    \bottomrule
+  \end{tabular}}
+  \caption{\textbf{Cross-configuration retrieval: the enabling claim.} Each row queries with one
+  acquisition configuration against a memory containing \emph{only} a different one. Because
+  these pairs are verified simultaneous recordings---same subject, same activity, same
+  instant---the only thing that varies is the configuration, so off-diagonal degradation is
+  attributable to it alone. \emph{Retention} is cross divided by same: a system whose features
+  denote the same physical quantity across devices should retain most of its quality, while one
+  that resamples or conditions on the rate should not. This is what a flat, device-agnostic
+  memory requires, and it is the property that no prior retrieval-based HAR system has needed to
+  have.}
+  \label{tab:crossconfig}
+  \vspace{-1em}
+\end{table}
+
 \textbf{Conditioning must not be a corpus fingerprint.} Table~\ref{tab:identity_probe} reports
 a dataset-identity probe: a linear classifier fitted on frozen embeddings to predict which
 \emph{source dataset} a window came from, on held-out subjects. A representation that has
@@ -266,10 +331,15 @@ only direct evidence we have for the ``too little bias'' failure mode.
     \quad$-$ language conditioning (layout-locked input)  & \PH & \PH & \PH \\
     \quad$-$ observability / resolution masks             & \PH & \PH & \PH \\
     \quad$-$ signed DC (gravity) feature                  & \PH & \PH & \PH \\
+    \midrule
+    \emph{naive assembly}: resample $+$ per-channel text  & \PH & \PH & \PH \\
     \bottomrule
   \end{tabular}}
   \caption{Tokenizer inductive-bias ablation
-  (macro-F1 over the 7 held-out datasets), each component removed independently.
+  (macro-F1 over the 7 held-out datasets), each component removed independently. The last row is
+  not an ablation but a \emph{rival assembly}: the same retrieval mechanism over an encoder built
+  the conventional way---every stream resampled to a common rate, free text attached per
+  channel. It is the arm that tests whether HALO is a combination of known parts.
   $^\ddagger$\,\emph{Rate gap} is performance on the $100$\,Hz held-out cell minus performance
   on the same data downsampled to $20$\,Hz---the direct measurement of what resampling costs.}
   \label{tab:tokenizer_ablation}

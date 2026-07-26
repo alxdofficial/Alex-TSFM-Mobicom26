@@ -4,14 +4,122 @@
 \section{Motivation}
 \label{sec:motivation}
 
-This section develops the three claims the rest of the paper rests on. Section~\ref{sec:heterogeneity_motiv}
-characterises the heterogeneity that any cross-device IMU model must absorb.
-Section~\ref{sec:no_grammar} argues that this heterogeneity cannot be closed by
-data---inertial signals admit no closed grammar---so compatibility must be supplied as
-inductive bias, and that the bias must be \emph{calibrated} rather than maximised.
-Section~\ref{sec:geometry} shows by direct measurement that the field's standard mechanism
-for open-ended labels rests on a false premise. Section~\ref{sec:requirements} turns the
-three into design requirements.
+Section~\ref{sec:why} argues from concrete deployments why open-set labels, sensing
+heterogeneity, and a small supervision budget are the binding constraints, rather than
+features a paper might optionally offer. Section~\ref{sec:heterogeneity_motiv} then
+characterises the heterogeneity technically. Section~\ref{sec:no_grammar} argues that it
+cannot be closed by data---inertial signals admit no closed grammar---so compatibility must
+be supplied as inductive bias, and that the bias must be \emph{calibrated} rather than
+maximised. Section~\ref{sec:geometry} shows by direct measurement that the field's standard
+mechanism for open-ended labels rests on a false premise. Section~\ref{sec:requirements}
+turns these into design requirements.
+
+\subsection{Why This Problem: Three Deployments and What They Demand}
+\label{sec:why}
+
+That IMU-based activity recognition is useful needs no argument. What needs an argument is why
+it should be \emph{open-set}, \emph{heterogeneity-aware}, and \emph{label-efficient}---three
+qualifiers that add real difficulty and that a system could reasonably decline to take on. Our
+answer is that in the deployments that motivate the work, all three are forced simultaneously,
+and dropping any one of them removes the application rather than simplifying it.
+
+\textbf{Rehabilitation adherence.} A physiotherapist prescribes a set of exercises after
+surgery and needs to know whether they were performed, and performed correctly. The exercise
+set is chosen \emph{per patient} from a long clinical tail---a specific loaded knee extension,
+a specific scapular retraction---so no fixed output vocabulary covers it. The sensor is the
+patient's own phone or watch, worn wherever they choose. The available supervision is whatever
+the clinician can demonstrate inside a twenty-minute appointment.
+
+\textbf{Occupational strain.} A safety team wants to count a specific risky motion in one
+facility: reaching under a chassis, lifting from below knee height. The vocabulary belongs to
+that facility and its risk assessment. The hardware is a fleet accumulated over years, mixing
+phone models and wristbands. Collecting a labelled corpus would require instrumenting the floor
+with video and obtaining consent from every worker in frame---which is precisely the thing the
+deployment exists to avoid.
+
+\textbf{Free-living behavioural monitoring.} A cohort study measures posture, sedentary time,
+and sleep over weeks. Devices vary across participants and firmware revisions vary within a
+participant; the categories are the study's own, defined by its protocol rather than by a
+benchmark.
+
+\begin{table}[t]
+  \centering
+  \resizebox{\columnwidth}{!}{
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l ccc}
+    \toprule
+    & open-set & heterogeneous & small label \\
+    Deployment & labels & sensing & budget \\
+    \midrule
+    Rehabilitation adherence   & \checkmark & \checkmark & \checkmark \\
+    Occupational strain        & \checkmark & \checkmark & \checkmark \\
+    Free-living monitoring     & \checkmark & \checkmark & \checkmark \\
+    \midrule
+    \emph{Public HAR benchmark} & --- & --- & --- \\
+    \bottomrule
+  \end{tabular}}
+  \caption{The three qualifiers are not independent features to be offered separately. Every
+  deployment that motivates this work demands all three at once, because all three are
+  properties of the deployment rather than of the recognition task. A public benchmark demands
+  none of them---which is why a model can score well on one and still be unusable in any of the
+  rows above.}
+  \label{tab:demands}
+  \vspace{-1em}
+\end{table}
+
+Table~\ref{tab:demands} makes the pattern explicit, and also makes clear why benchmark
+performance has been a poor guide: a fixed-vocabulary, fixed-layout, fully-supervised benchmark
+demands none of the three, so a model can lead it and still be inapplicable to every row above.
+We now take each qualifier in turn, because each rests on a different argument.
+
+\textbf{Why open-set is not optional.} Two reasons, neither of which is solved by more data.
+First, \emph{the label set is not the model's to choose}. A prescribed rehabilitation exercise
+is defined per patient; a task vocabulary is defined per facility. These are not rare classes
+that a larger corpus would eventually cover---they are defined after training, by someone who
+is not us. A model with a fixed output layer is structurally unable to express them.
+Second, \emph{the annotation channel for inertial data is uniquely poor}. Images and text can
+be labelled from the artifact itself, which is why annotation crowdsources and why those
+corpora are enormous. Nobody can label an accelerometer trace by looking at it. Labels must
+therefore come from synchronised video, scripted in-laboratory protocols, or self-report---all
+expensive, and all biasing the resulting data toward laboratory-like conditions. This is the
+mechanical reason HAR corpora are small and scripted while image corpora are large and natural,
+and it will not be fixed by effort. A system that requires a labelled target set per deployment
+inherits that cost every time.
+
+\textbf{Why heterogeneity-aware is not optional.} The cost of sensing heterogeneity is usually
+described as a one-time integration expense. It is not: it \emph{recurs}, per device model, per
+placement, per firmware revision, for as long as the product ships. A vendor covering fifty
+device-by-placement combinations either maintains fifty models---fifty training runs, fifty
+validation cycles, fifty entries in a model registry---or ships one model built for the lowest
+common denominator. In practice the second happens, and it is a large part of why deployed
+phone activity recognition is still limited to a handful of coarse ambulatory classes. It is
+also why there is no ``download the model and point it at your sensor'' moment for IMU as there
+is for vision: the model cannot read your sensor. Notably, this is not only our reading.
+UniMTS~\cite{unimts}, the leading zero-shot motion model, ablates its own components and
+attributes substantially more of its performance to acquisition-configuration handling---
+rotation-invariant augmentation and placement encoding---than to its label-text handling. The
+field names sensor heterogeneity and poor activity text as its barriers; it does not name label
+semantics.
+
+\textbf{Why the label budget is the right axis.} Given the two arguments above, the useful
+question is not whether a system is ``zero-shot'' but how much target supervision it needs to
+become useful, and what that supervision costs to obtain. Zero labelled examples is the
+interesting left endpoint because it is the only point reachable without any target data
+collection at all. But a clinician demonstrating an exercise five times is a realistic and cheap
+form of supervision, and a system that can consume it \emph{without a training cycle} is
+categorically easier to deploy than one that requires fine-tuning: nothing needs to be
+retrained, nothing needs re-validating, and the demonstration never has to leave the device.
+That last property is a legal precondition in the clinical and workplace settings above, not a
+convenience.
+
+\textbf{What this buys, and why it should interest a systems audience.} The result of meeting
+all three is a difference in \emph{capability}, not a difference in accuracy: one encoder
+serving many deployments instead of one model per configuration; new activities and new devices
+added by appending to a memory rather than by retraining, so that a model already validated does
+not have to be validated again; enrollment performed on-device; and predictions that can be
+inspected, because a retrieval-based decision can name the stored examples that produced it. In
+a regulated or clinical setting the last two are worth more than a few points of macro-F1.
 
 \subsection{Sensing Heterogeneity Across Devices and Deployments}
 \label{sec:heterogeneity_motiv}
