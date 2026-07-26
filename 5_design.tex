@@ -70,6 +70,13 @@ DC feature already carries. Band energies are window-normalised so they do not d
 length, log-compressed, and per-band standardised with statistics calibrated once before
 training.
 
+Figure~\ref{fig:rateinv} shows this working on real data rather than asserting it. One
+$1.5$\,s wrist patch of walking is resampled to $100$, $50$, and $20$\,Hz and passed through the
+tokenizer at its own rate. As sample arrays the three are entirely different objects---$150$,
+$75$, and $30$ numbers---but the band energies they produce agree to cosine $0.997$ and $0.996$
+over the bands all three can observe, and the six bands the $20$\,Hz stream cannot legally
+measure are masked rather than filled in.
+
 The consequence is that rate-invariance is a property of the construction, not of a learned
 approximation: a $2$\,Hz gait rhythm deposits its energy in the same band whether the device
 sampled at $20$ or $100$\,Hz, and because no interpolation exists in the path there is no
@@ -82,6 +89,29 @@ patch length is frequency-domain interpolation only and does not alter band ener
 that $S{=}256$ and $S{=}512$ give band-energy cosine $1.000000$ and identical masks at $20$,
 $25$, $50$, and $100$\,Hz. Patch lengths exceeding $S$ raise an error rather than silently
 truncating.
+
+\begin{figure*}[t]
+    \centering
+    \setlength{\abovecaptionskip}{4pt}
+    \setlength{\belowcaptionskip}{-6pt}
+  \input{figures/fig_rateinvariance.tex}
+  \caption{\textbf{Rate-invariance, measured on a real window rather than argued.} A single
+  $1.5$\,s accelerometer patch of \emph{walking} from the NFI-FARED wrist stream is anti-alias
+  resampled to three rates and run through the tokenizer at each. \emph{Left:} to a human the three
+  are obviously the same motion, but to a model they are three different arrays---$150$, $75$,
+  and $30$ numbers, no sample of one coinciding with a sample of another---so any encoder whose
+  positional code is a timestep index sees three different structures. \emph{Right:} the band energies land on top of
+  one another, because a band denotes a physical frequency and the bin$\to$Hz map has already
+  absorbed the rate. Measured agreement is cosine $0.997$ ($100$ vs $50$\,Hz) and $0.996$
+  ($100$ vs $20$\,Hz) over the $26$ bands all three rates can observe. The shaded region is
+  what the $20$\,Hz stream physically cannot see: those six bands are \emph{masked}, not
+  estimated, so the encoder is told the content is missing instead of being handed a small
+  number it would read as silence. Note that the $20$\,Hz curve does fall away inside the shaded
+  band, which is the correct behaviour and precisely why the mask exists: an encoder that
+  resampled the whole corpus to $20$\,Hz would silently take that loss on every stream,
+  including the ones that measured the content perfectly well.}
+  \label{fig:rateinv}
+\end{figure*}
 
 \subsubsection{Observability: say what could not be measured}
 \label{sec:masks}
