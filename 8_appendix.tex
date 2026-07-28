@@ -62,8 +62,10 @@ Figure~\ref{fig:corpus} plots them by placement and native rate.
   \centering
   \caption{Corpus. \emph{\#Str} is the number of distinct sensor streams (one per device
   placement); \emph{Ch} the number of core channels reaching the model (3 = accelerometer only).
-  Window counts are six-second windows on the native-rate grid after physical-plausibility
-  filtering. InclusiveHAR comprises 10 able-bodied and 10 physically disabled subjects.
+  Window counts are windows on the native-rate grid after physical-plausibility and
+  duplicate filtering. Most are six seconds, but UCI-HAR ships $2.56$\,s records and SP-SW-HAR
+  $1$\,s, so hours are computed from each grid's own samples/rate rather than by multiplying by
+  six. InclusiveHAR comprises 10 able-bodied and 10 physically disabled subjects.
   TNDA-HAR is distributed without per-window subject identifiers (see
   Section~\ref{sec:eval_protocol}).}
   \label{tab:datasets}
@@ -74,7 +76,7 @@ Figure~\ref{fig:corpus} plots them by placement and native rate.
     Dataset & Hz & \#Str & Ch & \#Win & Placement(s) \\
     \midrule
     \multicolumn{6}{l}{\textit{Training corpus (12 datasets, 20 streams)}}\\
-    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 3 & 144{,}142 & wrist, free-living \\
+    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 3 & 1{,}530{,}792 & wrist, free-living \\
     WISDM~\cite{wisdm}                  &  20 & 2 & 6 &  70{,}201 & pocket $+$ wrist \\
     XRF~V2~\cite{xrf_v2}                &  50 & 6 & 6 &  34{,}764 & pockets, wrists, glasses \\
     NFI-FARED~\cite{nfi_fared}          & 100 & 2 & 6 &  26{,}520 & wrist $+$ lower back \\

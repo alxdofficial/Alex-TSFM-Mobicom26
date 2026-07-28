@@ -19,7 +19,11 @@ fixed}---a clinician can demonstrate an exercise a handful of times, not label f
 repetitions. Human activity recognition (HAR) has no foundation model meeting all three at once:
 one pretrained model a developer picks up, points at whatever sensors a device exposes, tells the
 application's own activity names, and asks only for as much labelled data as the deployment can
-afford. Section~\ref{sec:why} argues these demands from concrete deployments.
+afford. We use \emph{foundation model} in its usual sense---a model trained on broad data,
+typically self-supervised, producing general embeddings adaptable out of the box to downstream
+tasks. Adaptation from a handful of labelled examples is therefore within scope, not a departure
+from it: the question is not whether a deployment supplies labels but how few it must supply.
+Section~\ref{sec:why} argues these demands from concrete deployments.
 
 The field's dominant answer has been scale. We argue that scale alone cannot deliver this, for
 two reasons specific to inertial sensing, and that those reasons dictate two design choices

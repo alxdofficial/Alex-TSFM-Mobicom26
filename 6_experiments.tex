@@ -22,7 +22,7 @@ We train on 12 public HAR datasets contributing 20 distinct sensor streams and e
 never seen during training; Appendix~\ref{app:corpus} lists both with per-dataset rates,
 placements, and window counts, and records the six datasets deliberately excluded and why. After
 conversion to native-rate grids and removal of 95 windows exceeding physically possible sensor
-rails, the corpus is $343{,}140$ non-overlapping six-second windows---$572$ hours---over $93$
+rails, the corpus is $1{,}728{,}787$ non-overlapping windows---$2{,}858$ hours---over $93$
 labels, split subject-disjointly into $300{,}231$ training and $42{,}909$ validation windows, the
 latter built by a greedy label-cover procedure so all $93$ labels are represented. Training rates
 span $20$--$100$\,Hz over placements at the wrist, waist, pocket, lower back, ear, and head; the
@@ -39,7 +39,7 @@ discards the model being tested. CrossHAR and LiMU-BERT release no checkpoint co
 corpus, so we pretrain them on \emph{our} data with their own published objectives, making their
 data identical to ours; harnet, UniMTS and NormWear are used as released, which is faithful but
 means their pretraining corpora differ from ours and from each other. This distinction is
-material---harnet is pretrained on roughly $700$k person-days against our $572$
+material---harnet is pretrained on roughly $700$k person-days against our $2{,}858$
 hours---and we state it wherever a comparison could be read as data-matched. Closed-vocabulary
 models are bridged to arbitrary label strings with ConSE~\cite{conse}, so that ``can predict an
 unseen label'' is available to every model and is not something HALO is credited for.
