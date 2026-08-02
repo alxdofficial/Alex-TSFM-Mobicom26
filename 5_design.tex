@@ -23,10 +23,63 @@ into text space, so it belongs after the encoder, in a component swappable per d
   \label{fig:overview}
 \end{figure}
 
-\subsection{The Tokenizer: Calibrated Inductive Bias}
+\label{sec:requirements}
+The three claims yield four requirements. \textbf{R1:} one weight set must accept arbitrary rates,
+channel counts, sensor suites, and placements with no architectural change, and must signal what
+a configuration could not observe instead of fabricating it. \textbf{R2:} the conditioning
+carrying acquisition context must compose to unseen configurations yet be too coarse to identify
+a corpus---a testable property, not an assertion. \textbf{R3:} recognition over a run-time label
+set must not require a single projection reconciling sensor with sentence geometry. \textbf{R4:}
+the model must place no floor on target supervision, and adding a little must need no gradient
+update and no data leaving the device. HALO meets R1--R2 with the tokenizer
+(Section~\ref{sec:tokenizer_design}), R3 with the evidence engine
+(Section~\ref{sec:evidence_design}), and R4 because that engine's memory is append-only.
+
+Table~\ref{tab:mechanisms} states which mechanism answers which demand, and fixes the name we use
+for each one throughout. The distinctions the names carry are the contribution: not ``a spectral
+tokenizer'' but one anchored to \emph{physical} Hz; not a Nyquist mask but one bounded by the
+\emph{acquisition} clock; not per-channel text but per-\emph{sensor}; not retrieval in CLIP space
+but in \emph{sensor} space.
+
+\begin{table}[t]
+  \centering
+  \caption{Each deployment demand, the mechanism that answers it, and the name used for that
+  mechanism throughout this paper. The qualifiers are load-bearing: each marks where HALO departs
+  from the nearest existing technique.}
+  \label{tab:mechanisms}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}p{0.30\columnwidth} p{0.38\columnwidth} p{0.24\columnwidth}@{}}
+    \toprule
+    Demand & Mechanism & Name \\
+    \midrule
+    Rate and anti-aliasing differ per device
+      & constant-$Q$ filterbank on a fixed physical-frequency axis over a native-rate transform;
+        no resampling anywhere in the path
+      & \textbf{physical-Hz tokenizer} \\[2pt]
+    What a device \emph{could} measure differs
+      & per-token masks bounded by the \textsc{acquisition} clock, not the rate the grid happens
+        to be stored at
+      & \textbf{acquisition-bounded observability masks} \\[2pt]
+    Channel count, order and placement differ
+      & free-text identity attached to the \textsc{sensor}, leaving channel count and order free
+        while staying too coarse to fingerprint a corpus
+      & \textbf{per-sensor language conditioning} \\[2pt]
+    The label set belongs to the deployment
+      & retrieve encoded exemplars by \textsc{sensor} similarity; accumulate evidence for whatever
+        strings are declared at run time
+      & \textbf{evidence retrieval in sensor space} \\[2pt]
+    The label budget is small and fixed
+      & append exemplars to memory; no gradient update at any budget
+      & \textbf{append-only memory} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{The Physical-Hz Tokenizer}
 \label{sec:tokenizer_design}
 
-\subsubsection{Sensors, not channels}
+\subsubsection{Per-sensor language conditioning: sensors, not channels}
 \label{sec:sensor_grouping}
 
 HALO's first commitment is that the unit of description is the \emph{sensor}, not the scalar
@@ -144,7 +197,7 @@ statistics, offline and causal operation differ only by the attention mask and t
 implements both; this submission does not measure a causal arm, so we report it as an affordance
 rather than a claim.
 
-\subsection{Phase A: Label-Free Representation Pretraining}
+\subsection{Phase A: Label-Free Pretraining of the Physical-Hz Tokenizer and Encoder}
 \label{sec:phaseA_design}
 
 Phase A trains the tokenizer and encoder with objectives that never observe an activity label.
@@ -178,7 +231,7 @@ comes from explicit event identifiers written during conversion, never from arra
 activity label; and two self-derived targets as a sanity anchor. Model selection uses
 subject-disjoint $k$-NN accuracy; labels are a \emph{metric} here, never in the loss.
 
-\subsection{Phase B: The Evidence Engine}
+\subsection{Phase B: Evidence Retrieval in Sensor Space}
 \label{sec:evidence_design}
 
 The encoder is frozen. What remains is to turn its representation into a decision over label

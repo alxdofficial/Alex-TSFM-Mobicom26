@@ -39,7 +39,8 @@ performance to acquisition-configuration handling than to label-text handling. A
 training cycle} needs nothing retrained and nothing re-validated, and the demonstration never
 leaves the device---in clinical and workplace settings a legal precondition, not a convenience.
 
-\subsection{Sensing Heterogeneity Across Devices and Deployments}
+\subsection{Inertial Signals Have No Grammar---But They Have Physics}
+\label{sec:no_grammar}
 \label{sec:heterogeneity_motiv}
 
 The differences between configurations are not cosmetic. Our corpus alone
@@ -54,9 +55,6 @@ unadvertised low-pass filter. In assembling our corpus we found public datasets 
 transformed---one per-axis min--max normalised, destroying physical scale; another shipping
 gravity-removed acceleration under a name suggesting total acceleration. A model that silently
 assumes a convention will be wrong on data it has every reason to think it understands.
-
-\subsection{Inertial Signals Admit No Closed Grammar}
-\label{sec:no_grammar}
 
 This heterogeneity is usually treated as a nuisance to be absorbed by pretraining on more of it.
 That is the wrong diagnosis, and it changes what the solution has to be. Language and vision
@@ -120,17 +118,3 @@ corpus the cheapest other means is dataset identity. The consequence is to stop 
 keeps language as the \emph{interface} for naming activities but not as the \emph{metric space}
 in which recognition happens. Retrieval runs in sensor space, where similarity means kinematic
 similarity; label text enters afterwards, to name neighbours and enumerate candidates.
-
-\subsection{Design Requirements}
-\label{sec:requirements}
-
-The three claims yield four requirements. \textbf{R1:} one weight set must accept arbitrary rates,
-channel counts, sensor suites, and placements with no architectural change, and must signal what
-a configuration could not observe instead of fabricating it. \textbf{R2:} the conditioning
-carrying acquisition context must compose to unseen configurations yet be too coarse to identify
-a corpus---a testable property, not an assertion. \textbf{R3:} recognition over a run-time label
-set must not require a single projection reconciling sensor with sentence geometry. \textbf{R4:}
-the model must place no floor on target supervision, and adding a little must need no gradient
-update and no data leaving the device. HALO meets R1--R2 with the tokenizer
-(Section~\ref{sec:tokenizer_design}), R3 with the evidence engine
-(Section~\ref{sec:evidence_design}), and R4 because that engine's memory is append-only.
