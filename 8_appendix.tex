@@ -109,40 +109,6 @@ depends on. MobiAct~\cite{mobiact} was never materialised into grids. And HAPT~\
 excluded because it re-records the same 30 subjects as UCI-HAR~\cite{ucihar}, so including both
 would place the same people on both sides of a supposedly subject-disjoint boundary.
 
-\section{Per-Dataset Results}
-\label{app:perdataset}
-
-\begin{table}[h]
-  \centering
-  \caption{Per-dataset HALO performance at the two ends of the enrollment regime. InclusiveHAR is
-  stratified by ability, because a model that works only for able-bodied users is not a
-  foundation for rehabilitation applications. $^\S$\,TNDA-HAR carries no subject identifiers, so
-  it sits outside the subject-disjoint mean.}
-  \label{tab:per_dataset_app}
-  \scriptsize
-  \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{@{}l cc cc@{}}
-    \toprule
-    & \multicolumn{2}{c}{$k{=}0$} & \multicolumn{2}{c}{$k{=}10$} \\
-    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-    Dataset & Acc & F1 & Acc & F1 \\
-    \midrule
-    MotionSense   & \PH & \PH & \PH & \PH \\
-    RealWorld     & \PH & \PH & \PH & \PH \\
-    Shoaib        & \PH & \PH & \PH & \PH \\
-    InclusiveHAR  & \PH & \PH & \PH & \PH \\
-    \quad\emph{able-bodied} & \PH & \PH & \PH & \PH \\
-    \quad\emph{disabled}    & \PH & \PH & \PH & \PH \\
-    USC-HAD       & \PH & \PH & \PH & \PH \\
-    UT-Complex    & \PH & \PH & \PH & \PH \\
-    \midrule
-    \textbf{Mean} (subject-disjoint) & \PH & \PH & \PH & \PH \\
-    \midrule
-    TNDA-HAR\rlap{$^\S$}     & \PH & \PH & \PH & \PH \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
 \section{Baselines}
 \label{app:baselines}
 

@@ -66,6 +66,60 @@ hyper-parameters are selected on held-out \emph{training} configurations.
 HALO is also evaluated under baseline-equivalent inputs---$20$\,Hz resampling, neutral sensor
 description---against the best member of each baseline group (Appendix~\ref{app:parity}).
 
+\subsection{Per-Dataset Zero-Shot and 10-Shot Transfer}
+\label{sec:per_dataset}
+
+We report the conventional view first: every held-out dataset, scored against its own label
+strings, at the two ends of the enrollment regime. Datasets are grouped by how much of their
+vocabulary the training corpus never saw, because that fraction is what the open-set claim is
+actually about, and it is far from uniform: three of the seven held-out sets are covered entirely
+by the $93$-label training vocabulary, while four are not. A method that only needs to name
+\emph{sitting}, \emph{standing} and \emph{walking} should do equally well on both groups; a
+closed-vocabulary method should not.
+
+\begin{table}[t]
+  \centering
+  \caption{Per-dataset transfer, grouped by the fraction of that dataset's label vocabulary absent
+  from the $93$-label training corpus (\emph{unseen}). Every dataset is scored against its
+  \emph{own} label strings. InclusiveHAR is stratified by ability, because a model that works only
+  for able-bodied users is not a foundation for rehabilitation applications.
+  $^\S$\,TNDA-HAR carries no subject identifiers, so it sits outside the subject-disjoint mean.}
+  \label{tab:per_dataset}
+  \scriptsize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}l r cc cc@{}}
+    \toprule
+    & & \multicolumn{2}{c}{$k{=}0$} & \multicolumn{2}{c}{$k{=}10$} \\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+    Dataset & unseen & Acc & F1 & Acc & F1 \\
+    \midrule
+    \multicolumn{6}{l}{\textit{Vocabulary fully covered by training}}\\
+    MotionSense   & $0\%$ & \PH & \PH & \PH & \PH \\
+    RealWorld     & $0\%$ & \PH & \PH & \PH & \PH \\
+    Shoaib        & $0\%$ & \PH & \PH & \PH & \PH \\
+    \midrule
+    \multicolumn{6}{l}{\textit{Vocabulary partly unseen}}\\
+    InclusiveHAR  & $33\%$ & \PH & \PH & \PH & \PH \\
+    \quad\emph{able-bodied} & & \PH & \PH & \PH & \PH \\
+    \quad\emph{disabled}    & & \PH & \PH & \PH & \PH \\
+    UT-Complex    & $38\%$ & \PH & \PH & \PH & \PH \\
+    USC-HAD       & $42\%$ & \PH & \PH & \PH & \PH \\
+    \midrule
+    \textbf{Mean} (subject-disjoint) & $23\%$ & \PH & \PH & \PH & \PH \\
+    \midrule
+    TNDA-HAR\rlap{$^\S$}     & $25\%$ & \PH & \PH & \PH & \PH \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The unseen fractions are properties of the corpus, not of any model: across the seven held-out
+sets, $14$ of $60$ label strings ($23\%$) never appear in training. The examples are the point.
+UT-Complex asks for \emph{drinking coffee}, \emph{eating} and \emph{smoking}---three
+wrist-mounted activities a closed sit/stand/walk vocabulary cannot express at all---and
+InclusiveHAR distinguishes \emph{ramp ascent} from \emph{walking upstairs}. Where a held-out set
+\emph{is} covered by the training vocabulary, we say so rather than counting it as evidence for
+an open-set claim it does not test.
+
 \subsection{Q1: The Label-Efficiency Curve}
 \label{sec:label_efficiency}
 
@@ -119,9 +173,8 @@ where a nearest-neighbour decision beats a linear fit on a handful of points, an
 overtake somewhere between $k{=}10$ and $k{=}25$---roughly the $3$--$7\%$ band. If that holds,
 the regime HALO owns is $k \le 10$, which is the enrollment setting a user can perform in under a
 minute. If the probe dominates at \emph{every} $k$ including the smallest, retrieval has no
-regime of its own; we will report that outcome plainly. Appendix~\ref{app:perdataset} reports the
-per-dataset breakdown, including InclusiveHAR stratified by ability, because a model that works
-only for able-bodied users is not a foundation for rehabilitation applications.
+regime of its own; we will report that outcome plainly. Table~\ref{tab:per_dataset} gives the
+per-dataset breakdown behind this curve, including InclusiveHAR stratified by ability.
 
 \subsection{Q2: Does the Inductive Bias Do What It Claims?}
 \label{sec:bias_experiments}
