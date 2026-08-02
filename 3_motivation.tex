@@ -118,3 +118,23 @@ corpus the cheapest other means is dataset identity. The consequence is to stop 
 keeps language as the \emph{interface} for naming activities but not as the \emph{metric space}
 in which recognition happens. Retrieval runs in sensor space, where similarity means kinematic
 similarity; label text enters afterwards, to name neighbours and enumerate candidates.
+
+\subsection{Why These Answers Are Entailed, Not Assembled}
+\label{sec:combination}
+
+Table~\ref{tab:coverage} summarises which axes the closest systems address. No prior system
+addresses all of them, which is true and also the least interesting thing to say: ``we combine
+more components'' is not a contribution. Variable channel counts, variable rates, and language as
+a bridge to an open vocabulary all have known solutions, and we claim none as novel. Our claim is
+different---that physical-Hz \emph{anchoring} is what makes a single, flat, cross-device memory
+well-posed in the first place, an \emph{enabling} result rather than an assembly. Such a memory
+requires that a query encoded on one device and an exemplar encoded on another be comparable
+\emph{as vectors}, with no per-configuration index to reconcile them; neither resampling nor
+rate-equivariance provides that, which is why existing retrieval-based sensing systems retrieve
+somewhere else---descriptor space~\cite{raghar}, an LLM agent~\cite{zara}, CLIP
+space~\cite{sensorlm}---and why none needs the property we claim. Once it is in view the
+remaining choices stop looking like options: they are \emph{mutually entailed}, so the set
+follows from L1 and L2 rather than being a collection of independently attractive features
+(Appendix~\ref{app:entailment}). Section~\ref{sec:bias_experiments} tests this directly, and
+because ``it is just a combination'' is an empirical objection, the conventional assembly is run
+as a rival arm.

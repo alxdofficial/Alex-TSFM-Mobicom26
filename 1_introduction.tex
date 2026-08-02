@@ -73,6 +73,15 @@ evaluation exists to catch.
   \label{fig:hook}
 \end{figure*}
 
+\textbf{(L3) The quantity that matters is label efficiency.}
+These choices are usually argued about as ``zero-shot versus fine-tuning,'' a false dichotomy: a
+deployment does not choose between zero labels and a full annotation campaign, it has a budget,
+and the question is what that budget buys. HALO is therefore evaluated on a single
+\emph{label-efficiency curve}: one frozen model recognises declared labels with no target data,
+improves as demonstrated examples are appended to memory with no gradient update and nothing
+leaving the device, and remains available for supervised fitting when labels are plentiful.
+Zero-shot is the left endpoint of that curve, not a separate claim.
+
 \textbf{HALO.} We present HALO (\textbf{H}eterogeneity-\textbf{A}ware
 \textbf{L}anguage-conditioned \textbf{O}pen-set model), which answers each obstacle with a design
 choice (Figure~\ref{fig:hook}). Against L1, a tokenizer committing to the physics that is genuinely universal (co-located
@@ -87,15 +96,6 @@ the conditioning stays too coarse to fingerprint a corpus. Against L2, an \emph{
 that declines to reconcile the two geometries at all: it retrieves encoded exemplars from a
 memory by \emph{sensor} similarity and accumulates evidence for whichever label strings the
 deployment declares at run time. Pretraining is entirely activity-label-free.
-
-\textbf{(L3) The quantity that matters is label efficiency.}
-These choices are usually argued about as ``zero-shot versus fine-tuning,'' a false dichotomy: a
-deployment does not choose between zero labels and a full annotation campaign, it has a budget,
-and the question is what that budget buys. HALO is therefore evaluated on a single
-\emph{label-efficiency curve}: one frozen model recognises declared labels with no target data,
-improves as demonstrated examples are appended to memory with no gradient update and nothing
-leaving the device, and remains available for supervised fitting when labels are plentiful.
-Zero-shot is the left endpoint of that curve, not a separate claim.
 
 We contribute: the \emph{no closed grammar} argument and its realisation as a tokenizer that is
 rate-invariant by construction, groups co-located axes into rigid sensors, and conditions on

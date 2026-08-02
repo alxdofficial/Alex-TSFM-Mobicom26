@@ -14,7 +14,10 @@ ssl-wearables~\cite{sslwearables} scales multi-task self-supervision to ${\sim}7
 of wrist accelerometry. A second wave targets foundation scale, establishing the label-efficiency
 argument and learning from incomplete recordings~\cite{lsm1,lsm2}, learning motion-similarity
 metrics at ${\sim}10^9$ windows~\cite{relcon}, and pairing sensor data with
-captions~\cite{sensorlm}; general time-series and tabular models~\cite{moment,patchtst,mitra}
+captions~\cite{sensorlm}; IMU foundation models outside HAR pursue the same transfer goal on a different task---Tartan
+IMU~\cite{tartanimu} pretrains for inertial positioning across ground, aerial and legged
+platforms, then adapts per-deployment with LoRA; general time-series and tabular
+models~\cite{moment,patchtst,mitra}
 trade domain bias for breadth, and Inertia-1~\cite{inertia1} runs a controlled lifecycle study
 over modality, placement, rate, and window length~\cite{harfmsurvey}. \emph{What is left:} all of
 these treat sampling rate as a preprocessing decision to be normalised away. We argue that is
@@ -62,25 +65,8 @@ To that we add calibrated rejection~\cite{selectiveclass,edl}.
 Section~\ref{sec:label_efficiency} reports the control that decides whether the distinction is
 real: the same memory mechanism on a competitor's encoder.
 
-\subsection{The Combination, and Why It Is Not a List}
-\label{sec:combination}
-
-Table~\ref{tab:coverage} summarises which axes the closest systems address. No prior system
-addresses all of them, which is true and also the least interesting thing to say: ``we combine
-more components'' is not a contribution. Variable channel counts, variable rates, and language as
-a bridge to an open vocabulary all have known solutions, and we claim none as novel. Our claim is
-different---that physical-Hz \emph{anchoring} is what makes a single, flat, cross-device memory
-well-posed in the first place, an \emph{enabling} result rather than an assembly. Such a memory
-requires that a query encoded on one device and an exemplar encoded on another be comparable
-\emph{as vectors}, with no per-configuration index to reconcile them; neither resampling nor
-rate-equivariance provides that, which is why existing retrieval-based sensing systems retrieve
-somewhere else---descriptor space~\cite{raghar}, an LLM agent~\cite{zara}, CLIP
-space~\cite{sensorlm}---and why none needs the property we claim. Once it is in view the
-remaining choices stop looking like options: they are \emph{mutually entailed}, so the set
-follows from L1 and L2 rather than being a collection of independently attractive features
-(Appendix~\ref{app:entailment}). Section~\ref{sec:bias_experiments} tests this directly, and
-because ``it is just a combination'' is an empirical objection, the conventional assembly is run
-as a rival arm.
+\textbf{What the closest systems claim.} Table~\ref{tab:coverage} summarises which axes each
+addresses; Section~\ref{sec:combination} argues why our set is entailed rather than assembled.
 
 \begin{table}[t]
   \centering
