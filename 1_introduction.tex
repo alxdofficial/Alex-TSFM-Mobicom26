@@ -36,11 +36,11 @@ images obey a stable projective geometry, so enough data does approach the space
 inputs. Inertial signals have no comparable closure. The same motion, from the same body,
 becomes a different signal if the device is rotated, worn on a different limb, sampled at a
 different rate, low-pass filtered by an unknown firmware stage, or reported as
-gravity-inclusive rather than gravity-removed acceleration. These are not corner cases; they
-are what changes when an app ships on a second phone model. A larger corpus reduces the
+gravity-inclusive rather than gravity-removed acceleration---not corner cases, but what changes
+when an app ships on a second phone model. A larger corpus reduces the
 \emph{probability} of surprise but cannot close the space, because the transformations are
-continuous and compose. Compatibility with an unseen configuration must therefore be built in
-as \emph{inductive bias}---and inductive bias is a quantity to be \emph{calibrated}, not
+continuous and compose. Compatibility must therefore be built in
+as \emph{inductive bias}---a quantity to be \emph{calibrated}, not
 maximised. Assume too much (a fixed channel layout and rate) and the encoder cannot read a device
 it was not built for; assume too little (every scalar channel an independent series carrying a
 free-text name) and nothing stops the model from using that text as a dataset identifier.
@@ -58,20 +58,9 @@ reduce training loss is to exploit whatever \emph{does} predict the label within
 corpus---subject, session, device---which is precisely the memorisation that cross-dataset
 evaluation exists to catch.
 
-\begin{figure*}[t]
-    \centering
-    \setlength{\abovecaptionskip}{4pt}
-    \setlength{\belowcaptionskip}{-6pt}
-  \resizebox{0.92\textwidth}{!}{\input{figures/fig_hook.tex}}
-  \caption{HALO absorbs acquisition heterogeneity \emph{in the tokenizer}---a fixed
-  physical-frequency axis, sensor identity supplied in language, gravity preserved---so that
-  windows recorded on different devices are directly comparable as vectors. Recognition is then
-  a retrieval in \emph{sensor} space against a memory of encoded exemplars, with the label
-  strings the deployment declares at run time used only to name and to enumerate. Because the
-  memory is append-only, one frozen model spans the whole label budget, from no target data to
-  full supervision, with no gradient update at any point.}
-  \label{fig:hook}
-\end{figure*}
+% The teaser figure (fig:hook) moved to Appendix B for the page budget. Its
+% three real traces are evidence for L1 and are cited from Section 3.2; the
+% machinery it sketched is now shown properly by fig:overview in Section 4.
 
 \textbf{(L3) The quantity that matters is label efficiency.}
 These choices are usually argued about as ``zero-shot versus fine-tuning,'' a false dichotomy: a
@@ -84,7 +73,7 @@ Zero-shot is the left endpoint of that curve, not a separate claim.
 
 \textbf{HALO.} We present HALO (\textbf{H}eterogeneity-\textbf{A}ware
 \textbf{L}anguage-conditioned \textbf{O}pen-set model), which answers each obstacle with a named
-mechanism (Figure~\ref{fig:hook}; Table~\ref{tab:mechanisms} fixes the names). Against L1, a
+mechanism (Table~\ref{tab:mechanisms} fixes the names). Against L1, a
 \textbf{physical-Hz tokenizer} commits to the physics that is genuinely universal (co-located
 axes form a rigid sensor; motion energy lives at physical frequencies; gravity is a signed DC
 offset) and to nothing that varies by deployment: each sensor is read on a frequency axis fixed
@@ -100,8 +89,7 @@ geometries at all: encoded exemplars are retrieved from an \textbf{append-only m
 declares at run time. Pretraining is entirely activity-label-free.
 
 We contribute: the \emph{no closed grammar} argument and its realisation as a physical-Hz
-tokenizer that is rate-invariant by construction, groups co-located axes into rigid sensors, and
-conditions on \emph{per-sensor} rather than per-channel language; the direct measurement that sensor and
+tokenizer; the direct measurement that sensor and
 linguistic similarity are frequently \emph{inverted}, and its architectural consequence, an
 evidence engine that never forces the two geometries through one projection; a reframing of the
 evaluation as one \emph{label-efficiency curve} under a leakage-free, subject-disjoint

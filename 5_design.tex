@@ -99,23 +99,22 @@ HALO's first commitment is that the unit of description is the \emph{sensor}, no
 channel. Three co-located accelerometer axes share a coordinate frame: they rotate together,
 experience the same gravity vector, and no physically realisable transformation moves one without
 the others. Treating them as independent series discards this and lets per-channel text act as a
-corpus fingerprint. HALO therefore models a stream as a \emph{set of sensors}, each an
-accelerometer or gyroscope triad with its own device, placement, and gravity convention---which
-also makes the augmentation physics correct, since an $SO(3)$ rotation is applied jointly to a
-triad and its co-located gyroscope rather than to a single axis.
+corpus fingerprint. HALO therefore models a stream as a \emph{set of sensors}, each a triad with
+its own device, placement, and gravity convention---which also makes the augmentation physics
+correct, since an $SO(3)$ rotation is applied jointly to a triad and its co-located gyroscope
+rather than to a single axis.
 
 Accelerometer streams are gravity-aware. The quasi-static component below the analysis band is
 split off as a \emph{signed} per-axis DC feature rather than removed, so posture survives. On
 $200$ real waist-phone windows each of standing, sitting and lying, the frequency path separates
 no pair distinctly (all pairwise cosines within $0.84$--$0.88$) while signed DC places lying
-nearly orthogonal to standing (cosine $-0.04$); a design achieving orientation robustness through
-\emph{invariance} discards that quantity entirely, and with it the distinction between lying down
-and standing still. Appendix~\ref{app:gravity}, Figure~\ref{fig:gravity} shows this and its
+nearly orthogonal to standing ($-0.04$); a design achieving orientation robustness through
+\emph{invariance} discards that quantity, and with it the distinction between lying down
+and standing still. Figure~\ref{fig:gravity} shows this and its
 limit---standing and sitting stay at $0.99$ in DC, the same pair Section~\ref{sec:geometry} finds
-inseparable in text, so neither the frequency path nor the DC term suffices on its own. Because
-gravity conventions differ across platforms, the
-convention is declared in the sensor's text and a gravity-removal augmentation is applied with
-low probability, so the encoder sees both conventions for the same motion.
+inseparable in text, so neither path suffices alone. Because gravity conventions differ across
+platforms, the convention is declared in the sensor's text and a gravity-removal augmentation is
+applied with low probability, so the encoder sees both conventions for the same motion.
 
 \subsubsection{A physical-frequency constant-$Q$ filterbank}
 \label{sec:filterbank}
@@ -135,11 +134,10 @@ the signed DC feature already carries.
 Rate-invariance is therefore a property of the construction rather than of a learned
 approximation: a $2$\,Hz gait rhythm deposits energy in the same band whether the device sampled
 at $20$ or $100$\,Hz, and because no interpolation exists in the path there is no aliasing to
-introduce and no fabricated sample to explain away (Figure~\ref{fig:rateinv}). Note the
-distinction from rate-\emph{equivariance}~\cite{flowstate}: the model is never told the rate in
-order to compare two windows, because band $k$ denotes the same physical frequency in both---which
-is what allows exemplars from different devices to occupy one memory with no per-configuration
-index. Appendix~\ref{app:tokenizer} records the DFT- and patch-length guardrails.
+introduce and no fabricated sample to explain away (Figure~\ref{fig:rateinv}). This is the
+property, argued in Section~\ref{sec:no_grammar}, that rate-\emph{equivariance}~\cite{flowstate}
+does not provide and that one flat cross-device memory requires.
+Appendix~\ref{app:tokenizer} records the DFT- and patch-length guardrails.
 
 \begin{figure*}[t]
     \centering
@@ -165,11 +163,10 @@ energy at $12$\,Hz, and a $0.4$\,s patch cannot resolve a $0.3$\,Hz band. Rather
 small number the encoder might read as ``no energy here,'' each token carries two masks. The
 \emph{Nyquist observability} mask marks band $k$ observable only if
 $c_k + 2\sigma_k \le 0.9\,(r/2)$, a $10\%$ guard so a band's Gaussian tail does not straddle the
-aliasing edge; at $20$\,Hz this leaves $26$ of $32$ bands and at $50$\,Hz and above all $32$. The
-\emph{resolution} mask marks band $k$ resolved only if one full cycle fits in the patch,
-$c_k \ge 1/D$; a $0.5$\,s patch resolves $16$ bands and a $1.5$\,s patch $25$. A band that is
-present but blurry is flagged, not zeroed, and streams resampled by their publisher take the
-Nyquist bound from the \emph{acquisition} rate, since upsampling cannot create information.
+aliasing edge; the \emph{resolution} mask marks it resolved only if one full cycle fits in the
+patch, $c_k \ge 1/D$ (Figure~\ref{fig:tokenizer}). A band that is present but blurry is flagged,
+not zeroed, and streams resampled by their publisher take the Nyquist bound from the
+\emph{acquisition} rate, since upsampling cannot create information.
 
 \subsubsection{Factored language conditioning}
 \label{sec:conditioning}
@@ -183,14 +180,14 @@ embedded by the same frozen sentence encoder~\cite{sbert} and fused into the tok
 embedding through a gated residual initialised near zero so conditioning starts as a gentle bias
 and grows only if it earns its place.
 
-The factorisation is the point: the description a channel receives is shared by every channel of
-that sensor and every sensor of that kind across the corpus, which is what makes it too coarse to
-identify a dataset. Numeric metadata is deliberately \emph{absent} from the text, because a
-frozen sentence encoder represents numbers unreliably; rate and duration enter through the
-bin$\to$Hz map and the masks instead. Sensor strings are paraphrased during training and
-sometimes dropped to a generic string, so the encoder must tolerate an unfamiliar description at
-deployment. Whether this buys the anti-memorisation property it is designed for is empirical, and
-Table~\ref{tab:tokenizer_ablation} tests it against per-channel-text and layout-locked variants.
+The factorisation is the point: the description a channel receives is shared by every sensor of
+that kind across the corpus, which is what makes it too coarse to identify a dataset. Numeric
+metadata is deliberately \emph{absent}, because a frozen sentence encoder represents numbers
+unreliably; rate and duration enter through the bin$\to$Hz map and the masks instead. Sensor
+strings are paraphrased during training and sometimes dropped to a generic one, so the encoder
+must tolerate an unfamiliar description at deployment. Whether this buys the anti-memorisation it
+is designed for is empirical: Table~\ref{tab:tokenizer_ablation} tests it against
+per-channel-text and layout-locked variants.
 
 \subsubsection{Set encoder over physical time}
 \label{sec:encoder}
@@ -207,8 +204,7 @@ trainable parameters ($d{=}256$, $6$ layers, $8$ heads) plus a frozen all-MiniLM
 encoder ($22.7$M) shared by sensor conditioning and label text, reading $6$\,s windows tokenised
 at two resolutions. Because rotary positions are relative and the tokenizer uses no cross-patch
 statistics, offline and causal operation differ only by the attention mask and the encoder
-implements both; this submission does not measure a causal arm, so we report it as an affordance
-rather than a claim.
+implements both---an affordance, not a claim, since we do not measure a causal arm here.
 
 \subsection{Phase A: Label-Free Pretraining of the Physical-Hz Tokenizer and Encoder}
 \label{sec:phaseA_design}
@@ -229,12 +225,11 @@ its own input features.
 
 \textbf{(A2) VICReg over augmented views.} Two independently augmented views are pulled together
 under VICReg~\cite{vicreg} rather than a contrastive loss, for a reason specific to this corpus:
-with NT-Xent the other windows in a batch are declared negatives, and in a multi-dataset corpus
-the batch is full of windows of the same activity from other subjects and datasets, so a
-contrastive objective actively pushes apart things that should be together. VICReg needs no
-negatives; SimCLR~\cite{simclr} and SupCon~\cite{supcon} remain selectable as controls. Text
-augmentation uses a \emph{shared} seed across views, so a pair never differs only in whether its
-configuration was described.
+NT-Xent declares the other windows in a batch negatives, and in a multi-dataset corpus the batch
+is full of the same activity from other subjects and datasets, so it actively pushes apart things
+that should be together. VICReg needs no negatives; SimCLR~\cite{simclr} and SupCon~\cite{supcon}
+remain selectable as controls. Text augmentation uses a \emph{shared} seed across views, so a pair
+never differs only in whether its configuration was described.
 
 \textbf{(A3--A5) Three low-weight rails} complete the objective: time--frequency consistency
 against an auxiliary time-domain encoder discarded at inference (inspired by TF-C~\cite{tfc} but
@@ -242,7 +237,7 @@ not faithful to it); a cross-placement term over \emph{verified simultaneous} re
 physical event at two or more placements ($17{,}387$ paired events), whose positive identity
 comes from explicit event identifiers written during conversion, never from array alignment or an
 activity label; and two self-derived targets as a sanity anchor. Model selection uses
-subject-disjoint $k$-NN accuracy; labels are a \emph{metric} here, never in the loss.
+subject-disjoint $k$-NN accuracy---labels are a \emph{metric} here, never in the loss.
 
 \subsection{Phase B: Evidence Retrieval in Sensor Space}
 \label{sec:evidence_design}
@@ -270,34 +265,31 @@ mechanism.
 
 \textbf{Memory and retrieval.} Every labelled window available---from the training corpus and,
 optionally, the target deployment---is encoded once and written to a versioned table storing the
-patch vector with its label, subject, dataset and acquisition configuration, source window,
-physical event, sensor group, and timing. The table is append-only: adding a class, a placement,
-or a device is a write, not a training run. Every artifact is bound to the Phase-A checkpoint,
-corpus, and vocabulary it was built from, and a behavioural probe rejects a bank whose encoder has
-since changed---silently stale memory is the most dangerous failure mode this design has. Each
-query patch then retrieves independently by similarity in \emph{sensor} space under learned
-projections, each defining its own subspace and evidence contribution. During training the
-query's own window, event, and subject are excluded, and contributions are capped per source
-window and per label so one long recording cannot dominate a vote.
+patch vector with its label, subject, dataset, acquisition configuration, and source event. The
+table is append-only: adding a class, a placement, or a device is a write, not a training run.
+Every artifact is bound to the Phase-A checkpoint it was built from, and a behavioural probe
+rejects a bank whose encoder has since changed---silently stale memory is the most dangerous
+failure mode this design has. Each query patch then retrieves independently in \emph{sensor} space
+under learned projections, each defining its own subspace and evidence contribution. During
+training the query's own window, event, and subject are excluded, and contributions are capped per
+source window and per label so one long recording cannot dominate a vote.
 
 \textbf{Candidate-aware decoding.} Retrieved evidence is not simply averaged. A small set
-transformer contextualises query and evidence tokens under learned structural roles, refines each
-evidence item's label text as a residual in frozen sentence space---which is what lets a
-neighbour labelled \emph{walking} but retrieved in a stair-climbing context contribute as
-\emph{walking upstairs}---and pools evidence as a residual on the retrieval prior. Candidate
-tokens carry frozen label text and attend permutation-equivariantly over the fixed evidence
-states, so neither candidate nor evidence order carries meaning. Every sublayer is gated by a
-LayerScale initialised near zero and the residuals are zero-initialised, so at initialisation the
-decoder is \emph{exactly} the untrained retrieval-plus-text-ensemble mechanism: every trained arm
-has an exact untrained control, reported side by side.
+transformer contextualises query and evidence tokens, refines each evidence item's label text as a
+residual in frozen sentence space---which is what lets a neighbour labelled \emph{walking} but
+retrieved in a stair-climbing context contribute as \emph{walking upstairs}---and pools evidence
+as a residual on the retrieval prior. Candidate tokens carry frozen label text and attend
+permutation-equivariantly over the evidence, so neither candidate nor evidence order carries
+meaning. Every sublayer is gated by a LayerScale initialised near zero and the residuals are
+zero-initialised, so at initialisation the decoder is \emph{exactly} the untrained
+retrieval-plus-text-ensemble mechanism: every trained arm has an exact untrained control, reported
+side by side.
 
-\textbf{Confidence and rejection.} The decoder emits non-negative evidence per candidate with
-attribution to the patches, sensors, and examples that produced it, so a prediction can be
-inspected rather than merely reported. There is no \textsc{unknown} candidate; a rejection
-confidence is estimated separately~\cite{selectiveclass,edl} from evidence mass, retrieval
-density, agreement, and the leading margin, calibrated on truth-absent episodes with
-risk/coverage reported---and truth-present episodes require support, so always-reject is not a
-solution. Complete label \emph{families} are held out of decoder training for model selection
+\textbf{Confidence and rejection.} There is no \textsc{unknown} candidate; a rejection confidence
+is estimated separately~\cite{selectiveclass,edl} from evidence mass, retrieval density,
+agreement, and the leading margin, calibrated on truth-absent episodes with risk/coverage
+reported---and truth-present episodes require support, so always-reject is not a solution.
+Complete label \emph{families} are held out of decoder training for model selection
 (Appendix~\ref{app:phaseb}).
 
 \textbf{Deployment.}
@@ -306,6 +298,6 @@ A deployment is two pieces of configuration and no code: one description string 
 list of activity names, both embedded once and cached, so run-time cost is one encoder pass plus
 a retrieval. The label-efficiency dial is the memory: at $k{=}0$ evidence comes from corpus
 exemplars and candidate strings alone; at $k{>}0$ each demonstration costs one forward pass and
-is immediately available---no gradient step, no revalidation of weights that did not move, no
-requirement that data leave the device. We expose this behind a small \texttt{predict()}
-interface and package the encoder for Core~ML (Section~\ref{sec:case_study}).
+is immediately available---no gradient step, no revalidation, no requirement that data leave the
+device. We expose this behind a small \texttt{predict()} interface and package the encoder for
+Core~ML (Section~\ref{sec:case_study}).

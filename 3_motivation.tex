@@ -16,9 +16,8 @@ phone or watch worn wherever they choose, and supervision is whatever fits one a
 \textbf{Occupational strain}: a safety team counts one risky motion whose vocabulary belongs to
 that facility, over a hardware fleet accumulated across years, and collecting a labelled corpus
 would mean instrumenting the floor with video and consenting every worker in frame---the thing
-the deployment exists to avoid. \textbf{Free-living monitoring}: devices vary across participants
-and firmware within a participant, under categories defined by a study protocol. A benchmark
-demands none of the three, which is why a model can lead one and be inapplicable to all of these.
+the deployment exists to avoid. A benchmark demands none of the three, which is why a model can
+lead one and be inapplicable to both of these.
 
 Each qualifier rests on a different argument. \textbf{Open-set} is not optional because the label
 set is not the model's to choose. Nor will more data fix this, because \emph{the annotation
@@ -42,12 +41,13 @@ leaves the device---in clinical and workplace settings a legal precondition, not
 \label{sec:no_grammar}
 \label{sec:heterogeneity_motiv}
 
-The differences between configurations are not cosmetic. Our corpus alone
-(Appendix~\ref{app:corpus}, Figure~\ref{fig:corpus}) spans $20$--$100$\,Hz and placements at the waist, pocket, wrist, lower
-back, ear, and head---the last two from smart glasses and earbuds, devices that did not exist as
-HAR platforms when most public benchmarks were collected. Channel sets range from one 3-axis
-wrist accelerometer to six simultaneous placements on one body, which a fixed-width input layer
-cannot accommodate without padding artifacts or per-dataset heads. Worst are the conventions the
+The differences between configurations are not cosmetic---the same activity, recorded by three of
+our own sources, shares no sample grid at all (Appendix~\ref{app:corpus},
+Figure~\ref{fig:hook}). Our corpus alone
+(Table~\ref{tab:datasets}) reaches the ear and head, from smart glasses and earbuds---devices that
+did not exist as HAR platforms when most public benchmarks were collected---and ranges from one
+3-axis wrist accelerometer to six simultaneous placements on one body, which a fixed-width input
+layer cannot accommodate without padding artifacts or per-dataset heads. Worst are the conventions the
 data does not announce: two streams that look identical may differ in gravity convention (Android
 reports total acceleration, iOS \texttt{userAcceleration} removes it), in units, or in an
 unadvertised low-pass filter. In assembling our corpus we found public datasets already
@@ -56,15 +56,13 @@ gravity-removed acceleration under a name suggesting total acceleration. A model
 assumes a convention will be wrong on data it has every reason to think it understands.
 
 This heterogeneity is usually treated as a nuisance to be absorbed by pretraining on more of it.
-That is the wrong diagnosis, and it changes what the solution has to be. Language and vision
-models work in large part because their input space is effectively \emph{closed} by a corpus;
-inertial signals have no such closure. The map from motion to recorded signal is composed at
-deployment time from a chain of choices---mounting orientation (a continuous $SO(3)$ nuisance),
-placement, rate, filter chain, gravity convention, sensor suite---and the chain composes. There
-is no finite enumeration to cover and the free parameters are continuous, so a corpus $10\times$
+That is the wrong diagnosis, and it changes what the solution has to be. The map from motion to
+recorded signal is composed at deployment time from a chain of choices---mounting orientation (a
+continuous $SO(3)$ nuisance), placement, rate, filter chain, gravity convention, sensor
+suite---and the chain composes. There is no finite enumeration to cover, so a corpus $10\times$
 larger reduces the \emph{probability} that a new deployment is far from anything seen without
-closing the tail---and the transformations generating that tail are cheap to encounter: a second
-phone model, or a firmware update, is enough.
+closing the tail---and that tail is cheap to encounter: a second phone model, or a firmware
+update, is enough.
 
 If compatibility cannot come from coverage it must come from \emph{inductive bias}. This is the
 standard move, but for inertial sensing it fails on \emph{both} sides. \textbf{Too much bias:}
@@ -112,28 +110,19 @@ encodes activities by their \emph{object and purpose}---what is being drunk, wha
 cut---while an IMU sees only the \emph{kinematics of the limb}, which is invariant to the object;
 conversely, morphological relatives (\emph{sit}/\emph{sit down}) share nearly all of their surface
 form while denoting opposite dynamics. No amount of alignment training repairs a target geometry
-that is wrong; a model forced to fit it minimises its loss by other means, and in a multi-dataset
-corpus the cheapest other means is dataset identity. The consequence is to stop trying: HALO
-keeps language as the \emph{interface} for naming activities but not as the \emph{metric space}
-in which recognition happens. Retrieval runs in sensor space, where similarity means kinematic
-similarity; label text enters afterwards, to name neighbours and enumerate candidates.
+that is wrong. The consequence is to stop trying: HALO keeps language as the \emph{interface} for
+naming activities but not as the \emph{metric space} in which recognition happens.
 
-\subsection{Why These Answers Are Entailed, Not Assembled}
-\label{sec:combination}
-
-Table~\ref{tab:coverage} summarises which axes the closest systems address. No prior system
-addresses all of them, which is true and also the least interesting thing to say: ``we combine
-more components'' is not a contribution. Variable channel counts, variable rates, and language as
-a bridge to an open vocabulary all have known solutions, and we claim none as novel. Our claim is
-different---that physical-Hz \emph{anchoring} is what makes a single, flat, cross-device memory
-well-posed in the first place, an \emph{enabling} result rather than an assembly. Such a memory
+\textbf{Why these answers are entailed, not assembled.}
+\label{sec:combination}%
+``We combine more components'' is not a contribution, and we claim no component as novel. Our
+claim is that physical-Hz \emph{anchoring} is what makes a single, flat, cross-device memory
+well-posed in the first place---an \emph{enabling} result rather than an assembly. Such a memory
 requires that a query encoded on one device and an exemplar encoded on another be comparable
 \emph{as vectors}, with no per-configuration index to reconcile them; neither resampling nor
 rate-equivariance provides that, which is why existing retrieval-based sensing systems retrieve
 somewhere else---descriptor space~\cite{raghar}, an LLM agent~\cite{zara}, CLIP
 space~\cite{sensorlm}---and why none needs the property we claim. Once it is in view the
-remaining choices stop looking like options: they are \emph{mutually entailed}, so the set
-follows from L1 and L2 rather than being a collection of independently attractive features
-(Appendix~\ref{app:entailment}). Section~\ref{sec:bias_experiments} tests this directly, and
-because ``it is just a combination'' is an empirical objection, the conventional assembly is run
-as a rival arm.
+remaining choices stop looking like options: they are \emph{mutually entailed}
+(Appendix~\ref{app:entailment}). Because ``it is just a combination'' is an empirical objection,
+Section~\ref{sec:bias_experiments} runs the conventional assembly as a rival arm.

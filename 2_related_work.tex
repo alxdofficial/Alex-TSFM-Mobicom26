@@ -65,43 +65,10 @@ To that we add calibrated rejection~\cite{selectiveclass,edl}.
 Section~\ref{sec:label_efficiency} reports the control that decides whether the distinction is
 real: the same memory mechanism on a competitor's encoder.
 
-\textbf{What the closest systems claim.} Table~\ref{tab:coverage} summarises which axes each
-addresses; Section~\ref{sec:combination} argues why our set is entailed rather than assembled.
-
-\begin{table}[t]
-  \centering
-  \caption{Which axes each system \emph{explicitly claims} to address. $\checkmark$~= in the form
-  we argue is needed; $\circ$~= a weaker form (rate \emph{equivariance} rather than physical-Hz
-  anchoring; \emph{categorical} rather than free-text placement; rotation \emph{invariance},
-  which discards gravity). The last column marks systems reporting a range of label budgets with
-  no gradient update. Blank is not a criticism---these are different papers solving different
-  problems---and the table reports stated scope, not measured performance. The point is not the
-  bottom row's length but the dependency structure (Appendix~\ref{app:entailment}).}
-  \label{tab:coverage}
-  \scriptsize
-  \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}l ccccc@{}}
-    \toprule
-    & \multicolumn{2}{c}{acquisition} & orient./ & label & $k$-curve \\
-    \cmidrule(lr){2-3}
-    System & rate & place & grav. & interf. & \\
-    \midrule
-    LiMU-BERT~\cite{limubert}, CrossHAR~\cite{crosshar}\hspace*{-4pt} &   &   &   &   &  \\
-    harnet~\cite{sslwearables}, LSM~\cite{lsm1,lsm2}    &   &   &   &   & \checkmark \\
-    NormWear~\cite{normwear}                &         & $\circ$ &    & \checkmark &  \\
-    UniMTS~\cite{unimts}                    &         & \checkmark & $\circ$ & \checkmark &  \\
-    ZeroHAR~\cite{zerohar}                  &         & $\circ$ &        & \checkmark &  \\
-    GOAT~\cite{goat}, oneHAR~\cite{onehar}  &         & \checkmark &     & \checkmark &  \\
-    CHARM~\cite{charm,sensorsvoice}         &         & \checkmark &     &        &  \\
-    MoPFormer~\cite{mopformer}              &         & $\circ$ &        &        &  \\
-    FlowState~\cite{flowstate}              & $\circ$ &         &        &        &  \\
-    RAG-HAR~\cite{raghar}, ZARA~\cite{zara} &         &         &        & \checkmark & \checkmark \\
-    SensorLM~\cite{sensorlm}                &         &         &        & \checkmark & \checkmark \\
-    \midrule
-    \textbf{HALO}                           & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\textbf{What the closest systems claim.} Appendix~\ref{app:entailment},
+Table~\ref{tab:coverage} summarises which axes each addresses. No system addresses all of them,
+which is true and also the least interesting thing to say---Section~\ref{sec:combination} argues
+why our set is entailed rather than assembled.
 
 \textbf{A note on scale.} We do not claim the scale-first programme fails on its own terms: on
 population-scale health outcomes, models trained on tens of millions of

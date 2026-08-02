@@ -8,7 +8,43 @@
 \label{app:entailment}
 
 Section~\ref{sec:combination} claims HALO's four choices are \emph{mutually entailed} rather than
-independently attractive. The four dependencies, in full.
+independently attractive. Table~\ref{tab:coverage} records which axes the closest systems claim to
+address; the four dependencies follow in full.
+
+\begin{table}[h]
+  \centering
+  \caption{Which axes each system \emph{explicitly claims} to address. $\checkmark$~= in the form
+  we argue is needed; $\circ$~= a weaker form (rate \emph{equivariance} rather than physical-Hz
+  anchoring; \emph{categorical} rather than free-text placement; rotation \emph{invariance},
+  which discards gravity). The last column marks systems reporting a range of label budgets with
+  no gradient update. Blank is not a criticism---these are different papers solving different
+  problems---and the table reports stated scope, not measured performance. The point is not the
+  bottom row's length but the dependency structure below.}
+  \label{tab:coverage}
+  \scriptsize
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{@{}l ccccc@{}}
+    \toprule
+    & \multicolumn{2}{c}{acquisition} & orient./ & label & $k$-curve \\
+    \cmidrule(lr){2-3}
+    System & rate & place & grav. & interf. & \\
+    \midrule
+    LiMU-BERT~\cite{limubert}, CrossHAR~\cite{crosshar}\hspace*{-4pt} &   &   &   &   &  \\
+    harnet~\cite{sslwearables}, LSM~\cite{lsm1,lsm2}    &   &   &   &   & \checkmark \\
+    NormWear~\cite{normwear}                &         & $\circ$ &    & \checkmark &  \\
+    UniMTS~\cite{unimts}                    &         & \checkmark & $\circ$ & \checkmark &  \\
+    ZeroHAR~\cite{zerohar}                  &         & $\circ$ &        & \checkmark &  \\
+    GOAT~\cite{goat}, oneHAR~\cite{onehar}  &         & \checkmark &     & \checkmark &  \\
+    CHARM~\cite{charm,sensorsvoice}         &         & \checkmark &     &        &  \\
+    MoPFormer~\cite{mopformer}              &         & $\circ$ &        &        &  \\
+    FlowState~\cite{flowstate}              & $\circ$ &         &        &        &  \\
+    RAG-HAR~\cite{raghar}, ZARA~\cite{zara} &         &         &        & \checkmark & \checkmark \\
+    SensorLM~\cite{sensorlm}                &         &         &        & \checkmark & \checkmark \\
+    \midrule
+    \textbf{HALO}                           & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \textbf{Rate anchoring is a precondition for the memory, not a parallel feature.} A
 non-parametric memory only works if a query and a stored exemplar recorded on different devices
@@ -60,6 +96,24 @@ grid's own samples and rate rather than by multiplying by six.
     \setlength{\abovecaptionskip}{2pt}
   \input{figures/fig_corpus.tex}
 \end{figure}
+
+\begin{figure*}[t]
+    \centering
+    \setlength{\abovecaptionskip}{4pt}
+    \setlength{\belowcaptionskip}{-6pt}
+  \resizebox{0.92\textwidth}{!}{\input{figures/fig_hook.tex}}
+  \caption{\textbf{What ``no closed grammar'' looks like in the corpus.} The three traces on the
+  left are real accelerometer snippets of \emph{walking}, two seconds each, from three streams of
+  the materialised corpus; they are amplitude-normalised for display, but the sample counts are
+  the true ones. As arrays they have nothing in common. HALO absorbs that heterogeneity
+  \emph{in the tokenizer}---a frequency axis fixed in Hz, sensor identity supplied in language,
+  gravity preserved---so windows recorded on different devices become directly comparable as
+  vectors, which is the precondition for one flat memory. Recognition is then a retrieval in
+  \emph{sensor} space, with the label strings a deployment declares at run time used only to name
+  and to enumerate; because the memory is append-only, one frozen model spans the whole label
+  budget with no gradient update at any point.}
+  \label{fig:hook}
+\end{figure*}
 
 \textbf{Deliberate exclusions.} Six datasets were excluded from both splits.
 DSADS~\cite{dsads}, HARTH~\cite{harth}, and Opportunity~\cite{opportunity} use torso and limb IMU
