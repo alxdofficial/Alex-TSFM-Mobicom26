@@ -49,57 +49,17 @@ whether the rest still stand.
 \section{Corpus}
 \label{app:corpus}
 
-Table~\ref{tab:datasets} lists the training corpus and the held-out evaluation sets, and
-Figure~\ref{fig:corpus} plots them by placement and native rate.
+Table~\ref{tab:datasets} in the body lists the training corpus and the held-out evaluation sets;
+Figure~\ref{fig:corpus} plots them by placement and native rate. Window counts there are windows
+on the native-rate grid after physical-plausibility and duplicate filtering. Most windows are six
+seconds, but UCI-HAR ships $2.56$\,s records and SP-SW-HAR $1$\,s, so hours are computed from each
+grid's own samples and rate rather than by multiplying by six.
 
 \begin{figure}[h]
     \centering
     \setlength{\abovecaptionskip}{2pt}
   \input{figures/fig_corpus.tex}
 \end{figure}
-
-\begin{table}[h]
-  \centering
-  \caption{Corpus. \emph{\#Str} is the number of distinct sensor streams (one per device
-  placement); \emph{Ch} the number of core channels reaching the model (3 = accelerometer only).
-  Window counts are windows on the native-rate grid after physical-plausibility and
-  duplicate filtering. Most are six seconds, but UCI-HAR ships $2.56$\,s records and SP-SW-HAR
-  $1$\,s, so hours are computed from each grid's own samples/rate rather than by multiplying by
-  six. InclusiveHAR comprises 10 able-bodied and 10 physically disabled subjects.
-  TNDA-HAR is distributed without per-window subject identifiers (see
-  Section~\ref{sec:eval_protocol}).}
-  \label{tab:datasets}
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}l r r c r l@{}}
-    \toprule
-    Dataset & Hz & \#Str & Ch & \#Win & Placement(s) \\
-    \midrule
-    \multicolumn{6}{l}{\textit{Training corpus (12 datasets, 20 streams)}}\\
-    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 3 & 1{,}530{,}792 & wrist, free-living \\
-    WISDM~\cite{wisdm}                  &  20 & 2 & 6 &  70{,}201 & pocket $+$ wrist \\
-    XRF~V2~\cite{xrf_v2}                &  50 & 6 & 6 &  34{,}764 & pockets, wrists, glasses \\
-    NFI-FARED~\cite{nfi_fared}          & 100 & 2 & 6 &  26{,}520 & wrist $+$ lower back \\
-    HARMES~\cite{harmes}                &  50 & 1 & 6 &  18{,}576 & wrist \\
-    UniMiB~SHAR~\cite{unimibi}          &  50 & 1 & 3 &  11{,}771 & trouser pocket \\
-    UCI-HAR~\cite{ucihar}               &  50 & 1 & 6 &  10{,}299 & waist \\
-    HHAR~\cite{hhar}                    &  50 & 1 & 6 &   9{,}587 & waist \\
-    KU-HAR~\cite{kuhar}                 & 100 & 1 & 6 &   9{,}233 & waist \\
-    SP-SW-HAR~\cite{sp_sw_har}          & 100 & 2 & 6 &   3{,}757 & pocket $+$ wrist \\
-    PAMAP2~\cite{pamap2}                & 100 & 1 & 6 &   3{,}186 & wrist \\
-    MHEALTH~\cite{mhealth}              &  50 & 1 & 6 &   1{,}104 & wrist \\
-    \midrule
-    \multicolumn{6}{l}{\textit{Held-out evaluation (7 datasets, never trained on)}}\\
-    RealWorld~\cite{realworld}          &  50 & 1 & 6 & 11{,}237 & waist \\
-    MotionSense~\cite{motionsense}      &  50 & 1 & 6 &  4{,}534 & trouser pocket \\
-    USC-HAD~\cite{usc_had}              & 100 & 1 & 6 &  4{,}350 & hip \\
-    UT-Complex~\cite{ut_complex}        &  50 & 1 & 6 &  3{,}900 & wrist \\
-    TNDA-HAR~\cite{tnda_har}            &  50 & 1 & 6 &  3{,}353 & wrist \\
-    Shoaib~\cite{shoaib}                &  50 & 1 & 6 &  2{,}100 & 5 body positions \\
-    InclusiveHAR~\cite{inclusivehar}    &  50 & 1 & 6 &  1{,}260 & waist, mixed abilities \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
 \textbf{Deliberate exclusions.} Six datasets were excluded from both splits.
 DSADS~\cite{dsads}, HARTH~\cite{harth}, and Opportunity~\cite{opportunity} use torso and limb IMU

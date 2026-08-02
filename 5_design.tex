@@ -4,6 +4,10 @@
 \section{Design of HALO}
 \label{sec:design}
 
+\subsection{System Overview}
+\label{sec:overview}
+\label{sec:requirements}
+
 HALO is organised as two phases with a hard boundary (Figure~\ref{fig:overview}).
 \textbf{Phase~A} learns a representation using no activity labels whatsoever; \textbf{Phase~B}
 turns that frozen representation into a recogniser for whatever label set a deployment declares,
@@ -12,40 +16,49 @@ Section~\ref{sec:motivation} lands: L1 says compatibility must be structural, so
 the encoder before any label is involved; L2 says the label decision must not be a projection
 into text space, so it belongs after the encoder, in a component swappable per deployment.
 
-\begin{figure}[t]
+\begin{figure*}[t]
     \centering
     \setlength{\abovecaptionskip}{4pt}
+    \setlength{\belowcaptionskip}{-6pt}
   \input{figures/fig_overview.tex}
-  \caption{HALO's two phases. Phase~A trains the tokenizer and encoder with objectives that never
-  see an activity label; the encoder is then frozen. Phase~B encodes labelled exemplars into an
-  append-only memory and accumulates evidence for the label strings declared at run time. Adding
-  an activity, or a device, is an append---no gradient step.}
+  \caption{\textbf{HALO end to end.} One left-to-right path. Phase~A trains the tokenizer and
+  encoder with objectives that never see an activity label. The encoder is then frozen and
+  crosses the boundary unchanged---it is the \emph{same} weights that encode a query and that
+  encoded every exemplar in memory, which is what lets the two be compared as vectors. Phase~B
+  adds no parameters to that path: it appends encoded exemplars to a memory and accumulates
+  evidence for the label strings declared at run time. Adding an activity, a placement, or a
+  device is an append; no gradient step occurs anywhere to the right of \textsf{freeze}.}
   \label{fig:overview}
-\end{figure}
+\end{figure*}
 
-\label{sec:requirements}
-The three claims yield four requirements. \textbf{R1:} one weight set must accept arbitrary rates,
-channel counts, sensor suites, and placements with no architectural change, and must signal what
-a configuration could not observe instead of fabricating it. \textbf{R2:} the conditioning
-carrying acquisition context must compose to unseen configurations yet be too coarse to identify
-a corpus---a testable property, not an assertion. \textbf{R3:} recognition over a run-time label
-set must not require a single projection reconciling sensor with sentence geometry. \textbf{R4:}
-the model must place no floor on target supervision, and adding a little must need no gradient
-update and no data leaving the device. HALO meets R1--R2 with the tokenizer
-(Section~\ref{sec:tokenizer_design}), R3 with the evidence engine
-(Section~\ref{sec:evidence_design}), and R4 because that engine's memory is append-only.
-
-Table~\ref{tab:mechanisms} states which mechanism answers which demand, and fixes the name we use
-for each one throughout. The distinctions the names carry are the contribution: not ``a spectral
-tokenizer'' but one anchored to \emph{physical} Hz; not a Nyquist mask but one bounded by the
-\emph{acquisition} clock; not per-channel text but per-\emph{sensor}; not retrieval in CLIP space
-but in \emph{sensor} space.
+\textbf{One window, end to end.} A deployment hands HALO a $6$\,s window from whatever sensors it
+has---say a $50$\,Hz watch accelerometer and gyroscope, six channels---plus one description string
+per sensor and its list of activity names. The tokenizer cuts each channel into patches and turns
+each patch into one token: a $32$-band constant-$Q$ readout on a frequency axis fixed in Hz, a
+signed DC term carrying gravity, and two masks recording which of the $32$ bands this rate and
+patch length could actually resolve. Nothing is resampled, so band $k$ denotes the same physical
+frequency whether the device ran at $20$ or $100$\,Hz. Each token is then biased by the sentence
+embedding of its sensor's description, and the token set---unordered over channels, positioned in
+physical time---enters a $7.17$M-parameter transformer that emits one vector per patch. Those
+vectors are the interface between the phases: Phase~A shapes them with objectives that never see
+a label, and Phase~B compares them, by cosine similarity in that same space, against a memory of
+encoded exemplars, accumulating evidence for whichever activity names were declared. The
+demands of Section~\ref{sec:why} map onto this path one-to-one, and
+Table~\ref{tab:mechanisms} fixes the name we use for each mechanism throughout. The distinctions
+those names carry are the contribution: not ``a spectral tokenizer'' but one anchored to
+\emph{physical} Hz; not a Nyquist mask but one bounded by the \emph{acquisition} clock; not
+per-channel text but per-\emph{sensor}; not retrieval in CLIP space but in \emph{sensor} space.
 
 \begin{table}[t]
   \centering
   \caption{Each deployment demand, the mechanism that answers it, and the name used for that
   mechanism throughout this paper. The qualifiers are load-bearing: each marks where HALO departs
-  from the nearest existing technique.}
+  from the nearest existing technique. Rows 1--3 are the tokenizer
+  (Section~\ref{sec:tokenizer_design}) and are what let one weight set accept any rate, channel
+  count, and placement with no architectural change; rows 4--5 are the evidence engine
+  (Section~\ref{sec:evidence_design}). Row 3 states a property we \emph{probe} rather than assert
+  (Table~\ref{tab:tokenizer_ablation}), and row 5 is why no label budget requires a gradient
+  update.}
   \label{tab:mechanisms}
   \scriptsize
   \setlength{\tabcolsep}{3pt}
@@ -236,7 +249,24 @@ subject-disjoint $k$-NN accuracy; labels are a \emph{metric} here, never in the 
 
 The encoder is frozen. What remains is to turn its representation into a decision over label
 strings supplied at run time, without the single sensor-to-text projection
-Section~\ref{sec:geometry} showed to be mis-specified.
+Section~\ref{sec:geometry} showed to be mis-specified. Figure~\ref{fig:evidence} shows the
+mechanism.
+
+\begin{figure}[t]
+    \centering
+    \setlength{\abovecaptionskip}{4pt}
+    \setlength{\belowcaptionskip}{-4pt}
+  \input{figures/fig_evidence.tex}
+  \caption{\textbf{How a decision is made without a sensor-to-text projection.} Each patch of the
+  query retrieves independently, by cosine similarity in \emph{sensor} space, from one flat
+  memory whose rows may come from any device---that is what physical-Hz anchoring buys, and it is
+  what a resampling or rate-conditioned encoder cannot offer without a per-configuration index.
+  Label text enters only twice, and never as a metric: to name what a neighbour was, and to
+  enumerate what the deployment will accept as an answer. The decoder emits non-negative evidence
+  per candidate, attributable to the exemplars that produced it. Structural diagram---the bar
+  lengths are illustrative, not measured.}
+  \label{fig:evidence}
+\end{figure}
 
 \textbf{Memory and retrieval.} Every labelled window available---from the training corpus and,
 optionally, the target deployment---is encoded once and written to a versioned table storing the

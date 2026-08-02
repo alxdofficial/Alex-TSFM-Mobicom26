@@ -140,30 +140,27 @@
 \begin{abstract}
 Human activity recognition has no foundation model a developer can simply pick up: one pretrained
 model that reads whatever sensors a device exposes, recognises the application's own activity
-names, and needs only as much labelled target data as the deployment can afford. The field has
-pursued this through scale, but inertial signals admit no closed grammar the way language
-does---a change of mounting, placement, sampling rate, or on-device filtering puts a recording
-outside any corpus---so compatibility with an unseen configuration must be built in as inductive
-bias rather than accumulated as coverage. A second obstacle is that the standard remedy for open
-label sets, projecting sensor features into a sentence-embedding space, presumes that sensor
-similarity tracks linguistic similarity. It does not, and it fails in both directions:
-\emph{drinking coffee} and \emph{drinking water} are one wrist motion but distant strings, while
-\emph{sitting} and \emph{sitting down}---a posture and a transition---are nearly identical ones.
-We present HALO (\textbf{H}eterogeneity-\textbf{A}ware \textbf{L}anguage-conditioned
-\textbf{O}pen-set model)\footnote{Source code and pretrained models will be released upon
-acceptance.}, which answers each obstacle with a design choice. A tokenizer with
-\emph{calibrated} inductive bias groups co-located axes into sensors and reads each on a fixed
-physical-frequency axis, so the representation is rate-invariant and anti-aliased \emph{by
-construction}, with per-token masks declaring what a given rate and window could not observe;
-sensor identity enters as language attached to the sensor, leaving channel count and ordering
-free while staying too coarse to fingerprint a corpus. An \emph{evidence engine} then declines to
-reconcile the two geometries at all, retrieving encoded exemplars from a memory by \emph{sensor}
-similarity and accumulating evidence for whichever labels the deployment declares at run time.
-Pretraining uses no activity labels. The result is one \emph{label-efficiency curve} rather than
-a zero-shot-versus-fine-tuning dichotomy: a single frozen model spans no target data, a handful
-of demonstrations appended to memory with no gradient update, and full supervision. We train on
-12 public datasets spanning 20 sensor streams and evaluate on 7 held-out datasets under a
-leakage-free, subject-disjoint protocol scored against each dataset's own label strings.
+names, and needs only as much labelled target data as the deployment can afford. Scale alone will
+not produce one. Inertial signals admit no closed grammar the way language does---a change of
+mounting, placement, rate, or on-device filtering puts a recording outside any corpus---so
+compatibility must be built in as inductive bias, not accumulated as coverage. And the usual
+remedy for open label sets---projecting sensor features into a sentence-embedding
+space---presumes that sensor similarity tracks linguistic similarity; we measure that it does not,
+and that it fails in both directions.
+We present HALO\footnote{Source code and pretrained models will be released upon acceptance.},
+which answers each obstacle with a named mechanism. A \emph{physical-Hz tokenizer} reads every
+sensor on a frequency axis fixed in Hz, with no resampling anywhere in the path, so the
+representation is rate-invariant by construction;
+\emph{acquisition-bounded observability masks} state what a configuration could not measure
+instead of fabricating it; \emph{per-sensor language conditioning} leaves channel count and
+ordering free while staying too coarse to fingerprint a corpus; and \emph{evidence retrieval in
+sensor space} decides among the label strings a deployment declares at run time, with no
+sensor-to-text projection at all. Pretraining uses no activity labels, and the memory is
+append-only, so one frozen model spans an entire \emph{label-efficiency curve}---from no target
+data to full supervision, with no gradient update at any point---rather than a
+zero-shot-versus-fine-tuning dichotomy. We train on 12 public datasets (20 sensor streams)
+and evaluate on 7 held-out datasets under a leakage-free, subject-disjoint protocol scored against
+each dataset's own label strings.
 \end{abstract}
 
 

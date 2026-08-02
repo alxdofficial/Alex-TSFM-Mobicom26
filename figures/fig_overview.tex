@@ -1,73 +1,76 @@
 % =====================================================================
-% fig_overview.tex  --  the two-phase HALO system
-% Replaces the v1 fig_overview.png (single language-alignment stage).
+% fig_overview.tex  --  the two-phase HALO system as one left-to-right flow.
+%
+% Spans the full text width (used inside figure*).  Natural width ~156mm
+% against a 178mm text block, so \resizebox scales UP by ~1.14 and the
+% \tiny annotations land near 6.8pt.  The previous two-row single-column
+% layout had to be shrunk to 0.90 and rendered them at 5.4pt -- keep the
+% natural width UNDER \textwidth or that regression returns.
+%
+% Layout discipline: the phase boundary is one dashed vertical rule, not
+% two \fit boxes.  \fit boxes fight for horizontal room with the nodes
+% inside them and were what forced the earlier collisions.  Explanatory
+% prose belongs in the caption, NOT in floating text nodes.
+%
 % NOTE: keep every \\ at the top level of a node body -- a line break
 % nested inside a brace group breaks TikZ's align handling.
 % =====================================================================
-\resizebox{\columnwidth}{!}{%
-\begin{tikzpicture}[node distance=3mm and 4mm,font=\scriptsize]
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[font=\scriptsize]
 
-% =============== PHASE A ===============
-\node[hplain,anchor=west,text width=14mm] (araw) at (0,0)
-  {native-rate\\ IMU window\\ \tiny any rate,\\ \tiny any channels};
-\node[hplain,below=6mm of araw.south,anchor=north,text width=14mm] (atext)
-  {per-sensor text\\ \tiny ``a smartwatch\\ \tiny accelerometer on\\ \tiny the wrist''};
+% ---------------- phase headers + boundary ----------------
+\node[font=\scriptsize,anchor=south west] at (0,1.20)
+  {\textsf{\textbf{Phase A}} \ label-free pretraining \textbf{(no activity labels)}};
+\node[font=\scriptsize,anchor=south west] at (8.75,1.20)
+  {\textsf{\textbf{Phase B}} \ evidence engine \textbf{(labels enter only here)}};
+\draw[dashed,draw=halogray!60,line width=0.5pt] (8.60,1.30) -- (8.60,-2.35);
 
-\node[hbox,right=4.5mm of araw,minimum height=6mm,text width=13mm] (atok)
-  {physical-Hz\\ filterbank\\ tokenizer};
-\node[hbox,right=4mm of atok,minimum height=6mm,text width=12mm] (aenc)
-  {set encoder\\ \tiny RoPE over\\ \tiny physical time};
-\node[hbox2,right=4mm of aenc,minimum height=9mm,text width=18mm,align=left] (aobj)
-  {\textbf{label-free objectives}\\ masked latent\\ (fixed $+$ EMA teacher)\\ VICReg over views\\ time--freq.\ consistency\\ cross-placement\\ physical rail};
+% ---------------- Phase A ----------------
+\node[hplain,anchor=west,text width=23mm] (raw) at (0,0.60)
+  {native-rate IMU window\\ \tiny any rate, any channels};
+\node[hplain,anchor=west,text width=23mm] (text) at (0,-0.65)
+  {per-sensor text\\ \tiny ``a smartwatch accelerometer on the wrist''};
 
-\draw[harrow] (araw.east) -- (atok.west);
-\draw[harrow] (atext.east) -| ($(atok.south)+(0,-2.5mm)$) -- (atok.south);
-\draw[harrow] (atok) -- (aenc);
-\draw[harrow] (aenc) -- (aobj);
+\node[hbox,anchor=west,text width=27mm,minimum height=13mm] (tok) at (2.75,0)
+  {\textbf{physical-Hz tokenizer}\\ \tiny bands fixed in Hz, no resampling\\
+   \tiny $+$ signed DC (gravity)\\ \tiny $+$ observability masks};
+\node[hbox,anchor=west,text width=25mm,minimum height=13mm] (enc) at (5.95,0)
+  {\textbf{set encoder}\\ \tiny RoPE over physical time;\\
+   \tiny permutation-invariant over channels};
 
-\node[hphase,fit=(araw)(atext)(atok)(aenc)(aobj),
-      label={[font=\scriptsize,anchor=south west,yshift=1pt,xshift=-1pt]north west:%
-      \textsf{\textbf{Phase A}} \ label-free representation pretraining
-      \textbf{(no activity labels)}}] (phaseA) {};
+\node[hbox2,anchor=north,text width=48mm] (obj) at (5.60,-0.92)
+  {\textbf{label-free objectives}\\
+   \tiny A1 masked latent (EMA) $\cdot$ A2 VICReg over views $\cdot$
+   A3 physical rail $\cdot$ A4 cross-placement};
 
-% =============== FREEZE ARROW ===============
-% keep the freeze arrow clear of the Phase-B title, which starts at the left edge
-\draw[harrow,line width=1pt,draw=halogreen]
-  ($(phaseA.south east)+(-14mm,0)$) -- ++(0,-7.5mm)
-  node[midway,right=1mm,font=\scriptsize,color=halogreen]{\textbf{freeze}};
+\draw[harrow] (raw.east)  -- ($(tok.west)+(0,4mm)$);
+\draw[harrow] (text.east) -- ($(tok.west)+(0,-4mm)$);
+\draw[harrow] (tok) -- (enc);
+\draw[harrow] (enc.south) -- ($(obj.north)+(16mm,0)$);
 
-% =============== PHASE B ===============
-\node[hplain,anchor=north west,text width=14mm] (bex) at ($(phaseA.south west)+(1mm,-11.5mm)$)
-  {\textbf{$k$ labelled}\\ \textbf{exemplars}\\ \tiny $k{=}0$ allowed};
-\node[hplain,below=4mm of bex.south,anchor=north,text width=14mm] (bq) {query window};
-\node[hplain,below=4mm of bq.south,anchor=north,text width=14mm] (bcand)
-  {candidate labels\\ \tiny declared at run time};
+% ---------------- Phase B ----------------
+\node[hbox2,anchor=west,text width=27mm,minimum height=13mm] (dec) at (10.10,0)
+  {\textbf{candidate-aware evidence decoder}\\
+   \tiny evidence in \textbf{sensor} space;\\ \tiny label text only names it};
+\node[hplain,anchor=west,text width=22mm] (out) at (13.60,0)
+  {evidence per candidate\\ $+$ calibrated rejection\\
+   \tiny $+$ the exemplars that produced it};
 
-\node[hbox,right=3.5mm of bex,minimum height=5mm,text width=12mm] (bmem)
-  {memory bank\\ \tiny append-only};
-\node[hbox,right=3.5mm of bq,minimum height=5mm,text width=12mm] (bqe)
-  {frozen encoder};
-\node[hbox,right=3.5mm of bcand,minimum height=5mm,text width=12mm] (btxt)
-  {frozen text encoder};
+% mem and cand start strictly LEFT of `out' so their arrows into the decoder
+% never run underneath it; the 0.3cm gap between them is what the `hbox'
+% inner sep needs to keep the two rounded rectangles from touching.
+\node[hbox,anchor=north,text width=30mm] (mem) at (10.30,-0.92)
+  {\textbf{append-only memory}\\
+   \tiny encoded exemplars, $k{=}0$ allowed\\
+   \tiny retrieved by \mbox{\textbf{sensor}} similarity};
+\node[hbox,anchor=north,text width=20mm] (cand) at (13.25,-0.92)
+  {\textbf{candidate labels}\\ \tiny declared at run time};
 
-\node[hbox,right=4mm of bqe,minimum height=6mm,text width=13mm] (bret)
-  {retrieve top-$k$\\ \tiny by \textbf{sensor} similarity};
-\node[hbox2,right=4mm of bret,minimum height=8mm,text width=14mm] (bdec)
-  {candidate-aware\\ evidence\\ decoder};
-\node[hplain,right=3mm of bdec,text width=13mm,align=left] (bout)
-  {evidence per\\ candidate\\ $+$ calibrated\\ rejection};
+\draw[harrow] (mem.north)  -- ($(dec.south)+(-7mm,0)$);
+\draw[harrow] (cand.north) -- ($(dec.south)+(7mm,0)$);
+\draw[harrow] (dec.east) -- (out.west);
 
-\draw[harrow] (bex.east) -- (bmem.west);
-\draw[harrow] (bq.east) -- (bqe.west);
-\draw[harrow] (bcand.east) -- (btxt.west);
-\draw[harrow] (bqe.east) -- (bret.west);
-\draw[harrow] (bmem.east) -| ($(bret.north)+(0,3.5mm)$) -- (bret.north);
-\draw[harrow] (bret) -- (bdec);
-\draw[harrow] (btxt.east) -| ($(bdec.south)+(0,-3.5mm)$) -- (bdec.south);
-\draw[harrow] (bdec) -- (bout);
-
-\node[hphase,fit=(bex)(bq)(bcand)(bmem)(bqe)(btxt)(bret)(bdec)(bout),
-      label={[font=\scriptsize,anchor=south west,yshift=1pt,xshift=-1pt]north west:%
-      \textsf{\textbf{Phase B}} \ evidence engine
-      \textbf{(labels enter only here)}}] (phaseB) {};
+% ---------------- the freeze ----------------
+\draw[harrow,line width=1pt,draw=halogreen] (enc.east) -- (dec.west);
+\node[font=\scriptsize,color=halogreen,anchor=south] at (9.28,0.06) {\textbf{freeze}};
 \end{tikzpicture}}

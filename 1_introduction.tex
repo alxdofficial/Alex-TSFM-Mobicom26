@@ -83,23 +83,25 @@ leaving the device, and remains available for supervised fitting when labels are
 Zero-shot is the left endpoint of that curve, not a separate claim.
 
 \textbf{HALO.} We present HALO (\textbf{H}eterogeneity-\textbf{A}ware
-\textbf{L}anguage-conditioned \textbf{O}pen-set model), which answers each obstacle with a design
-choice (Figure~\ref{fig:hook}). Against L1, a tokenizer committing to the physics that is genuinely universal (co-located
+\textbf{L}anguage-conditioned \textbf{O}pen-set model), which answers each obstacle with a named
+mechanism (Figure~\ref{fig:hook}; Table~\ref{tab:mechanisms} fixes the names). Against L1, a
+\textbf{physical-Hz tokenizer} commits to the physics that is genuinely universal (co-located
 axes form a rigid sensor; motion energy lives at physical frequencies; gravity is a signed DC
-offset) and to nothing that varies by deployment: each sensor is read on a fixed
-physical-frequency axis by a constant-$Q$ filterbank over a native-rate transform, so the
+offset) and to nothing that varies by deployment: each sensor is read on a frequency axis fixed
+in Hz by a constant-$Q$ filterbank over a native-rate transform, so the
 representation is rate-invariant and anti-aliased \emph{by construction}---no resampling exists
-anywhere in the path---while per-token masks state which bands a given rate and window could
-actually measure rather than fabricating them. Sensor identity enters as language attached to the
-\emph{sensor} rather than to each scalar channel, so channel count and ordering are free while
-the conditioning stays too coarse to fingerprint a corpus. Against L2, an \emph{evidence engine}
-that declines to reconcile the two geometries at all: it retrieves encoded exemplars from a
-memory by \emph{sensor} similarity and accumulates evidence for whichever label strings the
-deployment declares at run time. Pretraining is entirely activity-label-free.
+anywhere in the path---while \textbf{acquisition-bounded observability masks} state which bands a
+given rate and window could actually measure rather than fabricating them. \textbf{Per-sensor
+language conditioning} attaches identity to the \emph{sensor} rather than to each scalar channel,
+so channel count and ordering are free while the conditioning stays too coarse to fingerprint a
+corpus. Against L2, \textbf{evidence retrieval in sensor space} declines to reconcile the two
+geometries at all: encoded exemplars are retrieved from an \textbf{append-only memory} by
+\emph{sensor} similarity, and evidence accumulates for whichever label strings the deployment
+declares at run time. Pretraining is entirely activity-label-free.
 
-We contribute: the \emph{no closed grammar} argument and its realisation as a tokenizer that is
-rate-invariant by construction, groups co-located axes into rigid sensors, and conditions on
-\emph{per-sensor} rather than per-channel language; the direct measurement that sensor and
+We contribute: the \emph{no closed grammar} argument and its realisation as a physical-Hz
+tokenizer that is rate-invariant by construction, groups co-located axes into rigid sensors, and
+conditions on \emph{per-sensor} rather than per-channel language; the direct measurement that sensor and
 linguistic similarity are frequently \emph{inverted}, and its architectural consequence, an
 evidence engine that never forces the two geometries through one projection; a reframing of the
 evaluation as one \emph{label-efficiency curve} under a leakage-free, subject-disjoint

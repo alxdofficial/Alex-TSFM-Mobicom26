@@ -1,0 +1,65 @@
+% =====================================================================
+% fig_evidence.tex  --  how Phase B turns a frozen representation into a
+% decision over run-time label strings.
+%
+% This is a MECHANISM diagram, not a data plot: every quantity in it is
+% structural (which vector retrieves what, where label text enters, what
+% the decoder emits).  Nothing here is a measurement; the three bars are
+% illustrative and the caption says so.
+%
+% Layout discipline: four horizontal bands at fixed y, nothing floating.
+% Natural width ~8.0cm against an 8.46cm column, so \resizebox scales up
+% slightly.  Explanatory prose belongs in the caption.
+% NOTE: keep every \\ at the top level of a node body.
+% =====================================================================
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[font=\scriptsize]
+
+% ============ band 1: query -> one vector per patch ============
+\node[hplain,anchor=west,text width=15mm] (qw) at (0,0)
+  {query window\\ \tiny any device, any rate};
+\node[hbox,anchor=west,text width=15mm,minimum height=6mm] (fe) at (1.75,0)
+  {frozen encoder};
+\foreach \i in {0,1,2,3} { \node[fbok,anchor=west] at (3.65+0.34*\i,0) {}; }
+\node[font=\tiny,color=halogray,anchor=south] at (4.20,0.28) {one vector per patch};
+\draw[harrow] (qw.east) -- (fe.west);
+\draw[harrow] (fe.east) -- (3.58,0);
+
+\node[font=\tiny,color=halogray,anchor=west,align=left,text width=24mm] at (5.60,0)
+  {each patch retrieves independently, by cosine in \textbf{sensor} space};
+
+% ============ band 2: one flat memory ============
+\node[font=\scriptsize,anchor=west] (memtitle) at (0.20,-1.28)
+  {\textbf{append-only memory}};
+\foreach \i/\lab/\cfg in {%
+  0/{\emph{walking}}/{watch, wrist, 100\,Hz},
+  1/{\emph{stair ascent}}/{phone, pocket, 20\,Hz},
+  2/{\emph{walking}}/{glasses, head, 50\,Hz},
+  3/{\emph{sitting}}/{watch, wrist, 50\,Hz}} {
+  \node[fbblur,anchor=west] (m\i) at (0.28,-1.70-0.27*\i) {};
+  \node[font=\tiny,anchor=west] at (0.62,-1.70-0.27*\i) {\lab};
+  \node[font=\tiny,color=halogray,anchor=west] (c\i) at (2.60,-1.70-0.27*\i) {\cfg};
+}
+\node[hphase,fit=(memtitle)(m0)(m3)(c0)(c3),inner sep=4pt] (mem) {};
+\draw[harrow] (4.20,-0.25) -- (4.20,-1.10);
+
+% ============ band 3: candidates enter, decoder decides ============
+\node[hbox2,anchor=west,text width=24mm,minimum height=7mm] (cand) at (0.05,-3.35)
+  {\textbf{candidate labels}\\ \tiny declared at run time};
+\node[hbox2,anchor=west,text width=28mm,minimum height=7mm] (dec) at (3.00,-3.35)
+  {\textbf{candidate-aware evidence decoder}};
+\draw[harrow] (cand.east) -- (dec.west);
+\draw[harrow] (4.40,-2.78) -- (4.40,-3.00);
+
+% ============ band 4: non-negative evidence per candidate ============
+% bars start BELOW the arrow tip -- an arrowhead landing inside bar 0 reads
+% as if the decoder emitted only the first candidate.
+\foreach \i/\lab/\w in {0/{walking upstairs}/1.55, 1/{ramp ascent}/0.70, 2/{standing}/0.20} {
+  \fill[haloblue!65,draw=haloblue!85,line width=0.3pt]
+    (3.00,-4.22-0.27*\i) rectangle ++(\w,0.17);
+  \node[font=\tiny,anchor=west] at (3.10+\w,-4.135-0.27*\i) {\lab};
+}
+\draw[harrow] (4.40,-3.72) -- (4.40,-4.00);
+\node[font=\tiny,color=halogray,anchor=west,align=left,text width=26mm] at (0.05,-4.46)
+  {non-negative evidence per candidate, attributable to the exemplars that produced it};
+\end{tikzpicture}}

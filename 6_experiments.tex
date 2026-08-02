@@ -19,14 +19,56 @@ the transfer? \textbf{(Q4)} Does the system run on a phone?
 \label{sec:datasets}
 
 We train on 12 public HAR datasets contributing 20 distinct sensor streams and evaluate on 7
-never seen during training; Appendix~\ref{app:corpus} lists both with per-dataset rates,
-placements, and window counts, and records the six datasets deliberately excluded and why. After
+never seen during training (Table~\ref{tab:datasets}). After
 conversion to native-rate grids and removal of 95 windows exceeding physically possible sensor
 rails, the corpus is $1{,}728{,}787$ non-overlapping windows---$2{,}858$ hours---over $93$
 labels, split subject-disjointly into $300{,}231$ training and $42{,}909$ validation windows, the
 latter built by a greedy label-cover procedure so all $93$ labels are represented. Training rates
 span $20$--$100$\,Hz over placements at the wrist, waist, pocket, lower back, ear, and head; the
 held-out sets range from $1{,}260$ to $11{,}237$ windows over $6$ to $13$ labels.
+Appendix~\ref{app:corpus} plots the corpus by placement and rate and records the six datasets
+deliberately excluded and why.
+
+\begin{table}[t]
+  \centering
+  \caption{The corpus. \emph{\#Str} is the number of distinct sensor streams (one per device
+  placement); \emph{Ch} the number of core channels reaching the model (3 = accelerometer only).
+  No two training sources agree on rate, channel set, and placement at once, which is the
+  condition the tokenizer exists to handle. InclusiveHAR comprises 10 able-bodied and 10
+  physically disabled subjects; TNDA-HAR is distributed without per-window subject identifiers
+  (Section~\ref{sec:eval_protocol}).}
+  \label{tab:datasets}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}l r r c r l@{}}
+    \toprule
+    Dataset & Hz & \#Str & Ch & \#Win & Placement(s) \\
+    \midrule
+    \multicolumn{6}{l}{\textit{Training corpus (12 datasets, 20 streams)}}\\
+    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 3 & 1{,}530{,}792 & wrist, free-living \\
+    WISDM~\cite{wisdm}                  &  20 & 2 & 6 &  70{,}201 & pocket $+$ wrist \\
+    XRF~V2~\cite{xrf_v2}                &  50 & 6 & 6 &  34{,}764 & pockets, wrists, glasses \\
+    NFI-FARED~\cite{nfi_fared}          & 100 & 2 & 6 &  26{,}520 & wrist $+$ lower back \\
+    HARMES~\cite{harmes}                &  50 & 1 & 6 &  18{,}576 & wrist \\
+    UniMiB~SHAR~\cite{unimibi}          &  50 & 1 & 3 &  11{,}771 & trouser pocket \\
+    UCI-HAR~\cite{ucihar}               &  50 & 1 & 6 &  10{,}299 & waist \\
+    HHAR~\cite{hhar}                    &  50 & 1 & 6 &   9{,}587 & waist \\
+    KU-HAR~\cite{kuhar}                 & 100 & 1 & 6 &   9{,}233 & waist \\
+    SP-SW-HAR~\cite{sp_sw_har}          & 100 & 2 & 6 &   3{,}757 & pocket $+$ wrist \\
+    PAMAP2~\cite{pamap2}                & 100 & 1 & 6 &   3{,}186 & wrist \\
+    MHEALTH~\cite{mhealth}              &  50 & 1 & 6 &   1{,}104 & wrist \\
+    \midrule
+    \multicolumn{6}{l}{\textit{Held-out evaluation (7 datasets, never trained on)}}\\
+    RealWorld~\cite{realworld}          &  50 & 1 & 6 & 11{,}237 & waist \\
+    MotionSense~\cite{motionsense}      &  50 & 1 & 6 &  4{,}534 & trouser pocket \\
+    USC-HAD~\cite{usc_had}              & 100 & 1 & 6 &  4{,}350 & hip \\
+    UT-Complex~\cite{ut_complex}        &  50 & 1 & 6 &  3{,}900 & wrist \\
+    TNDA-HAR~\cite{tnda_har}            &  50 & 1 & 6 &  3{,}353 & wrist \\
+    Shoaib~\cite{shoaib}                &  50 & 1 & 6 &  2{,}100 & 5 body positions \\
+    InclusiveHAR~\cite{inclusivehar}    &  50 & 1 & 6 &  1{,}260 & waist, mixed abilities \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsubsection{Baselines and the fairness contract}
 \label{sec:baselines}
