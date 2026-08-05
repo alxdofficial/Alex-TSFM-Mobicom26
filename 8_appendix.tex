@@ -126,6 +126,10 @@ would place the same people on both sides of a supposedly subject-disjoint bound
 \section{Baselines}
 \label{app:baselines}
 
+Table~\ref{tab:baselines} lists the five baselines, what each was pretrained on, and how much
+acquisition context each can receive at inference---the axis on which the comparison is not
+symmetric.
+
 \begin{table}[h]
   \centering
   \caption{Baselines and where each sits on the heterogeneity stack. ``Blind'' means the model
@@ -154,6 +158,10 @@ would place the same people on both sides of a supposedly subject-disjoint bound
 \section{Parity Control}
 \label{app:parity}
 
+Because several baselines cannot accept HALO's native inputs, Table~\ref{tab:parity} reports HALO
+restricted to each baseline's own input contract, so any remaining gap is attributable to the
+model rather than to what it was allowed to read.
+
 \begin{table}[h]
   \centering
   \caption{Parity control: HALO under its native inputs versus baseline-equivalent inputs.
@@ -178,10 +186,13 @@ would place the same people on both sides of a supposedly subject-disjoint bound
 \section{Gravity as a Signed DC Feature}
 \label{app:gravity}
 
-\begin{figure}[h]
+Section~\ref{sec:sensor_grouping} keeps the quasi-static component as a signed per-axis feature
+rather than normalising it away. Figure~\ref{fig:gravity} is the measurement behind that choice.
+
+\begin{figure*}[t]
     \centering
     \setlength{\abovecaptionskip}{4pt}
-  \resizebox{\columnwidth}{!}{\input{figures/fig_gravity.tex}}
+  \resizebox{0.86\textwidth}{!}{\input{figures/fig_gravity.tex}}
   \caption{\textbf{Why gravity is conditioned on rather than normalised away.} Three static
   postures, UCI-HAR waist phone, $200$ windows each through the real tokenizer path.
   \emph{Left:} the frequency path receives almost nothing (note the $\times10^{-3}$ axis) and
@@ -190,7 +201,7 @@ would place the same people on both sides of a supposedly subject-disjoint bound
   redistributed across axes. The limit is shown too: standing and sitting stay at $0.99$ in DC,
   the same pair Section~\ref{sec:geometry} finds inseparable in text.}
   \label{fig:gravity}
-\end{figure}
+\end{figure*}
 
 \section{Tokenizer Guardrails}
 \label{app:tokenizer}
