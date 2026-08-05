@@ -161,8 +161,8 @@ Appendix~\ref{app:tokenizer} records the DFT- and patch-length guardrails.
 Rate-invariance would be dishonest without a second mechanism. A $20$\,Hz stream cannot report
 energy at $12$\,Hz, and a $0.4$\,s patch cannot resolve a $0.3$\,Hz band. Rather than emitting a
 small number the encoder might read as ``no energy here,'' each token carries two masks. The
-\emph{Nyquist observability} mask marks band $k$ observable only if
-$c_k + 2\sigma_k \le 0.9\,(r/2)$, a $10\%$ guard so a band's Gaussian tail does not straddle the
+\emph{Nyquist observability} mask marks band $k$ (centre $c_k$, width
+$\sigma_k = c_k/2Q$) observable only if $c_k + 2\sigma_k \le 0.9\,(r/2)$, a $10\%$ guard so a band's Gaussian tail does not straddle the
 aliasing edge; the \emph{resolution} mask marks it resolved only if one full cycle fits in the
 patch, $c_k \ge 1/D$ (Figure~\ref{fig:tokenizer}). A band that is present but blurry is flagged,
 not zeroed, and streams resampled by their publisher take the Nyquist bound from the
