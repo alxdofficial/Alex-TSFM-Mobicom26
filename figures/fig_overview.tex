@@ -40,8 +40,8 @@
 
 \node[hbox2,anchor=north,text width=48mm] (obj) at (5.60,-0.92)
   {\textbf{label-free objectives}\\
-   \tiny A1 masked latent (EMA) $\cdot$ A2 VICReg over views $\cdot$
-   A3 physical rail $\cdot$ A4 cross-placement};
+   \tiny A1 masked latent (EMA teacher) $\cdot$ A2 relation:
+   VICReg over views $+$ cross-placement};
 
 \draw[harrow] (raw.east)  -- ($(tok.west)+(0,4mm)$);
 \draw[harrow] (text.east) -- ($(tok.west)+(0,-4mm)$);

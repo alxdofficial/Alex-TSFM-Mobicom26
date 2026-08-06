@@ -312,13 +312,13 @@ we have for the ``too little bias'' failure mode, so we report it whether or not
 \subsection{Q3: Which Phase-A Objectives Carry the Transfer?}
 \label{sec:objective_ablation}
 
-Each Phase-A term is removed independently with all others held fixed
-(Appendix~\ref{app:objectives}). Two controls matter more than the ablation itself. The
+The live recipe is two terms, so the ablation is short: strip the masked-latent objective, then
+the cross-placement subterm, then swap the tokenizer's front end and its second resolution
+(Appendix~\ref{app:objectives}). One control matters more than the ablation itself. The
 \emph{untrained control}: the decoder is identity-at-initialisation by construction, so every
 trained arm is reported against the same architecture untrained, and a component that does not
-beat its own initialisation is reported as such. The \emph{label-supervised control}: the
-original supervised recipe remains selectable, so the claim that going label-free helps is
-measured, not asserted.
+beat its own initialisation is reported as such---a bar that some arms of this system have
+already failed.
 
 \subsection{Q4: On-Device Cost and a Real Deployment}
 \label{sec:deployment_experiments}

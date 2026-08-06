@@ -226,23 +226,41 @@ rather than silently truncating.
 \section{Phase-A Specification}
 \label{app:phasea}
 
-The EMA teacher is updated only after an optimizer step (decay $0.996$) and is checkpointed with
-the model. Cross-placement positives are drawn under a quota so that the six-placement recordings
-cannot dominate; positive identity comes from explicit physical-event identifiers written during
-conversion and carried into the pretraining index, never inferred from equal array lengths or row
-alignment, and never from an activity label. Per-objective gradient norms, VICReg component
-values, minimum feature standard deviation, effective rank, and positive similarity by pair type
-are logged every step; non-finite values or representation collapse fail the run rather than
-being smoothed over.
+The encoder is $d{=}256$, 6 layers, 8 heads. Training runs $30$k steps at batch $256$, LR
+$4.2\mathrm{e}{-}4$ with $1$k warmup, weight decay $0.05$, gradient clip $1.0$. Both objective
+weights are $1.0$; the cross-placement subterm is weighted $0.1$ within the relation term, and
+VICReg keeps its published $25/25/1$ invariance/variance/covariance coefficients. The EMA teacher
+is updated only after an optimizer step (decay $0.996$) and is checkpointed with the model.
+Patches are drawn per batch at two physical resolutions---a short grid in $[0.4,0.8]$\,s and a
+long grid in $[1.0,1.5]$\,s, constrained to a ratio of at least $1.75$---so no single patch length
+is baked into the representation.
+
+Sampling is label-free and hierarchical: $P(\text{dataset})\!\propto\!n^{0.25}$ capped at $25\%$,
+then $P(\text{subject}\mid\text{dataset})\!\propto\!n^{0.5}$, then uniform within subject. Without
+tempering, one free-living wrist corpus would supply $88\%$ of every gradient---a single placement,
+device, and rate---which is self-defeating for a model whose claim is generalisation across
+acquisition configurations. A fifth of each batch is reserved for verified simultaneous pairs.
+Positive identity comes from explicit physical-event identifiers written during conversion and
+carried into the pretraining index, never inferred from equal array lengths or row alignment, and
+never from an activity label.
+
+Per-objective gradient norms, VICReg component values, minimum feature standard deviation,
+effective rank, and positive similarity by pair type are logged every step; non-finite values or
+representation collapse fail the run rather than being smoothed over.
 
 \section{Phase-A Objective Ablation}
 \label{app:objectives}
 
-\begin{table}[h]
+Every row is a from-scratch run at the recipe of Appendix~\ref{app:phasea}, differing only in the
+stated term, scored under one protocol against one frozen evaluation split. Rows are read against
+the untrained control rather than against each other: a term that does not beat initialisation is
+reported as not earning its place.
+
+\begin{table}[htbp]
   \centering
-  \caption{Phase-A objective ablation, macro-F1 over the held-out datasets. The last two rows are
-  controls, not variants: they test whether the non-contrastive and label-free choices were worth
-  making.}
+  \caption{Phase-A ablation, macro-F1 over the held-out datasets. R0--R2 strip the live recipe
+  back one term at a time; the tokenizer rows test whether the physical-Hz front end and the two
+  resolutions earn their place; the last row is a control, not a variant.}
   \label{tab:objective_ablation}
   \scriptsize
   \setlength{\tabcolsep}{3pt}
@@ -250,15 +268,14 @@ being smoothed over.
     \toprule
     Phase-A configuration & $k{=}0$ & $k{=}10$ \\
     \midrule
-    Full (A1 fixed$+$EMA, VICReg, TF, placement, rail) & \PH & \PH \\
-    \quad$-$ EMA-latent target (fixed A1 only)      & \PH & \PH \\
-    \quad$-$ augmentation VICReg                    & \PH & \PH \\
-    \quad$-$ time--frequency consistency            & \PH & \PH \\
-    \quad$-$ cross-placement positives              & \PH & \PH \\
-    \quad$-$ physical grounding rail                & \PH & \PH \\
+    R2: masked latent $+$ relation $+$ cross-placement (live) & \PH & \PH \\
+    \quad R1: $-$ masked latent (relation only)      & \PH & \PH \\
+    \quad R0: $-$ cross-placement (augmentation relation only) & \PH & \PH \\
     \midrule
-    VICReg $\rightarrow$ NT-Xent (contrastive control) & \PH & \PH \\
-    Label-supervised recipe (SupCon; \emph{uses labels}) & \PH & \PH \\
+    Fixed filterbank $\rightarrow$ constrained-learnable & \PH & \PH \\
+    Two resolutions $\rightarrow$ one                    & \PH & \PH \\
+    \midrule
+    Untrained encoder (initialisation control)           & \PH & \PH \\
     \bottomrule
   \end{tabular}
 \end{table}

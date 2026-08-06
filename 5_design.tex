@@ -216,28 +216,32 @@ training corpora---the failure of Section~\ref{sec:no_grammar}---and removing la
 unlabelled data, which is where the scale in wearables is (full spec in
 Appendix~\ref{app:phasea}).
 
-\textbf{(A1) Masked prediction, with two targets.} A validity-aware mask over physical-time
-intervals hides a subset of tokens; at masked positions the encoder predicts both the \emph{fixed}
-filterbank features of the hidden content and the \emph{contextual latents} a stop-gradient EMA
-teacher~\cite{byol,data2vec,ijepa} produces from the unmasked window. The fixed target grounds
-the representation in physical quantities; the latent target lets it become more abstract than
-its own input features.
+The recipe is two terms at equal weight. Nothing else is in the loss.
 
-\textbf{(A2) VICReg over augmented views.} Two independently augmented views are pulled together
+\textbf{(A1) Masked latent prediction.} A validity-aware mask over physical-time intervals hides a
+subset of tokens; at masked positions the encoder predicts the \emph{contextual latents} a
+stop-gradient EMA teacher~\cite{byol,data2vec,ijepa} produces from the unmasked window. Masked
+attention is isolated per resolution, so a resolution that masking would leave without visible
+context is skipped rather than handed an impossible single-token target.
+
+\textbf{(A2) Relation.} Two independently augmented views of every window are pulled together
 under VICReg~\cite{vicreg} rather than a contrastive loss, for a reason specific to this corpus:
 NT-Xent declares the other windows in a batch negatives, and in a multi-dataset corpus the batch
 is full of the same activity from other subjects and datasets, so it actively pushes apart things
-that should be together. VICReg needs no negatives; SimCLR~\cite{simclr} and SupCon~\cite{supcon}
-remain selectable as controls. Text augmentation uses a \emph{shared} seed across views, so a pair
-never differs only in whether its configuration was described.
+that should be together. VICReg needs no negatives. Text augmentation uses a \emph{shared} seed
+across views, so a pair never differs only in whether its configuration was described. Inside the
+same term, a low-weight subterm ties together \emph{verified simultaneous} recordings of one
+physical event at two or more placements ($18{,}400$ paired events, three datasets), whose
+positive identity comes from explicit event identifiers written during conversion, never from
+array alignment or an activity label. These pairs are sparse, so they estimate no
+variance/covariance of their own and cannot dilute the universal term; a dataset whose devices
+carry unrelated clocks is excluded rather than paired by row order.
 
-\textbf{(A3--A5) Three low-weight rails} complete the objective: time--frequency consistency
-against an auxiliary time-domain encoder discarded at inference (inspired by TF-C~\cite{tfc} but
-not faithful to it); a cross-placement term over \emph{verified simultaneous} recordings of one
-physical event at two or more placements ($17{,}387$ paired events), whose positive identity
-comes from explicit event identifiers written during conversion, never from array alignment or an
-activity label; and two self-derived targets as a sanity anchor. Model selection uses
-subject-disjoint $k$-NN accuracy---labels are a \emph{metric} here, never in the loss.
+Every window supports (A2); (A1) needs only enough tokens to leave visible context. Model
+selection uses subject-disjoint $k$-NN accuracy---labels are a \emph{metric} here, never in the
+loss. Earlier drafts of this recipe also carried a fixed-feature reconstruction target, a
+time--frequency rail, and self-derived anchors; consolidating to two terms is what
+Appendix~\ref{app:objectives} measures.
 
 \subsection{Phase B: Evidence Retrieval in Sensor Space}
 \label{sec:evidence_design}
