@@ -2,64 +2,96 @@
 % fig_evidence.tex  --  how Phase B turns a frozen representation into a
 % decision over run-time label strings.
 %
-% This is a MECHANISM diagram, not a data plot: every quantity in it is
-% structural (which vector retrieves what, where label text enters, what
-% the decoder emits).  Nothing here is a measurement; the three bars are
-% illustrative and the caption says so.
+% MECHANISM diagram, not a data plot: every quantity is structural.  The
+% three bars are illustrative and the caption says so.
 %
-% Layout discipline: four horizontal bands at fixed y, nothing floating.
-% Natural width ~8.0cm against an 8.46cm column, so \resizebox scales up
-% slightly.  Explanatory prose belongs in the caption.
+% LAYOUT DISCIPLINE (learned the hard way -- a tall narrow version of this
+% figure collided in six places):
+%   * natural width ~7.9cm against an 8.46cm column, natural height ~4.3cm.
+%     Keep the ASPECT near 1.8 or \resizebox shrinks the \tiny text to
+%     illegibility.  Wide-and-short, never tall-and-narrow.
+%   * three fixed bands: (A) query+memory side by side at y=0, (B) the
+%     decoder sequence at y=-1.75, (C) scores at y=-2.75 and below.
+%   * explanatory prose belongs in the CAPTION.  Every in-figure text node
+%     costs width, and width is what squeezes the bands together.
+%
+% Band B is the decoder input sequence.  Group x positions are hardcoded so
+% the coreference tags line up under their tokens; if you add a token, shift
+% every later group by one pitch (0.31) and re-centre that group's label.
+% Group gaps are wide (0.55) so the \tiny group names below do not collide.
 % NOTE: keep every \\ at the top level of a node body.
 % =====================================================================
 \resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[font=\scriptsize]
 
-% ============ band 1: query -> one vector per patch ============
-\node[hplain,anchor=west,text width=15mm] (qw) at (0,0)
+% ============ band A left: query -> one vector per patch ============
+\node[hplain,anchor=west,text width=14mm] (qw) at (0,0)
   {query window\\ \tiny any device, any rate};
-\node[hbox,anchor=west,text width=15mm,minimum height=6mm] (fe) at (1.75,0)
+\node[hbox,anchor=west,text width=14mm,minimum height=6mm] (fe) at (1.60,0)
   {frozen encoder};
-\foreach \i in {0,1,2,3} { \node[fbok,anchor=west] at (3.65+0.34*\i,0) {}; }
-\node[font=\tiny,color=halogray,anchor=south] at (4.20,0.28) {one vector per patch};
+\foreach \i in {0,1,2,3} { \node[fbok,anchor=west] at (3.35+0.32*\i,0) {}; }
+\node[font=\tiny,color=halogray,anchor=south] at (3.60,0.26) {one vector per patch};
 \draw[harrow] (qw.east) -- (fe.west);
-\draw[harrow] (fe.east) -- (3.58,0);
+\draw[harrow] (fe.east) -- (3.28,0);
 
-\node[font=\tiny,color=halogray,anchor=west,align=left,text width=24mm] at (5.60,0)
-  {each patch retrieves independently, by cosine in \textbf{sensor} space};
-
-% ============ band 2: one flat memory ============
-\node[font=\scriptsize,anchor=west] (memtitle) at (0.20,-1.28)
+% ============ band A right: one flat memory ============
+\node[font=\scriptsize,anchor=west] (memtitle) at (5.15,0.62)
   {\textbf{append-only memory}};
 \foreach \i/\lab/\cfg in {%
-  0/{\emph{walking}}/{watch, wrist, 100\,Hz},
-  1/{\emph{stair ascent}}/{phone, pocket, 20\,Hz},
-  2/{\emph{walking}}/{glasses, head, 50\,Hz},
-  3/{\emph{sitting}}/{watch, wrist, 50\,Hz}} {
-  \node[fbblur,anchor=west] (m\i) at (0.28,-1.70-0.27*\i) {};
-  \node[font=\tiny,anchor=west] at (0.62,-1.70-0.27*\i) {\lab};
-  \node[font=\tiny,color=halogray,anchor=west] (c\i) at (2.60,-1.70-0.27*\i) {\cfg};
+  0/{\emph{walking}}/{wrist, 100\,Hz},
+  1/{\emph{stair ascent}}/{pocket, 20\,Hz},
+  2/{\emph{walking}}/{head, 50\,Hz},
+  3/{\emph{sitting}}/{wrist, 50\,Hz}} {
+  \node[fbblur,anchor=west] (m\i) at (5.20,0.26-0.26*\i) {};
+  \node[font=\tiny,anchor=west] at (5.52,0.26-0.26*\i) {\lab};
+  \node[font=\tiny,color=halogray,anchor=west] (c\i) at (7.00,0.26-0.26*\i) {\cfg};
 }
-\node[hphase,fit=(memtitle)(m0)(m3)(c0)(c3),inner sep=4pt] (mem) {};
-\draw[harrow] (4.20,-0.25) -- (4.20,-1.10);
+\node[hphase,fit=(memtitle)(m0)(m3)(c0)(c3),inner sep=3pt] (mem) {};
+\draw[harrow] (4.62,0) -- (5.02,0);
 
-% ============ band 3: candidates enter, decoder decides ============
-\node[hbox2,anchor=west,text width=24mm,minimum height=7mm] (cand) at (0.05,-3.35)
-  {\textbf{candidate labels}\\ \tiny declared at run time};
-\node[hbox2,anchor=west,text width=28mm,minimum height=7mm] (dec) at (3.00,-3.35)
-  {\textbf{candidate-aware evidence decoder}};
-\draw[harrow] (cand.east) -- (dec.west);
-\draw[harrow] (4.40,-2.78) -- (4.40,-3.00);
+% ============ band B: the decoder reads one sequence ============
+% candidates (orange) | background label names (gray) | query patches
+% (solid blue) | retrieved evidence (light blue)
+\foreach \x in {0.30,0.61} {
+  \fill[haloorange!30,draw=haloorange!80,line width=0.3pt]
+    (\x,-1.89) rectangle ++(0.26,0.28); }
+\foreach \x in {1.75,2.06,2.37} {
+  \fill[halogray!18,draw=halogray!70,line width=0.3pt]
+    (\x,-1.89) rectangle ++(0.26,0.28); }
+\foreach \x in {3.20,3.51,3.82,4.13} {
+  \fill[haloblue!55,draw=haloblue!80,line width=0.3pt]
+    (\x,-1.89) rectangle ++(0.26,0.28); }
+\foreach \x in {4.95,5.26,5.57,5.88,6.19} {
+  \fill[haloblue!18,draw=haloblue!70,line width=0.3pt]
+    (\x,-1.89) rectangle ++(0.26,0.28); }
+\node[hphase,draw=haloorange!70,fit={(0.22,-2.16) (6.53,-1.53)},inner sep=2pt] (seq) {};
+\node[font=\tiny,color=haloorange,anchor=south west] at (0.22,-1.46)
+  {\textbf{relational decoder} reads one sequence};
 
-% ============ band 4: non-negative evidence per candidate ============
-% bars start BELOW the arrow tip -- an arrowhead landing inside bar 0 reads
-% as if the decoder emitted only the first candidate.
-\foreach \i/\lab/\w in {0/{walking upstairs}/1.55, 1/{ramp ascent}/0.70, 2/{standing}/0.20} {
+% inputs into the sequence
+\draw[harrow] (3.70,-0.20) -- (3.70,-1.50);
+\draw[harrow] (5.70,-0.72) -- (5.70,-1.50);
+\node[font=\tiny,color=halogray,anchor=west] at (5.80,-1.12) {top-$k$};
+
+% coreference slots: a random tag per label, stamped on the candidate token
+% and on every row enrolled under it.  Matching fills = same episode slot.
+\foreach \x in {0.36,5.32,6.25} {
+  \fill[haloorange,draw=none] (\x,-2.10) rectangle ++(0.14,0.11); }
+\foreach \x in {0.67,5.63} {
+  \fill[halogreen,draw=none] (\x,-2.10) rectangle ++(0.14,0.11); }
+
+\node[font=\tiny,anchor=north] at (0.585,-2.26) {candidates};
+\node[font=\tiny,anchor=north] at (2.19,-2.26) {label names};
+\node[font=\tiny,anchor=north] at (3.795,-2.26) {query patches};
+\node[font=\tiny,anchor=north] at (5.70,-2.26) {retrieved evidence};
+
+% ============ band C: one score per candidate ============
+\draw[harrow] (0.585,-2.52) -- (0.585,-2.78);
+\foreach \i/\lab/\w in {0/{walking upstairs}/1.35, 1/{ramp ascent}/0.62, 2/{standing}/0.18} {
   \fill[haloblue!65,draw=haloblue!85,line width=0.3pt]
-    (3.00,-4.22-0.27*\i) rectangle ++(\w,0.17);
-  \node[font=\tiny,anchor=west] at (3.10+\w,-4.135-0.27*\i) {\lab};
+    (0.90,-2.94-0.24*\i) rectangle ++(\w,0.15);
+  \node[font=\tiny,anchor=west] at (1.00+\w,-2.865-0.24*\i) {\lab};
 }
-\draw[harrow] (4.40,-3.72) -- (4.40,-4.00);
-\node[font=\tiny,color=halogray,anchor=west,align=left,text width=26mm] at (0.05,-4.46)
-  {non-negative evidence per candidate, attributable to the exemplars that produced it};
+\node[font=\tiny,color=halogray,anchor=north west] at (0.22,-3.50)
+  {one score per candidate label};
 \end{tikzpicture}}

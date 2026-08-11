@@ -96,11 +96,26 @@ with accuracy alongside, because held-out label distributions are imbalanced.
 rotating over grouped folds with a confidence interval where one split would be unstable.
 TNDA-HAR ships no per-window subject identifiers, so a subject-disjoint boundary cannot be
 constructed for it; we report it separately and exclude it from the subject-disjoint mean rather
-than implying a guarantee we cannot honour.
+than implying a guarantee we cannot honour. For the same reason it contributes only the
+zero-enrollment condition, never a same- or cross-subject enrollment cell.
 
 \emph{Label leakage.} The inference-time label-text ensemble is purged of synonyms drawn from the
 evaluation datasets, and retrieval hyper-parameters are selected on held-out \emph{training}
 configurations.
+
+\emph{A sealed test roster.} The seven held-out datasets were split, before any Phase-B design
+decision, into a \emph{development} roster (MotionSense, RealWorld, Shoaib) and a \emph{test}
+roster (InclusiveHAR, USC-HAD, TNDA-HAR, UT-Complex). Every design choice, hyper-parameter and
+checkpoint selection was made against the development roster alone; the test roster is scored once
+the recipe is frozen. The split is a constant in the released code, not a statement of intent.
+
+\emph{What this roster cannot measure.} Enrolling from one acquisition configuration and querying
+from another is only testable where the same activity \emph{and} subject were recorded on two
+streams at once. Among the held-out sets only Shoaib supplies that, and it is on the development
+roster. Cross-configuration retrieval is therefore measured on training-corpus streams as a
+property of the representation (Section~\ref{sec:bias_experiments}), and the held-out enrollment
+claim is stated for same- and cross-\emph{subject} conditions only, rather than pooling cells the
+data cannot support.
 
 \emph{Parity control.} To separate the architecture from its native-rate and rich-text inputs,
 HALO is also evaluated under baseline-equivalent inputs---$20$\,Hz resampling, neutral sensor
@@ -180,9 +195,12 @@ because beyond it the budget exceeds what the smaller sets contain.
   throughout. $k{=}0$ is the zero-shot point and $k{=}\text{full}$ the supervised one; they are
   ends of one curve, not separate experiments, and every row uses \emph{one} frozen encoder
   across all $k$. The second header row converts $k$ into the mean fraction of a target dataset
-  it represents. $^\dagger$\,The mechanism-versus-representation control: if retrieval helps only
-  on HALO features the contribution is the encoder; if it helps equally on harnet's, it is the
-  memory. We pre-register that we report this control regardless of which way it falls.}
+  it represents. $^\ast$\,Closed-form rivals over the \emph{same} frozen features and the
+  \emph{same} enrolled examples, using no Phase-B parameters at all---the bar a learned decoder has
+  to clear to have earned its parameters. $^\dagger$\,The mechanism-versus-representation control:
+  if retrieval helps only on HALO features the contribution is the encoder; if it helps equally on
+  harnet's, it is the memory. We pre-register both controls regardless of which way they fall, plus
+  two canaries on every enrolled cell---removing the examples, and shuffling their labels.}
   \label{tab:label_efficiency}
   \scriptsize
   \setlength{\tabcolsep}{1.5pt}
@@ -194,6 +212,8 @@ because beyond it the budget exceeds what the smaller sets contain.
     \emph{(mean \% of target)} & \emph{0} & \emph{1.3} & \emph{2.7} & \emph{6.6} & \emph{27} & \emph{100} \\
     \midrule
     HALO memory (no gradient step)   & \PH & \PH & \PH & \PH & \PH & \PH \\
+    HALO frozen $+$ prototype\rlap{$^\ast$}   & \PH & \PH & \PH & \PH & \PH & \PH \\
+    HALO frozen $+$ ridge\rlap{$^\ast$}       & \PH & \PH & \PH & \PH & \PH & \PH \\
     HALO frozen $+$ probe            & \PH & \PH & \PH & \PH & \PH & \PH \\
     harnet frozen $+$ probe          & \PH & \PH & \PH & \PH & \PH & \PH \\
     harnet frozen $+$ memory\rlap{$^\dagger$} & \PH & \PH & \PH & \PH & \PH & \PH \\
@@ -209,10 +229,14 @@ because beyond it the budget exceeds what the smaller sets contain.
 \textbf{Pre-registered hypothesis and kill criterion.} We expect retrieval to win at small $k$,
 where a nearest-neighbour decision beats a linear fit on a handful of points, and the probe to
 overtake somewhere between $k{=}10$ and $k{=}25$---roughly the $3$--$7\%$ band. If that holds,
-the regime HALO owns is $k \le 10$, which is the enrollment setting a user can perform in under a
-minute. If the probe dominates at \emph{every} $k$ including the smallest, retrieval has no
-regime of its own; we will report that outcome plainly. Table~\ref{tab:per_dataset} gives the
-per-dataset breakdown behind this curve, including InclusiveHAR stratified by ability.
+the regime HALO owns is $k \le 10$, the enrollment setting a user can perform in under a minute.
+There are two ways this fails and we report both plainly. If the probe dominates at \emph{every}
+$k$ including the smallest, retrieval has no regime of its own. The sharper test is the
+closed-form pair: a class prototype and a ridge fit read the same frozen features and the same
+enrolled examples with no Phase-B parameters whatsoever, so a learned decoder that does not beat
+them has not earned its parameters, whatever it does against an external baseline.
+Table~\ref{tab:per_dataset} gives the per-dataset breakdown behind this curve, including
+InclusiveHAR stratified by ability.
 
 \subsection{Q2: Does the Inductive Bias Do What It Claims?}
 \label{sec:bias_experiments}
@@ -248,7 +272,10 @@ up as elevated dataset identifiability, resampling as a rate gap.
   these pairs are verified simultaneous recordings, the only thing that varies is the
   configuration, so off-diagonal degradation is attributable to it alone. \emph{Retention} is
   cross divided by same: features that denote the same physical quantity across devices should
-  retain most of their quality; one that resamples or conditions on the rate should not.}
+  retain most of their quality; one that resamples or conditions on the rate should not. These
+  rows are measured on \emph{training-corpus} streams, because they are the only ones that recorded
+  the same activity and subject on two devices at once; they are evidence about the representation,
+  not a held-out transfer result (Section~\ref{sec:eval_protocol}).}
   \label{tab:crossconfig}
   \scriptsize
   \setlength{\tabcolsep}{4pt}
@@ -312,13 +339,13 @@ we have for the ``too little bias'' failure mode, so we report it whether or not
 \subsection{Q3: Which Phase-A Objectives Carry the Transfer?}
 \label{sec:objective_ablation}
 
-The live recipe is two terms, so the ablation is short: strip the masked-latent objective, then
-the cross-placement subterm, then swap the tokenizer's front end and its second resolution
-(Appendix~\ref{app:objectives}). One control matters more than the ablation itself. The
-\emph{untrained control}: the decoder is identity-at-initialisation by construction, so every
-trained arm is reported against the same architecture untrained, and a component that does not
-beat its own initialisation is reported as such---a bar that some arms of this system have
-already failed.
+The live recipe is two terms, so the ablation is short: strip each in turn, then swap the
+tokenizer's front end and its second resolution (Appendix~\ref{app:objectives}). One control
+matters more than the ablation itself. The \emph{untrained control} packages the retriever and
+decoder at initialisation into the evaluator's own artifact schema, so it is scored over identical
+cohorts through identical code with nothing differing but the weights. Every trained arm is
+reported beside it, and a component that does not beat its own initialisation is reported as
+such---a bar that some arms of this system have already failed.
 
 \subsection{Q4: On-Device Cost and a Real Deployment}
 \label{sec:deployment_experiments}

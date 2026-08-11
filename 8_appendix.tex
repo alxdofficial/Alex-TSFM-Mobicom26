@@ -227,8 +227,10 @@ rather than silently truncating.
 \label{app:phasea}
 
 The encoder is $d{=}256$, 6 layers, 8 heads. Training runs $30$k steps at batch $256$, LR
-$4.2\mathrm{e}{-}4$ with $1$k warmup, weight decay $0.05$, gradient clip $1.0$. Both objective
-weights are $1.0$; the cross-placement subterm is weighted $0.1$ within the relation term, and
+$4.2\mathrm{e}{-}4$ with $1$k warmup, weight decay $0.05$, gradient clip $1.0$, and the selected
+checkpoint is the subject-disjoint $k$-NN peak rather than the last step. The two objective weights
+are solved once after warmup from the measured encoder-gradient geometry and then held fixed rather
+than being continuously auto-balanced;
 VICReg keeps its published $25/25/1$ invariance/variance/covariance coefficients. The EMA teacher
 is updated only after an optimizer step (decay $0.996$) and is checkpointed with the model.
 Patches are drawn per batch at two physical resolutions---a short grid in $[0.4,0.8]$\,s and a
@@ -239,10 +241,8 @@ Sampling is label-free and hierarchical: $P(\text{dataset})\!\propto\!n^{0.25}$ 
 then $P(\text{subject}\mid\text{dataset})\!\propto\!n^{0.5}$, then uniform within subject. Without
 tempering, one free-living wrist corpus would supply $88\%$ of every gradient---a single placement,
 device, and rate---which is self-defeating for a model whose claim is generalisation across
-acquisition configurations. A fifth of each batch is reserved for verified simultaneous pairs.
-Positive identity comes from explicit physical-event identifiers written during conversion and
-carried into the pretraining index, never inferred from equal array lengths or row alignment, and
-never from an activity label.
+acquisition configurations. Phase A does not sample by event identity at all; that structure is
+used only by Phase~B (Appendix~\ref{app:phaseb}).
 
 Per-objective gradient norms, VICReg component values, minimum feature standard deviation,
 effective rank, and positive similarity by pair type are logged every step; non-finite values or
@@ -258,9 +258,9 @@ reported as not earning its place.
 
 \begin{table}[htbp]
   \centering
-  \caption{Phase-A ablation, macro-F1 over the held-out datasets. R0--R2 strip the live recipe
-  back one term at a time; the tokenizer rows test whether the physical-Hz front end and the two
-  resolutions earn their place; the last row is a control, not a variant.}
+  \caption{Phase-A ablation, macro-F1 over the held-out datasets. The first block strips the live
+  two-term recipe back one term at a time; the tokenizer rows test whether the physical-Hz front
+  end and the two resolutions earn their place; the last row is a control, not a variant.}
   \label{tab:objective_ablation}
   \scriptsize
   \setlength{\tabcolsep}{3pt}
@@ -268,9 +268,9 @@ reported as not earning its place.
     \toprule
     Phase-A configuration & $k{=}0$ & $k{=}10$ \\
     \midrule
-    R2: masked latent $+$ relation $+$ cross-placement (live) & \PH & \PH \\
-    \quad R1: $-$ masked latent (relation only)      & \PH & \PH \\
-    \quad R0: $-$ cross-placement (augmentation relation only) & \PH & \PH \\
+    Masked latent $+$ augmentation relation (live)  & \PH & \PH \\
+    \quad $-$ masked latent (relation only)         & \PH & \PH \\
+    \quad $-$ relation (masked latent only)         & \PH & \PH \\
     \midrule
     Fixed filterbank $\rightarrow$ constrained-learnable & \PH & \PH \\
     Two resolutions $\rightarrow$ one                    & \PH & \PH \\
@@ -283,12 +283,45 @@ reported as not earning its place.
 \section{Phase-B Episodic Training}
 \label{app:phaseb}
 
-The decoder is trained on episodes that vary, independently: the candidate budget
-($10$--$100\%$ of the vocabulary); the number of true-label memory exemplars
-($0$, $1$, $2$, $4$, $8$, or all); the support available for competing labels; whether memory is
-same-configuration, cross-configuration only, or missing the query's configuration entirely; the
-kind of distractors present (random, language-near, motion-family-near, physically confusable);
-and whether the truth is present at all. Complete label \emph{families} are held out of decoder
-training and reserved for model selection, so candidate-text reasoning is always tested on
-concepts the decoder never fit. Head collapse in the retrieval projections is resisted by output
-decorrelation, projection diversity, and contribution-usage regularisation.
+One optimizer step is eight independent episodes of eight query executions each. An episode draws
+its candidate count uniformly from $2$ to $16$; how many of those candidates are enrolled is drawn
+uniformly from one to the candidate count, so partial and full enrollment fall out of one draw
+rather than being named strata; and each enrolled candidate receives the \emph{same} number of
+examples, drawn uniformly from $1$ to $8$ \emph{distinct executions}, so the count cannot reveal
+the answer. Four regimes are covered: semantic zero-enrollment, ordinary few-example, cross-subject
+(examples and query from different people---a hard constraint), and same-subject enrollment from
+distinct executions. Two anchors are guaranteed per step: a partially enrolled episode paired with
+a zero-enrollment counterfactual reusing its exact query, candidates, phrasing and physical view,
+so only the memory overlay differs; and one fully enrolled alias episode. Distractor candidates are
+drawn to be hard---by text similarity and physical-centroid similarity---with the difficulty and the
+candidate range staged over the run.
+
+With probability $1/3$ an enrolled episode replaces its candidate names with meaningless
+episode-local aliases. This is the only condition that forces example-based rather than text-based
+inference, so it is load-bearing rather than decorative; aliases appear only at full enrollment,
+because an arbitrary name with no example bound to it is unanswerable.
+
+The unit of enrollment is a verified physical event, identified by explicit identifiers written
+during dataset conversion---never inferred from equal array lengths or row alignment, and never
+from an activity label. All rows from one event are bound together, so a demonstration captured
+simultaneously at two placements counts as one example rather than two.
+
+The objective is candidate-set cross-entropy and nothing else: no auxiliary retrieval term, no
+corpus-vocabulary classification head, no subject-adversarial loss, no collapse regulariser. Loss
+is reduced separately over four groups---zero-enrollment, unenrolled-candidate queries within a
+partial episode, enrolled queries under coherent names, and enrolled queries under aliases---and the
+present group means are weighted equally, so a common condition cannot swamp a rare one.
+
+Retrieval during training runs against a rotating balanced view of the encoded corpus rather than
+all of it. The corpus is severely imbalanced---its most frequent label has $28{,}648$ windows
+against a $30$-window minimum---so the view caps every label at a fixed budget and is redrawn
+often enough that most of the corpus becomes reachable over a run. Exact sizes are in the released
+configuration.
+
+Complete label \emph{families} are held out of decoder training and reserved for model selection,
+so candidate-text reasoning is always tested on concepts the decoder never fit. Training uses only
+rows whose subject and configuration both lie in the training partition, and validation queries the
+three excluded quadrants: held subject, held configuration, and both. Validation canaries enumerate
+rather than sample---they are the checkpoint-selection target, so they must be identical across
+runs and checkpoints---and every reported result is stratified by example count and regime.
+Averaging across them would hide whether the adaptation mechanism works at all.

@@ -25,9 +25,10 @@ into text space, so it belongs after the encoder, in a component swappable per d
   encoder with objectives that never see an activity label. The encoder is then frozen and
   crosses the boundary unchanged---it is the \emph{same} weights that encode a query and that
   encoded every exemplar in memory, which is what lets the two be compared as vectors. Phase~B
-  adds no parameters to that path: it appends encoded exemplars to a memory and accumulates
-  evidence for the label strings declared at run time. Adding an activity, a placement, or a
-  device is an append; no gradient step occurs anywhere to the right of \textsf{freeze}.}
+  trains a retriever and an evidence decoder \emph{once} on top of those frozen vectors, and adds
+  no parameter \emph{per label or per deployment}---the label set enters as text at run time. At
+  deployment nothing to the right of \textsf{freeze} takes a gradient step: adding an activity, a
+  placement, or a device is an append to memory.}
   \label{fig:overview}
 \end{figure*}
 
@@ -42,8 +43,7 @@ embedding of its sensor's description, and the token set---unordered over channe
 physical time---enters a $7.17$M-parameter transformer that emits one vector per patch. Those
 vectors are the interface between the phases: Phase~A shapes them with objectives that never see
 a label, and Phase~B compares them, by cosine similarity in that same space, against a memory of
-encoded exemplars, accumulating evidence for whichever activity names were declared. The
-demands of Section~\ref{sec:why} map onto this path one-to-one, and
+encoded exemplars, accumulating evidence for whichever activity names were declared.
 Table~\ref{tab:mechanisms} fixes the name we use for each mechanism throughout. The distinctions
 those names carry are the contribution: not ``a spectral tokenizer'' but one anchored to
 \emph{physical} Hz; not a Nyquist mask but one bounded by the \emph{acquisition} clock; not
@@ -229,19 +229,16 @@ under VICReg~\cite{vicreg} rather than a contrastive loss, for a reason specific
 NT-Xent declares the other windows in a batch negatives, and in a multi-dataset corpus the batch
 is full of the same activity from other subjects and datasets, so it actively pushes apart things
 that should be together. VICReg needs no negatives. Text augmentation uses a \emph{shared} seed
-across views, so a pair never differs only in whether its configuration was described. Inside the
-same term, a low-weight subterm ties together \emph{verified simultaneous} recordings of one
-physical event at two or more placements ($18{,}400$ paired events, three datasets), whose
-positive identity comes from explicit event identifiers written during conversion, never from
-array alignment or an activity label. These pairs are sparse, so they estimate no
-variance/covariance of their own and cannot dilute the universal term; a dataset whose devices
-carry unrelated clocks is excluded rather than paired by row order.
+across views, so a pair never differs only in whether its configuration was described.
 
 Every window supports (A2); (A1) needs only enough tokens to leave visible context. Model
 selection uses subject-disjoint $k$-NN accuracy---labels are a \emph{metric} here, never in the
-loss. Earlier drafts of this recipe also carried a fixed-feature reconstruction target, a
-time--frequency rail, and self-derived anchors; consolidating to two terms is what
-Appendix~\ref{app:objectives} measures.
+loss. Earlier drafts carried more: a fixed-feature reconstruction target, a time--frequency rail,
+self-derived anchors, and a subterm tying together \emph{verified simultaneous} recordings of one
+physical event at two placements. Consolidating to these two terms is what
+Appendix~\ref{app:objectives} measures. Those simultaneous recordings did not leave the system---
+they moved to Phase~B, where an event identity is the unit of \emph{enrollment} rather than a
+positive pair.
 
 \subsection{Phase B: Evidence Retrieval in Sensor Space}
 \label{sec:evidence_design}
@@ -260,10 +257,13 @@ mechanism.
   query retrieves independently, by cosine similarity in \emph{sensor} space, from one flat
   memory whose rows may come from any device---that is what physical-Hz anchoring buys, and it is
   what a resampling or rate-conditioned encoder cannot offer without a per-configuration index.
-  Label text enters only twice, and never as a metric: to name what a neighbour was, and to
-  enumerate what the deployment will accept as an answer. The decoder emits non-negative evidence
-  per candidate, attributable to the exemplars that produced it. Structural diagram---the bar
-  lengths are illustrative, not measured.}
+  The decoder then reads a single sequence, so candidates, the label names present in the roster,
+  the query, and the retrieved rows are all contextualised together. Which rows were enrolled for
+  which candidate is carried by a discrete \emph{coreference slot} rather than by a text
+  similarity---the one place the geometry of Section~\ref{sec:geometry} would otherwise re-enter.
+  Label text is used only to name what a neighbour was and to enumerate what the deployment will
+  accept as an answer, never as a metric. Structural diagram---the bar lengths are illustrative,
+  not measured.}
   \label{fig:evidence}
 \end{figure}
 
@@ -274,27 +274,48 @@ table is append-only: adding a class, a placement, or a device is a write, not a
 Every artifact is bound to the Phase-A checkpoint it was built from, and a behavioural probe
 rejects a bank whose encoder has since changed---silently stale memory is the most dangerous
 failure mode this design has. Each query patch then retrieves independently in \emph{sensor} space
-under learned projections, each defining its own subspace and evidence contribution. During
-training the query's own window, event, and subject are excluded, and contributions are capped per
-source window and per label so one long recording cannot dominate a vote.
+under four learned projections, each defining its own subspace; the roster is the highest-scoring
+unique rows across query patches and subspaces, with no per-label or per-window cap reordering
+that ranking. The unit of enrollment is a \emph{verified physical event}, so every stored row from
+one event is bound together and a demonstration captured simultaneously at two placements counts
+once. Leakage exclusion uses the same unit: the query's own window, event and subject are removed,
+and a candidate's concept is erased from background memory before its declared examples are
+restored, so an episode cannot be answered through a hidden canonical-label path.
 
-\textbf{Candidate-aware decoding.} Retrieved evidence is not simply averaged. A small set
-transformer contextualises query and evidence tokens, refines each evidence item's label text as a
-residual in frozen sentence space---which is what lets a neighbour labelled \emph{walking} but
-retrieved in a stair-climbing context contribute as \emph{walking upstairs}---and pools evidence
-as a residual on the retrieval prior. Candidate tokens carry frozen label text and attend
-permutation-equivariantly over the evidence, so neither candidate nor evidence order carries
-meaning. Every sublayer is gated by a LayerScale initialised near zero and the residuals are
-zero-initialised, so at initialisation the decoder is \emph{exactly} the untrained
-retrieval-plus-text-ensemble mechanism: every trained arm has an exact untrained control, reported
-side by side.
+\textbf{Candidate-aware decoding.} Retrieved evidence is not simply averaged. A small relational
+transformer reads one sequence---the \emph{candidate names}, the \emph{background label names}
+present in the roster, the \emph{query patches}, and the \emph{retrieved evidence}---and a
+candidate's score is the readout on its own token. Roles are explicit embeddings and the stack is
+permutation-equivariant within each role, so neither candidate nor evidence order carries meaning.
+The one non-obvious piece is how an evidence row is bound to the candidate it supports. Writing
+the label text onto the physical row would invite the model to decide by text cosine, the metric
+Section~\ref{sec:geometry} showed to be mis-specified; instead each episode draws a random
+\textbf{coreference slot} per label and stamps it on both the candidate token and the rows enrolled
+under it. Binding is then a discrete identity to attend over rather than a similarity to trust, and
+because slot ids are redrawn every episode they cannot become a stable label shortcut. Label
+meaning still enters---as attention between label tokens and candidate tokens---but only where it
+is genuinely graded.
 
-\textbf{Confidence and rejection.} There is no \textsc{unknown} candidate; a rejection confidence
-is estimated separately~\cite{selectiveclass,edl} from evidence mass, retrieval density,
-agreement, and the leading margin, calibrated on truth-absent episodes with risk/coverage
-reported---and truth-present episodes require support, so always-reject is not a solution.
-Complete label \emph{families} are held out of decoder training for model selection
-(Appendix~\ref{app:phaseb}).
+\textbf{Reaching the retriever.} Selection is a hard top-$k$ over frozen memory vectors and is not
+differentiable. Rather than a straight-through surrogate, each retained row's similarity enters the
+decoder as an additive attention bias, $\log\mathrm{softmax}(s/\tau) + \log N$: a shift-invariant
+log prior in which equal scores contribute exactly zero and only \emph{within-roster} preferences
+matter. That bias is the only route from the candidate loss back to the retrieval projections, so
+the gradient reads ``raise this row relative to the others selected'' rather than rewarding a high
+absolute similarity. The accepted cost is that a row the retriever never surfaced cannot be
+promoted; the alternative we tried, scoring rows outside the forward roster, is label-conditioned
+during training and unavailable at deployment.
+
+Because Phase~B therefore carries a genuine learned contribution rather than a zero-initialised
+residual over a closed-form vote, its untrained control is constructed rather than architectural:
+the same retriever and decoder \emph{at initialisation}, scored through an identical path
+(Section~\ref{sec:objective_ablation}).
+
+\textbf{Scope.} There is no \textsc{unknown} candidate, and we make no rejection claim here. A
+confidence head over evidence mass, retrieval density and the leading
+margin~\cite{selectiveclass,edl} is implemented but parked: calibrating it needs truth-absent
+episodes and a risk/coverage protocol this paper does not report. Complete label \emph{families}
+are held out of decoder training for model selection (Appendix~\ref{app:phaseb}).
 
 \textbf{Deployment.}
 \label{sec:deployment}%

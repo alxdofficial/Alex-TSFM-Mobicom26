@@ -40,8 +40,8 @@
 
 \node[hbox2,anchor=north,text width=48mm] (obj) at (5.60,-0.92)
   {\textbf{label-free objectives}\\
-   \tiny A1 masked latent (EMA teacher) $\cdot$ A2 relation:
-   VICReg over views $+$ cross-placement};
+   \tiny A1 masked latent prediction (EMA teacher)
+   $\cdot$ A2 VICReg over two augmented views};
 
 \draw[harrow] (raw.east)  -- ($(tok.west)+(0,4mm)$);
 \draw[harrow] (text.east) -- ($(tok.west)+(0,-4mm)$);
@@ -50,10 +50,13 @@
 
 % ---------------- Phase B ----------------
 \node[hbox2,anchor=west,text width=27mm,minimum height=13mm] (dec) at (10.10,0)
-  {\textbf{candidate-aware evidence decoder}\\
-   \tiny evidence in \textbf{sensor} space;\\ \tiny label text only names it};
+  {\textbf{retriever} $\rightarrow$ \textbf{relational decoder}\\
+   \tiny top-$k$ by \mbox{\textbf{sensor}} similarity;\\ \tiny label text only names it};
+% must clear the dec box, whose 13mm minimum height puts its top edge at y=0.65
+\node[font=\tiny,color=halogreen,anchor=south] at (11.45,0.80)
+  {trained once $\cdot$ no parameter per label};
 \node[hplain,anchor=west,text width=22mm] (out) at (13.60,0)
-  {evidence per candidate\\ $+$ calibrated rejection\\
+  {one score per candidate\\
    \tiny $+$ the exemplars that produced it};
 
 % mem and cand start strictly LEFT of `out' so their arrows into the decoder
