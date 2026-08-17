@@ -1,0 +1,47 @@
+% Active HALO pipeline; synchronized with docs/design/DESIGN_OF_RECORD.md.
+%
+% TODO (figure, 2026-08-17): the "two resolutions" label below describes the pinned v2 artifact.
+% The repository default is now a single fixed 1.0 s patch grid (multiresolution=False), and the
+% descriptor-prediction term in the losses box is disabled (descriptor_weight=0). Redraw both
+% labels when the manuscript repins to phase_a_fixed_1s_rotation_20260817. See STALENESS.md sec. 2.
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[font=\scriptsize]
+\node[font=\scriptsize,anchor=south west] at (0,1.05)
+  {\textsf{\textbf{Phase A}} \ label-free representation learning};
+\node[font=\scriptsize,anchor=south west] at (8.55,1.05)
+  {\textsf{\textbf{Evidence stage}} \ fixed prediction rule};
+\draw[dashed,draw=halogray!60,line width=0.5pt] (8.35,1.18) -- (8.35,-2.15);
+
+\node[hplain,anchor=west,text width=23mm] (raw) at (0,0.35)
+  {stored-grid IMU window\\ \tiny source rate and valid axes};
+\node[hplain,anchor=west,text width=23mm] (desc) at (0,-0.85)
+  {sensor description\\ \tiny $+$ measured acquisition bias};
+\node[hbox,anchor=west,text width=28mm,minimum height=14mm] (tok) at (2.65,-0.20)
+  {\textbf{physical-Hz front end}\\ \tiny per-axis bands and support flags\\
+   \tiny $\rightarrow$ fold axes by sensor};
+\node[hbox,anchor=west,text width=25mm,minimum height=14mm] (enc) at (5.85,-0.20)
+  {\textbf{sensor encoder}\\ \tiny physical-time attention\\ \tiny \TODO{two resolutions (TODO)}};
+\node[hbox2,anchor=north,text width=48mm] (obj) at (5.55,-1.10)
+  {\textbf{label-free losses}\\
+   \tiny masked latent \TODO{+ descriptor prediction (TODO)} $\cdot$ augmentation VICReg};
+\draw[harrow] (raw.east) -- ($(tok.west)+(0,4mm)$);
+\draw[harrow] (desc.east) -- ($(tok.west)+(0,-4mm)$);
+\draw[harrow] (tok.east) -- (enc.west);
+\draw[harrow] (enc.south) -- ($(obj.north)+(14mm,0)$);
+
+\node[hbox,anchor=west,text width=25mm,minimum height=13mm] (bank) at (8.80,-0.20)
+  {\textbf{versioned bank}\\ \tiny one row per patch and sensor\\ \tiny label + provenance};
+\node[hbox2,anchor=west,text width=34mm,minimum height=13mm] (rule) at (11.80,-0.20)
+  {\textbf{compatibility $\rightarrow$ gate $\rightarrow$ rank}\\
+   \tiny vote by enrollment identity or label text\\ \tiny sum across sensors};
+\node[hplain,anchor=west,text width=19mm] (out) at (15.65,-0.20)
+  {one score per\\candidate activity};
+\node[hplain,anchor=north,text width=26mm] (cand) at (12.55,-1.10)
+  {candidate names + optional demonstrations\\ \tiny supplied at run time};
+
+\draw[harrow,line width=1pt,draw=halogreen] (enc.east) -- (bank.west);
+\node[font=\tiny,color=halogreen,anchor=south] at (8.58,-0.05) {freeze};
+\draw[harrow] (bank.east) -- (rule.west);
+\draw[harrow] (cand.north) -- ($(rule.south)+(5mm,0)$);
+\draw[harrow] (rule.east) -- (out.west);
+\end{tikzpicture}}

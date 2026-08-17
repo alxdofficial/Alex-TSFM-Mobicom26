@@ -84,7 +84,7 @@ The patch-resolution flag is the clipped number of cycles in duration $D$,
 $q_k=\min(1,c_kD)$. This is a heuristic indication of spectral support, not a theorem that one cycle
 is sufficient. Unobservable bands and observed zero energy remain distinguishable.
 
-The mean removed from the spectral path is retained as a signed per-axis low-frequency feature for
+We retain the mean removed from the spectral path as a signed per-axis low-frequency feature for
 accelerometers. It can carry gravity and posture information. We do not attach the numerical
 posture-separation claims from an earlier draft because their generating artifact is absent; the
 ablation in Section~\ref{sec:pending_measurements} is the evidential test of this design choice.
@@ -99,9 +99,9 @@ A six-channel accelerometer--gyroscope stream becomes two tokens per patch, whil
 accelerometer-only stream becomes one. Axis-role text is unnecessary after folding because axis
 identity is represented by its position inside the sensor token.
 
-The augmentation stack respects this structure. One $SO(3)$ rotation is applied jointly to a triad
-and to a co-located gyroscope. Sensor masking is permitted only when another modality at the same
-placement remains visible; the model is never asked to reconstruct a wrist from an ankle or pocket.
+The augmentation stack respects this structure. We apply one $SO(3)$ rotation jointly to a triad and
+its co-located gyroscope, and we permit sensor masking only when another modality at the same
+placement remains visible, so the model never has to reconstruct a wrist from an ankle or a pocket.
 
 \subsubsection{Declared descriptors and measured acquisition bias}
 \label{sec:conditioning}
@@ -178,15 +178,15 @@ accuracy on the Phase-A validation subjects.
 
 \textbf{Bank.} The current schema stores one row per patch and sensor: a 256-dimensional feature,
 the frozen sensor descriptor, acquisition measurements, label, subject, dataset, configuration,
-recording event, time, and resolution. The bank is bound to the exact encoder checkpoint and schema.
-Query-window, event, and subject identifiers are excluded where required by the evaluation
-protocol. Enrollment adds rows whose episode-local candidate identity is explicit.
+recording event, time, and resolution. We bind the bank to the exact encoder checkpoint and schema,
+and exclude query-window, event, and subject identifiers wherever the evaluation protocol demands
+it. Enrollment adds rows whose episode-local candidate identity is explicit.
 
 \textbf{Train-only resolvability measurement.} For every training sensor and concept with adequate
 support, a subject-disjoint one-versus-rest $k$NN probe measures how well that sensor distinguishes
-the concept. Chance balanced accuracy maps to zero. Accelerometers and gyroscopes are measured
-separately, and simultaneous-placement contrasts are reported separately. Activity strings group
-the measurement cells; they are not embedded by this probe.
+the concept. Chance balanced accuracy maps to zero. We measure accelerometers and gyroscopes
+separately and report simultaneous-placement contrasts separately. Activity strings only group the
+measurement cells; this probe never embeds them.
 
 \textbf{Admissibility gate.} A rank-$r$ bilinear model maps frozen sensor and concept text to one
 weight:
@@ -195,11 +195,11 @@ weight:
  g(s,c)=\sigma\!\left(u^\top\Lambda v+b\right),
 \]
 where $e_s,e_c\in\mathbb{R}^{384}$ and $r{=}2$ in the active artifact. The low rank limits the
-gate's ability to memorize literal stream--label cells. It is fitted only to the train-only
-resolvability table. For text unlike the fitted sensor or concept supports, the prediction is
-blended toward the table's neutral median rather than extrapolated confidently. Held-out
-configuration, dataset, and concept folds are required to characterize generalization; the fitted
-table itself is not validation evidence.
+gate's ability to memorize literal stream--label cells. We fit it only to the train-only
+resolvability table, and for text unlike the fitted sensor or concept supports we blend the
+prediction toward the table's neutral median rather than extrapolating confidently. Characterizing
+generalization requires held-out configuration, dataset, and concept folds; the fitted table itself
+is not validation evidence.
 
 \textbf{Prediction.} For each query sensor, HALO performs the following operations in order.
 

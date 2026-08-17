@@ -1,13 +1,13 @@
 % =========================
 % 6_experiments.tex --- current roster and provenance-bound development evidence
 % =========================
-\section{Experiments}
+\section{Evaluation}
 \label{sec:experiments}
 
-The current artifacts answer a narrower question than a completed benchmark paper: does the active
+We ask a narrower question than a completed benchmark paper answers: does the active
 admissibility-gated rule improve on simpler enrollment rules on the development roster? We report
-that result now. The external test roster and several tokenizer ablations remain unevaluated; they
-are stated as pending measurements rather than represented by fabricated cells.
+that result here. We leave the external test roster and several tokenizer ablations unevaluated, and
+we state them as pending measurements rather than filling the space with fabricated cells.
 
 \subsection{Data and Artifacts}
 \label{sec:methodology}
@@ -99,10 +99,10 @@ primary because activity frequencies are imbalanced.
 
 For enrollment, support and query executions are disjoint. The development evaluation uses
 cross-subject, same-configuration cohorts for MotionSense, RealWorld, and Shoaib. At each
-$k\in\{1,2,4,8\}$, the same queries and candidate inventory are retained and support prefixes are
-nested. A verified recording execution, not an adjacent window, is one example. The evaluation
-also runs support removal, cyclic support-label shuffling, an all-one admissibility control,
-prototypes, and ridge heads on the identical features and support split.
+$k\in\{1,2,4,8\}$, we retain the same queries and candidate inventory and nest the support prefixes.
+A verified recording execution, not an adjacent window, counts as one example. We also run support
+removal, cyclic support-label shuffling, an all-one admissibility control, prototypes, and ridge
+heads on the identical features and support split.
 
 The test roster was fixed before the present gate evaluation: InclusiveHAR, USC-HAD, TNDA-HAR,
 UT-Complex, MoniPar, SPAR, and Upper Limb Use. TNDA-HAR has no usable subject-disjoint enrollment

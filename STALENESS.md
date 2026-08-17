@@ -142,7 +142,7 @@ statement and directly motivates the cross-configuration cell listed in §6.4.
 | `fig_corpus.tex` | **current** — 56/14 configurations and the per-rate histogram re-verified today |
 | `fig_evidence.tex` | **current** — matches the implemented prediction order |
 | `fig_geometry.tex` | **current** — qualitative, no numbers |
-| `fig_overview.tex` | **stale in one label** ("two resolutions") — `\TODO` placeholder inserted |
+| `fig_overview.tex` | **WITHDRAWN** — replaced by a full red TODO placeholder box. Original TikZ preserved verbatim in `fig_overview_v2artifact.tex`; redraw from it after the repin |
 | `fig_gravity.tex` | retired, comment-only stub, no longer `\input` anywhere |
 | `fig_hook.tex` | retired, ditto |
 | `fig_rateinvariance.tex` | retired, ditto |

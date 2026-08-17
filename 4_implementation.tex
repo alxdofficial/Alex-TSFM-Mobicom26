@@ -1,0 +1,89 @@
+% =========================
+% 4_implementation.tex --- what we built, on what, and what it costs
+% =========================
+\section{Implementation}
+\label{sec:implementation}
+
+We implement HALO in PyTorch as a single repository covering conversion, pretraining, memory
+construction, and the evidence rule. The system is deliberately small where it matters: the trunk
+holds 7.70\,M parameters and the only component fitted after Phase A is a rank-2 bilinear gate with
+roughly 1.5\,k parameters.
+
+\subsection{Codebase}
+\label{sec:codebase}
+
+Table~\ref{tab:implementation} lists the components. We write one converter per dataset --- 35 in
+total --- rather than a generic ingest path, because every public corpus differs in column order,
+unit convention, gravity handling, and subject encoding, and a generic reader hides exactly the
+errors that later corrupt a physical feature. Each converter emits whole-recording sessions; the
+grid builder owns all windowing, so no converter can silently choose its own window policy.
+
+\begin{table}[t]
+  \centering
+  \caption{Implementation components. Line counts exclude generated artifacts.}
+  \label{tab:implementation}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lrp{0.44\columnwidth}@{}}
+    \toprule
+    Component & Lines & Contents \\
+    \midrule
+    Dataset converters & 11.8\,k & 35 per-dataset readers, unit and gravity normalization \\
+    Corpus pipeline    &  6.9\,k & curation policy, windowing, three grid alignments, quality screens \\
+    Model              &  3.9\,k & filterbank, sensor folding, conditioning, dual-branch trunk \\
+    Phase-A training   &  7.6\,k & sampler, augmentation, masking, objectives, telemetry \\
+    Evidence stage     & 14.3\,k & bank build, resolvability, gate, prediction rule, protocol \\
+    Evaluation harness &  2.1\,k & baseline adapters, scoring, protocol fingerprinting \\
+    Tests              &  9.3\,k & 578 tests across 45 files \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Training and Memory Cost}
+\label{sec:cost}
+
+We train on one NVIDIA RTX 4090 (24\,GB). The reported Phase-A run completes 30,000 steps at batch
+256 in 33 minutes of wall clock and peaks at 4.36\,GiB of allocated device memory, so a full
+pretraining run fits comfortably on a single consumer GPU. Mixed-precision training is enabled and
+we compile only the transformer; compiling the encoder specializes on each batch's changing
+unique-text cardinality and runs slower.
+
+Memory construction is the expensive artifact. The schema-4 bank stores one row per patch and
+sensor, which is 7.65\,M rows for a 250,000-window archive and 6.9\,GB on disk in half precision.
+Two engineering choices keep the evidence path tractable. First, we do not store a 384-dimensional
+sensor descriptor on every row: roughly $10^5$ rows are drawn from about 40 distinct sensor
+descriptions, so we store a de-duplicated table and an index, evaluate the gate once per distinct
+description, and gather. This is exact, not approximate, because the gate reads only text. Second,
+we cache stream metadata and text encodings per configuration, so sentence-embedding inference never
+runs inside a query loop.
+
+\subsection{Artifact Binding}
+\label{sec:guards}
+
+A retrieval system built on a cached bank fails in a specific way: an encoder is retrained, the bank
+is not rebuilt, and every downstream number silently describes a stale embedding space. We make that
+failure impossible to reach rather than easy to notice.
+
+Every artifact carries a fingerprint of what produced it, and every consumer checks it before doing
+any work. The bank records the encoder checkpoint hash, the label vocabulary, and behavioral probes
+of both the embedding path and the sentence-embedding path; loading it re-runs those probes against
+the live encoder and refuses a mismatch. The gate records the resolvability table hash, the
+checkpoint that produced it, and the bank it is bound to. The evaluation protocol is itself
+fingerprinted over the source files that define scoring behavior, so a change to the protocol
+invalidates cached results instead of blending two protocols into one table. The quality screens are
+loaded with the same discipline: a missing or stale exclusion cache is a hard failure, because
+silently re-admitting byte-identical stale-buffer windows would corrupt both training and scoring.
+
+These guards are load-bearing rather than decorative. During development they rejected a legacy
+resolvability table that pooled evaluation datasets into a training-only measurement, and they
+currently refuse the gate artifact described in Section~\ref{sec:label_efficiency} whenever it is
+paired with a bank from a different checkpoint.
+
+\subsection{Reproducibility}
+\label{sec:reproducibility}
+
+Every quantitative statement in this paper is bound to a named artifact through a checked-in evidence
+ledger that records the producing command, the source-data manifest, the seed, the checkpoint
+fingerprint, and the raw output. Values without that chain are not printed as results, which is why
+several quantities from an earlier draft of this work do not appear here. We will release the
+converters, the corpus pipeline, the model, the evidence stage, and the evaluation harness.

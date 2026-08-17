@@ -66,6 +66,13 @@
 
 \newcommand{\TODO}[1]{{\color{red}{#1}}}
 
+% DOUBLE-BLIND COMPLIANCE (MOBICOM_REQUIREMENTS.md sec. 2): the CFP states that the PDF "must not
+% contain any embedded hyperlinks, as these may compromise author anonymity". acmart loads hyperref,
+% which emitted 218 /Link annotations and 186 /URI actions before this line. `draft` keeps every
+% cross-reference working as plain text and emits no annotations. Verify with the snippet in
+% MOBICOM_REQUIREMENTS.md sec. 10 before every submission.
+\hypersetup{draft}
+
 \pagestyle{plain} % removes running headers
 \settopmatter{printacmref=false, printccs=false, printfolios=true}
 % \acmConference[SIGCOMM '23]{SIGCOMM '23: Annual conference of the ACM Special Interest Group on Data Communication}{Sep 2023}{New York City, US}
@@ -127,8 +134,8 @@ candidate activity names, and number of labeled demonstrations may all change. H
 acquisition configuration instead of normalizing it away. Its tokenizer computes frequency
 features on each stored sampling grid, defines bands in hertz, records acquisition-limited
 observability and patch-limited resolution, and folds the axes of each physical sensor into one
-token. A label-free encoder is trained with masked contextual prediction, masked sensor-description
-retrieval, and augmentation consistency.
+token. We train the encoder without activity labels, using masked contextual prediction, masked
+sensor-description retrieval, and augmentation consistency.
 
 Classification uses a versioned bank of sensor-patch embeddings. A closed-form evidence path first
 enforces modality and gravity compatibility, then uses a low-rank text-conditioned gate to decide
@@ -136,7 +143,7 @@ whether a query and stored sensor can observe each candidate concept. It applies
 test before cosine ranking, votes with enrolled-label identity or corpus-label text, and sums votes
 across query sensors. Adding a demonstration changes memory but does not update model parameters.
 The current Phase-A run uses 18 public datasets, 56 acquisition configurations, and 161 canonical
-labels; ten disjoint datasets are reserved for development and testing. On the three development
+labels; we reserve ten disjoint datasets for development and testing. On the three development
 datasets, the admissibility-gated path uses enrollment but trails both ungated retrieval and
 prototype or ridge classifiers on the same frozen features. We report this negative result rather
 than claim an unsupported retrieval advantage, and keep the seven-dataset test roster sealed until
@@ -146,12 +153,17 @@ the method is fixed.
 
 \maketitle
 
+% Section order follows the MobiCom convention documented in MOBICOM_REQUIREMENTS.md sec. 8:
+% design and evaluation reach the reviewer before related work, an implementation section is
+% present, and limitations get their own section rather than being buried in the conclusion.
 \input{1_introduction.tex}
-\input{2_related_work.tex}
-\input{3_motivation}
-\input{5_design}
-\input{6_experiments}
-\input{7_conclusion}
+\input{2_motivation}
+\input{3_design}
+\input{4_implementation}
+\input{5_evaluation}
+\input{6_related_work}
+\input{7_discussion}
+\input{8_conclusion}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{reference}
@@ -159,6 +171,6 @@ the method is fixed.
 % Appendices follow the bibliography and do not count towards the 12 pages
 % (MobiCom CFP). Nothing load-bearing for the argument may live here: reviewers
 % are not obligated to read it.
-\input{8_appendix}
+\input{9_appendix}
 
 \end{document}

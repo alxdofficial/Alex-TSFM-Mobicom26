@@ -40,17 +40,31 @@ axis-validity mask. The token also receives a frozen text description and activi
 acquisition statistics. Phase A learns from masked contextual prediction, reconstruction of hidden
 sensor descriptions, and consistency across physical augmentations.
 
-At inference, the encoder is frozen. A versioned memory stores one row per patch and sensor, with
+At inference we freeze the encoder. A versioned memory stores one row per patch and sensor, with
 label and provenance. The evidence path applies hard modality/gravity compatibility, a learned
 low-rank admissibility gate, cosine ranking within the surviving rows, voting, and closed-form
-sensor fusion. A labeled demonstration is appended to memory and bound directly to the application's
-candidate; it does not trigger a gradient update. Candidate names enter at run time rather than
-through a fixed classifier head.
+sensor fusion. An application appends a labeled demonstration to memory and binds it directly to its
+own candidate; no gradient update runs. Candidate names enter at run time rather than through a
+fixed classifier head.
 
-This paper makes four contributions. First, it specifies a sensor-granular tokenizer whose frequency
-coordinates and missing-information masks retain acquisition meaning. Second, it formulates
-retrieval admissibility as a separate, observable question from feature similarity. Third, it
-defines a leakage-aware enrollment protocol with support-removal, support-label-shuffling,
-ungated-retrieval, prototype, and ridge controls. Fourth, it reports the current negative development
-result: the fitted gate uses the support but does not beat simpler controls. This bounds the present
-claim and identifies what must improve before the sealed test roster is evaluated.
+We make four contributions.
+
+\begin{itemize}
+  \item \textbf{We design a sensor-granular tokenizer} that defines frequency bands in physical
+        hertz on each stored sampling grid, folds the axes of one physical sensor into a single
+        token with an explicit validity mask, and marks the bands that the acquisition rate or the
+        patch duration leaves unresolved. It states what a configuration \emph{cannot} observe
+        rather than presenting missing information as measured zero.
+  \item \textbf{We separate admissibility from similarity} in the retrieval rule. A low-rank
+        text-conditioned gate decides whether a query and a stored sensor can observe a candidate
+        concept, and we apply that test \emph{before} ranking so a rejected row frees its slot
+        instead of merely losing weight.
+  \item \textbf{We build a leakage-aware enrollment protocol} in which support and query come from
+        different recorded executions, and we ship five controls with every number: ungated
+        retrieval, support removal, support-label shuffling, prototypes, and ridge heads on the same
+        frozen features.
+  \item \textbf{We report a negative development result.} The fitted gate uses enrollment but does
+        not beat those controls, and its telemetry shows the veto never fires. We bound the present
+        claim, identify the protocol change that would make the mechanism testable, and keep the
+        seven-dataset test roster sealed.
+\end{itemize}
