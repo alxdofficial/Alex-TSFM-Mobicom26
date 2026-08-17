@@ -1,360 +1,193 @@
 % =========================
-% 6_experiments.tex  --- protocol and tables written; result cells reserved (\PH / \PENDING)
+% 6_experiments.tex --- current roster and provenance-bound development evidence
 % =========================
 \section{Experiments}
 \label{sec:experiments}
 
-\PENDING{Corpus, protocol, and table structure are final; orange cells are reserved for results.}
+The current artifacts answer a narrower question than a completed benchmark paper: does the active
+admissibility-gated rule improve on simpler enrollment rules on the development roster? We report
+that result now. The external test roster and several tokenizer ablations remain unevaluated; they
+are stated as pending measurements rather than represented by fabricated cells.
 
-\subsection{Methodology}
+\subsection{Data and Artifacts}
 \label{sec:methodology}
-
-We ask four questions. \textbf{(Q1)} Along the label-efficiency curve, where does HALO stand
-against strong frozen encoders, and is there a regime it owns? \textbf{(Q2)} Does the tokenizer's
-inductive bias do what Section~\ref{sec:no_grammar} claims---and, decisively, does anchoring let
-one flat memory serve devices it was not built from? \textbf{(Q3)} Which Phase-A objectives carry
-the transfer? \textbf{(Q4)} Does the system run on a phone?
-
-\subsubsection{Data}
 \label{sec:datasets}
 
-We train on 12 public HAR datasets contributing 20 distinct sensor streams and evaluate on 7
-never seen during training (Table~\ref{tab:datasets}). After
-conversion to native-rate grids and removal of 95 windows exceeding physically possible sensor
-rails, the corpus is $1{,}728{,}787$ non-overlapping windows---$2{,}858$ hours---over $93$
-labels, split subject-disjointly into $300{,}231$ training and $42{,}909$ validation windows, the
-latter built by a greedy label-cover procedure so all $93$ labels are represented. The held-out
-sets carry $6$ to $13$ labels each. Appendix~\ref{app:corpus} plots the corpus by placement and
-rate and records the six datasets deliberately excluded and why.
+% TODO (2026-08-17): every Phase-A row count in this paragraph and in Table~\ref{tab:datasets} is
+% pinned to the grids the reported checkpoint was trained on. Native grids were rebuilt on
+% 2026-08-17 (final partial contexts retained; KU-HAR reconverted) and now total 1,963,606 rows over
+% the same 56 configurations, with 166 canonical labels. Regenerate together with the checkpoint
+% repin, never separately -- see STALENESS.md sec. 1. The external column is unchanged and correct.
+Phase A uses 18 public datasets and 56 acquisition configurations. Their materialized native-grid
+manifests contain 1,871,011 stream-window rows before quality screens and the subject split. The
+selected bank contains 250,000 balanced source windows, 546 training subjects, all 161 canonical
+training labels, 3,942,901 patch rows, and 7,653,242 sensor rows. Ten datasets are disjoint from
+Phase-A training: three are the development roster and seven are sealed for testing. The full
+grid-derived roster appears in Table~\ref{tab:datasets}; its machine-readable provenance is listed
+in the paper-source evidence ledger.
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
-  \caption{The corpus. \emph{\#Str} is the number of distinct sensor streams (one per device
-  placement); \emph{Ch} the number of core channels reaching the model (3 = accelerometer only).
-  No two training sources agree on rate, channel set, and placement at once, which is the
-  condition the tokenizer exists to handle. InclusiveHAR comprises 10 able-bodied and 10
-  physically disabled subjects; TNDA-HAR is distributed without per-window subject identifiers
-  (Section~\ref{sec:eval_protocol}).}
+  \caption{Current Phase-A and external-evaluation rosters. \emph{Cfg} counts materialized sensor
+  configurations; \emph{rows} counts stream-window rows before the current quality exclusions and
+  subject split, so simultaneous placements are counted separately. Counts describe the grid build
+  the reported checkpoint was trained on. \TODO{[TODO: regenerate with the checkpoint repin.]} $^\dagger$The XRF ear stream was
+  acquired at 25\,Hz and stored at 50\,Hz. $^\ddagger$MM-Fit devices have different acquisition
+  clocks and are placed on a shared 100\,Hz grid; source rates still bound observability. The seven
+  test datasets have not been used for method selection.}
   \label{tab:datasets}
   \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}l r r c r l@{}}
+  \setlength{\tabcolsep}{3.2pt}
+  \begin{tabular}{@{}lrrr@{\hspace{8mm}}lrrr@{}}
     \toprule
-    Dataset & Hz & \#Str & Ch & \#Win & Placement(s) \\
+    \multicolumn{4}{c}{Phase-A training} & \multicolumn{4}{c}{External evaluation} \\
+    \cmidrule(lr){1-4}\cmidrule(lr){5-8}
+    Dataset & Hz & Cfg & rows & Dataset (role) & Hz & Cfg & rows \\
     \midrule
-    \multicolumn{6}{l}{\textit{Training corpus (12 datasets, 20 streams)}}\\
-    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 3 & 1{,}530{,}792 & wrist, free-living \\
-    WISDM~\cite{wisdm}                  &  20 & 2 & 6 &  70{,}201 & pocket $+$ wrist \\
-    XRF~V2~\cite{xrf_v2}                &  50 & 6 & 6 &  34{,}764 & pockets, wrists, glasses \\
-    NFI-FARED~\cite{nfi_fared}          & 100 & 2 & 6 &  26{,}520 & wrist $+$ lower back \\
-    HARMES~\cite{harmes}                &  50 & 1 & 6 &  18{,}576 & wrist \\
-    UniMiB~SHAR~\cite{unimibi}          &  50 & 1 & 3 &  11{,}771 & trouser pocket \\
-    UCI-HAR~\cite{ucihar}               &  50 & 1 & 6 &  10{,}299 & waist \\
-    HHAR~\cite{hhar}                    &  50 & 1 & 6 &   9{,}587 & waist \\
-    KU-HAR~\cite{kuhar}                 & 100 & 1 & 6 &   9{,}233 & waist \\
-    SP-SW-HAR~\cite{sp_sw_har}          & 100 & 2 & 6 &   3{,}757 & pocket $+$ wrist \\
-    PAMAP2~\cite{pamap2}                & 100 & 1 & 6 &   3{,}186 & wrist \\
-    MHEALTH~\cite{mhealth}              &  50 & 1 & 6 &   1{,}104 & wrist \\
-    \midrule
-    \multicolumn{6}{l}{\textit{Held-out evaluation (7 datasets, never trained on)}}\\
-    RealWorld~\cite{realworld}          &  50 & 1 & 6 & 11{,}237 & waist \\
-    MotionSense~\cite{motionsense}      &  50 & 1 & 6 &  4{,}534 & trouser pocket \\
-    USC-HAD~\cite{usc_had}              & 100 & 1 & 6 &  4{,}350 & hip \\
-    UT-Complex~\cite{ut_complex}        &  50 & 1 & 6 &  3{,}900 & wrist \\
-    TNDA-HAR~\cite{tnda_har}            &  50 & 1 & 6 &  3{,}353 & wrist \\
-    Shoaib~\cite{shoaib}                &  50 & 1 & 6 &  2{,}100 & 5 body positions \\
-    InclusiveHAR~\cite{inclusivehar}    &  50 & 1 & 6 &  1{,}260 & waist, mixed abilities \\
+    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 1,530,792
+      & MotionSense~\cite{motionsense} (dev) & 50 & 1 & 4,534 \\
+    WISDM~\cite{wisdm} & 20 & 2 & 70,205
+      & RealWorld~\cite{realworld} (dev) & 50 & 1 & 11,237 \\
+    RealDISP~\cite{realdisp} & 50 & 9 & 50,886
+      & Shoaib~\cite{shoaib} (dev) & 50 & 1 & 2,100 \\
+    DSADS~\cite{dsads} & 25 & 5 & 37,815
+      & InclusiveHAR~\cite{inclusivehar} (test) & 50 & 1 & 1,260 \\
+    XRF V2~\cite{xrf_v2} & 25/50$^\dagger$ & 6 & 34,764
+      & USC-HAD~\cite{usc_had} (test) & 100 & 1 & 4,350 \\
+    NFI-FARED~\cite{nfi_fared} & 100 & 2 & 26,876
+      & TNDA-HAR~\cite{tnda_har} (test) & 50 & 1 & 3,353 \\
+    PhyTMo~\cite{phytmo} & 100 & 8 & 24,684
+      & UT-Complex~\cite{ut_complex} (test) & 50 & 1 & 3,900 \\
+    HARMES~\cite{harmes} & 50 & 1 & 18,576
+      & MoniPar~\cite{monipar} (test) & 50 & 1 & 12,079 \\
+    UniMiB SHAR~\cite{unimibi} & 50 & 1 & 11,771
+      & SPAR~\cite{spar} (test) & 50 & 2 & 1,898 \\
+    Opportunity~\cite{opportunity_challenge} & 30 & 5 & 10,765
+      & Upper Limb Use~\cite{upper_limb_use} (test) & 50 & 4 & 1,124 \\
+    FORTH-TRACE~\cite{forth_trace} & 51.2 & 5 & 10,340
+      & & & & \\
+    UCI-HAR~\cite{ucihar} & 50 & 1 & 10,299
+      & & & & \\
+    HHAR~\cite{hhar} & 50 & 1 & 9,587
+      & & & & \\
+    KU-HAR~\cite{kuhar} & 100 & 1 & 9,324
+      & & & & \\
+    MM-Fit~\cite{mmfit} & 100$^\ddagger$ & 4 & 6,280
+      & & & & \\
+    SP-SW-HAR~\cite{sp_sw_har} & 100 & 2 & 3,757
+      & & & & \\
+    PAMAP2~\cite{pamap2} & 100 & 1 & 3,186
+      & & & & \\
+    MHEALTH~\cite{mhealth} & 50 & 1 & 1,104
+      & & & & \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}
 
-\subsubsection{Baselines and the fairness contract}
-\label{sec:baselines}
+The completed run trains for 30,000 steps. The subject-disjoint Phase-A selection metric peaks at
+step 4,000 (label--stream-macro balanced accuracy $0.3028$), so \texttt{best.pt} rather than the
+last checkpoint builds the reported bank. Dense development-only comparisons also favor this
+checkpoint; the test roster is not involved in that choice.
 
-Cross-model comparison here is easy to get wrong, because the models do not accept the same
-inputs. We state one contract and apply it uniformly (Appendix~\ref{app:baselines}): each model
-occupies a \emph{level} on each of four tiers---architecture, rate, channels/placement, and label
-vocabulary---and we never modify a released checkpoint's input contract, because doing so
-discards the model being tested. CrossHAR and LiMU-BERT release no checkpoint compatible with our
-corpus, so we pretrain them on \emph{our} data with their own published objectives; harnet,
-UniMTS and NormWear are used as released, which is faithful but means their pretraining corpora
-differ from ours and from each other. This distinction is material---harnet is pretrained on
-roughly $700$k person-days against our $2{,}858$ hours---and we state it wherever a comparison
-could be read as data-matched. Closed-vocabulary models are bridged to arbitrary label strings
-with ConSE~\cite{conse}, so ``can predict an unseen label'' is available to every model and is not
-something HALO is credited for.
-
-\subsubsection{Protocol}
+\subsection{Evaluation Protocol}
 \label{sec:eval_protocol}
 
-\emph{Scoring.} Following the zero-shot evaluation literature~\cite{zslgbu}, every held-out
-dataset is scored against its \emph{own} label strings, never a shared training-wide ontology, so
-a prediction counts only if it retrieves that dataset's exact activity name. Macro-F1 is primary,
-with accuracy alongside, because held-out label distributions are imbalanced.
+An evaluation dataset supplies its own candidate inventory; this is a HALO protocol choice, not a
+claim established by the generalized zero-shot-learning benchmark. Following that benchmark, we
+separately report whether a candidate was seen or unseen during training~\cite{zslgbu}. Macro-F1 is
+primary because activity frequencies are imbalanced.
 
-\emph{Splits.} All few-shot fits and memory writes use subjects disjoint from those evaluated,
-rotating over grouped folds with a confidence interval where one split would be unstable.
-TNDA-HAR ships no per-window subject identifiers, so a subject-disjoint boundary cannot be
-constructed for it; we report it separately and exclude it from the subject-disjoint mean rather
-than implying a guarantee we cannot honour. For the same reason it contributes only the
-zero-enrollment condition, never a same- or cross-subject enrollment cell.
+For enrollment, support and query executions are disjoint. The development evaluation uses
+cross-subject, same-configuration cohorts for MotionSense, RealWorld, and Shoaib. At each
+$k\in\{1,2,4,8\}$, the same queries and candidate inventory are retained and support prefixes are
+nested. A verified recording execution, not an adjacent window, is one example. The evaluation
+also runs support removal, cyclic support-label shuffling, an all-one admissibility control,
+prototypes, and ridge heads on the identical features and support split.
 
-\emph{Label leakage.} The inference-time label-text ensemble is purged of synonyms drawn from the
-evaluation datasets, and retrieval hyper-parameters are selected on held-out \emph{training}
-configurations.
+The test roster was fixed before the present gate evaluation: InclusiveHAR, USC-HAD, TNDA-HAR,
+UT-Complex, MoniPar, SPAR, and Upper Limb Use. TNDA-HAR has no usable subject-disjoint enrollment
+cohort and contributes only to a future zero-support cell. SPAR's repetitions occur within one bout
+and do not establish across-session enrollment. MoniPar is the held-out source that can support
+across-week enrollment. We do not consume any of these test datasets in the present revision.
 
-\emph{A sealed test roster.} The seven held-out datasets were split, before any Phase-B design
-decision, into a \emph{development} roster (MotionSense, RealWorld, Shoaib) and a \emph{test}
-roster (InclusiveHAR, USC-HAD, TNDA-HAR, UT-Complex). Every design choice, hyper-parameter and
-checkpoint selection was made against the development roster alone; the test roster is scored once
-the recipe is frozen. The split is a constant in the released code, not a statement of intent.
-
-\emph{What this roster cannot measure.} Enrolling from one acquisition configuration and querying
-from another is only testable where the same activity \emph{and} subject were recorded on two
-streams at once. Among the held-out sets only Shoaib supplies that, and it is on the development
-roster. Cross-configuration retrieval is therefore measured on training-corpus streams as a
-property of the representation (Section~\ref{sec:bias_experiments}), and the held-out enrollment
-claim is stated for same- and cross-\emph{subject} conditions only, rather than pooling cells the
-data cannot support.
-
-\emph{Parity control.} To separate the architecture from its native-rate and rich-text inputs,
-HALO is also evaluated under baseline-equivalent inputs---$20$\,Hz resampling, neutral sensor
-description---against the best member of each baseline group (Appendix~\ref{app:parity}).
-
-\subsection{Per-Dataset Zero-Shot and 10-Shot Transfer}
-\label{sec:per_dataset}
-
-We report the conventional view first: every held-out dataset, scored against its own label
-strings, at the two ends of the enrollment regime. Datasets are grouped by how much of their
-vocabulary the training corpus never saw, because that fraction is what the open-set claim is
-actually about, and it is far from uniform: three of the seven held-out sets are covered entirely
-by the $93$-label training vocabulary, four are not.
-
-\begin{table}[t]
-  \centering
-  \caption{Per-dataset transfer, grouped by the fraction of that dataset's label vocabulary absent
-  from the $93$-label training corpus (\emph{unseen}). Every dataset is scored against its
-  \emph{own} label strings. InclusiveHAR is stratified by ability, because a model that works only
-  for able-bodied users is not a foundation for rehabilitation applications.
-  $^\S$\,TNDA-HAR carries no subject identifiers, so it sits outside the subject-disjoint mean.}
-  \label{tab:per_dataset}
-  \scriptsize
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{@{}l r cc cc@{}}
-    \toprule
-    & & \multicolumn{2}{c}{$k{=}0$} & \multicolumn{2}{c}{$k{=}10$} \\
-    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
-    Dataset & unseen & Acc & F1 & Acc & F1 \\
-    \midrule
-    \multicolumn{6}{l}{\textit{Vocabulary fully covered by training}}\\
-    MotionSense   & $0\%$ & \PH & \PH & \PH & \PH \\
-    RealWorld     & $0\%$ & \PH & \PH & \PH & \PH \\
-    Shoaib        & $0\%$ & \PH & \PH & \PH & \PH \\
-    \midrule
-    \multicolumn{6}{l}{\textit{Vocabulary partly unseen}}\\
-    InclusiveHAR  & $33\%$ & \PH & \PH & \PH & \PH \\
-    \quad\emph{able-bodied} & & \PH & \PH & \PH & \PH \\
-    \quad\emph{disabled}    & & \PH & \PH & \PH & \PH \\
-    UT-Complex    & $38\%$ & \PH & \PH & \PH & \PH \\
-    USC-HAD       & $42\%$ & \PH & \PH & \PH & \PH \\
-    \midrule
-    \textbf{Mean} (subject-disjoint) & $23\%$ & \PH & \PH & \PH & \PH \\
-    \midrule
-    TNDA-HAR\rlap{$^\S$}     & $25\%$ & \PH & \PH & \PH & \PH \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-The unseen fractions are properties of the corpus, not of any model: across the seven held-out
-sets, $14$ of $60$ label strings ($23\%$) never appear in training. The examples are the point.
-UT-Complex asks for \emph{drinking coffee}, \emph{eating} and \emph{smoking}---wrist activities a
-closed sit/stand/walk vocabulary cannot express at all---and InclusiveHAR distinguishes
-\emph{ramp ascent} from \emph{walking upstairs}. Where a held-out set \emph{is} covered by the
-training vocabulary, we say so rather than counting it as evidence for an open-set claim it does
-not test.
-
-\subsection{Q1: The Label-Efficiency Curve}
+\subsection{Development Result: the Gate Does Not Beat Simpler Controls}
 \label{sec:label_efficiency}
 
-This is the headline experiment (Table~\ref{tab:label_efficiency}). At each budget $k$ of
-labelled target windows per class we compare three mechanisms on identical data: HALO's memory,
-given the exemplars as an append with \emph{no gradient update}; a probe on HALO's frozen
-features; and the same probe on frozen harnet features. We additionally report \emph{retrieval
-over harnet features}---the same mechanism on a different encoder---because without it a win could
-be credited to the mechanism when it belongs to the representation, or the reverse.
-
-The budget is reported in two units, because neither alone is honest: per-class $k$ is what a
-deployment controls, while the fraction of the target dataset makes the numbers comparable to the
-$1\%$/$5\%$/$10\%$ convention of the transfer literature. On our held-out sets the two coincide
-closely ($k{=}10$ per class is $0.7$--$4.8\%$ of a dataset), and the grid stops at $k{=}100$
-because beyond it the budget exceeds what the smaller sets contain.
+Table~\ref{tab:label_efficiency} averages dataset-level macro-F1 percentages over the three
+development datasets. ``Ungated'' uses the identical prediction path with admissibility fixed to
+one. Prototype and ridge operate on the same frozen representation and enrolled executions.
 
 \begin{table}[t]
   \centering
-  \caption{Macro-F1 versus label budget, averaged over the held-out datasets, subject-disjoint
-  throughout. $k{=}0$ is the zero-shot point and $k{=}\text{full}$ the supervised one; they are
-  ends of one curve, not separate experiments, and every row uses \emph{one} frozen encoder
-  across all $k$. The second header row converts $k$ into the mean fraction of a target dataset
-  it represents. $^\ast$\,Closed-form rivals over the \emph{same} frozen features and the
-  \emph{same} enrolled examples, using no Phase-B parameters at all---the bar a learned decoder has
-  to clear to have earned its parameters. $^\dagger$\,The mechanism-versus-representation control:
-  if retrieval helps only on HALO features the contribution is the encoder; if it helps equally on
-  harnet's, it is the memory. We pre-register both controls regardless of which way they fall, plus
-  two canaries on every enrolled cell---removing the examples, and shuffling their labels.}
+  \caption{Development macro-F1 (percentage points), averaged over MotionSense, RealWorld, and
+  Shoaib. These are model-selection diagnostics, not sealed-test results.}
   \label{tab:label_efficiency}
   \scriptsize
-  \setlength{\tabcolsep}{1.5pt}
-  \begin{tabular}{@{}l cccccc@{}}
+  \setlength{\tabcolsep}{3.0pt}
+  \begin{tabular}{@{}lrrrrr@{}}
     \toprule
-    & \multicolumn{6}{c}{labelled target windows per class ($k$)} \\
-    \cmidrule(lr){2-7}
-    Mechanism & 0 & 5 & 10 & 25 & 100 & full \\
-    \emph{(mean \% of target)} & \emph{0} & \emph{1.3} & \emph{2.7} & \emph{6.6} & \emph{27} & \emph{100} \\
+    & \multicolumn{5}{c}{labeled executions per candidate ($k$)} \\
+    \cmidrule(lr){2-6}
+    Method & 0 & 1 & 2 & 4 & 8 \\
     \midrule
-    HALO memory (no gradient step)   & \PH & \PH & \PH & \PH & \PH & \PH \\
-    HALO frozen $+$ prototype\rlap{$^\ast$}   & \PH & \PH & \PH & \PH & \PH & \PH \\
-    HALO frozen $+$ ridge\rlap{$^\ast$}       & \PH & \PH & \PH & \PH & \PH & \PH \\
-    HALO frozen $+$ probe            & \PH & \PH & \PH & \PH & \PH & \PH \\
-    harnet frozen $+$ probe          & \PH & \PH & \PH & \PH & \PH & \PH \\
-    harnet frozen $+$ memory\rlap{$^\dagger$} & \PH & \PH & \PH & \PH & \PH & \PH \\
+    HALO admissibility gate & 15.73 & 40.88 & 43.11 & 44.29 & 39.72 \\
+    HALO ungated retrieval  &  9.07 & 52.15 & 57.14 & 56.16 & 53.62 \\
+    Frozen HALO $+$ prototype & --- & 57.76 & 61.16 & 65.41 & \textbf{72.04} \\
+    Frozen HALO $+$ ridge     & --- & 56.62 & 59.42 & 62.60 & 71.29 \\
     \midrule
-    UniMTS (native text)             & \PH & \PH & \PH & \PH & \PH & \PH \\
-    CrossHAR $+$ ConSE               & \PH & \PH & \PH & \PH & \PH & \PH \\
-    LiMU-BERT $+$ ConSE              & \PH & \PH & \PH & \PH & \PH & \PH \\
-    NormWear (native text)           & \PH & \PH & \PH & \PH & \PH & \PH \\
+    Gate, support removed & --- & 15.73 & 15.73 & 15.73 & 15.73 \\
+    Gate, support labels shuffled & --- & 6.02 & 4.75 & 2.19 & 0.88 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\textbf{Pre-registered hypothesis and kill criterion.} We expect retrieval to win at small $k$,
-where a nearest-neighbour decision beats a linear fit on a handful of points, and the probe to
-overtake somewhere between $k{=}10$ and $k{=}25$---roughly the $3$--$7\%$ band. If that holds,
-the regime HALO owns is $k \le 10$, the enrollment setting a user can perform in under a minute.
-There are two ways this fails and we report both plainly. If the probe dominates at \emph{every}
-$k$ including the smallest, retrieval has no regime of its own. The sharper test is the
-closed-form pair: a class prototype and a ridge fit read the same frozen features and the same
-enrolled examples with no Phase-B parameters whatsoever, so a learned decoder that does not beat
-them has not earned its parameters, whatever it does against an external baseline.
-Table~\ref{tab:per_dataset} gives the per-dataset breakdown behind this curve, including
-InclusiveHAR stratified by ability.
+The support interventions show that the gated rule uses enrollment: removing or shuffling support
+substantially reduces macro-F1. That fact is insufficient for a performance claim. Ungated
+retrieval is 11.3--14.0 points better at $k=1$ through 4, and prototypes are 16.9--32.3 points
+better across the enrollment curve. Performance also falls from $k=4$ to 8 for the gated rule while
+prototype and ridge improve.
 
-\subsection{Q2: Does the Inductive Bias Do What It Claims?}
-\label{sec:bias_experiments}
+The telemetry identifies a concrete mechanism. Across every reported development cell, gate values
+range from $0.245$ to $0.733$, above the configured veto threshold $0.15$; consequently the hard
+veto removes no row. The gate only reweights already selected evidence and cannot demonstrate the
+paper's intended admissibility behavior. We therefore reject the hypothesis that the current gate
+improves few-example recognition. The seven-dataset test evaluation remains sealed rather than
+being spent on a method that fails its development controls.
 
-Section~\ref{sec:no_grammar} made two falsifiable claims about the tokenizer. Both are tested
-directly rather than inferred from end-task accuracy.
+% TODO (2026-08-17): strengthen this paragraph once the repin lands. Three facts are now measured
+% and sharpen the negative result from "the gate did not help" to "this protocol could not have
+% shown it helping":
+%   (i) every reported cell is same-configuration, so evidence rows carry the query's own
+%       descriptor and the geometric mean sqrt(g(query,c) * g(row,c)) collapses to a function of the
+%       candidate alone -- a query-independent per-candidate prior, which can only add bias;
+%  (ii) the veto is inert because the fitted neutral (0.190 on the rebuilt table) sits ABOVE the
+%       0.15 threshold, so abstention rescues unfamiliar rows rather than triggering the veto; the
+%       threshold was calibrated against a table median of 0.33 that is now 0.22;
+% (iii) arbitrary-alias cells set admissibility to all-ones, so gated and ungated arms are
+%       bit-identical there and carry no information about the gate.
+% (i) directly motivates the cross-configuration cell already listed in Sec. 6.4.
+% See STALENESS.md sec. 4.
 
-\textbf{Rate-invariance is measured, not assumed.} A closed-form check confirms a pure tone
-deposits identical band energies at $20$, $50$, and $100$\,Hz. The end-task version is
-Table~\ref{tab:tokenizer_ablation}: the same encoder on the same data but reading a common
-$20$\,Hz resampling of every stream, so the gap measures what resampling costs.
+\subsection{Required Measurements Before a Performance Claim}
+\label{sec:pending_measurements}
 
-\textbf{Does anchoring actually make one cross-device memory well-posed?} A flat memory shared
-across devices is only meaningful if a query encoded from one configuration retrieves useful
-neighbours stored from a \emph{different} one, which is what Table~\ref{tab:crossconfig} measures.
-The measurement is unusually clean because parts of our corpus contain \emph{verified simultaneous}
-recordings---same person, activity, and instant, two or more devices---so querying one stream
-against a memory built only from its simultaneous partner isolates configuration from subject,
-session, and activity entirely. We report the same matrix for a resample-to-common-rate variant of
-our own encoder and for the frozen baselines, so the comparison is of mechanisms rather than
-corpora.
+The following experiments are part of the protocol but do not yet have provenance-complete
+artifacts:
 
-\textbf{Is the naive assembly enough?} Table~\ref{tab:tokenizer_ablation} includes the obvious
-alternative as a row: resample every stream to a common rate, attach free text per channel, same
-retrieval on top. If that arm matches HALO the architecture is a combination and we will say so;
-mutual entailment predicts it will not, and predicts a reason---per-channel conditioning showing
-up as elevated dataset identifiability, resampling as a rate gap.
+\begin{itemize}
+  \item held-out concept, dataset, and body-region studies for the gate, including gate-collapse,
+        provenance-capture, and latent-to-measurement guards;
+  \item cross-configuration enrollment on simultaneous training streams, reported separately from
+        the external test result;
+  \item native-grid versus common-rate, sensor-folded versus channel-level, descriptor-off,
+        acquisition-bias-off, observability-off, and signed-low-frequency ablations;
+  \item all-pairs activity-text similarity versus sensor-centroid similarity, replacing any
+        hand-selected quantitative geometry claim;
+  \item data-matched and released-checkpoint baselines, including the published short fine-tuning
+        baseline required by the wearable-foundation-model literature; and
+  \item only after development criteria are met, one evaluation of the seven-dataset sealed test
+        roster with confidence intervals and seen/unseen candidate breakdowns.
+\end{itemize}
 
-\begin{table}[t]
-  \centering
-  \caption{\textbf{Cross-configuration retrieval: the enabling claim.} Each row queries with one
-  acquisition configuration against a memory containing \emph{only} a different one. Because
-  these pairs are verified simultaneous recordings, the only thing that varies is the
-  configuration, so off-diagonal degradation is attributable to it alone. \emph{Retention} is
-  cross divided by same: features that denote the same physical quantity across devices should
-  retain most of their quality; one that resamples or conditions on the rate should not. These
-  rows are measured on \emph{training-corpus} streams, because they are the only ones that recorded
-  the same activity and subject on two devices at once; they are evidence about the representation,
-  not a held-out transfer result (Section~\ref{sec:eval_protocol}).}
-  \label{tab:crossconfig}
-  \scriptsize
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{@{}l cc cc@{}}
-    \toprule
-    & \multicolumn{2}{c}{HALO} & \multicolumn{2}{c}{resample-to-20\,Hz} \\
-    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-    Query $\rightarrow$ memory & same & \textbf{cross} & same & \textbf{cross} \\
-    \midrule
-    wrist $\rightarrow$ pocket (SP-SW-HAR)   & \PH & \PH & \PH & \PH \\
-    wrist $\rightarrow$ lower back (NFI)     & \PH & \PH & \PH & \PH \\
-    pocket $\rightarrow$ watch (WISDM)       & \PH & \PH & \PH & \PH \\
-    wrist $\rightarrow$ ear/glasses (XRF~V2) & \PH & \PH & \PH & \PH \\
-    100\,Hz $\rightarrow$ 20\,Hz memory      & \PH & \PH & \PH & \PH \\
-    \midrule
-    \textbf{cross/same retention}            & \multicolumn{2}{c}{\PH} & \multicolumn{2}{c}{\PH} \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\textbf{Conditioning must not be a corpus fingerprint.} The right-hand columns of
-Table~\ref{tab:tokenizer_ablation} report a dataset-identity probe: a linear classifier fitted on
-frozen embeddings of held-out subjects to predict which \emph{source dataset} a window came from.
-A representation that has absorbed the acquisition description as a corpus identifier makes this
-easy; one whose conditioning is genuinely compositional does not. It is the only direct evidence
-we have for the ``too little bias'' failure mode, so we report it whether or not it favours us.
-
-\begin{table}[t]
-  \centering
-  \caption{Tokenizer inductive-bias ablation (macro-F1 over the held-out datasets), each
-  component removed independently, with the dataset-identity probe alongside. The
-  \emph{naive assembly} row is not an ablation but a \emph{rival}: the same retrieval mechanism
-  over an encoder built the conventional way. It is the arm that tests whether HALO is a
-  combination of known parts. $^\ddagger$\,\emph{Rate gap} is performance on the $100$\,Hz
-  held-out cell minus the same data downsampled to $20$\,Hz---what resampling costs.
-  \emph{ds-ID} is dataset-identity accuracy; lower is better.}
-  \label{tab:tokenizer_ablation}
-  \scriptsize
-  \setlength{\tabcolsep}{1.5pt}
-  \begin{tabular}{@{}l cc cc@{}}
-    \toprule
-    & \multicolumn{2}{c}{transfer} & \multicolumn{2}{c}{probe} \\
-    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
-    Tokenizer configuration & $k{=}0$ & $k{=}10$ & rate gap\rlap{$^\ddagger$} & ds-ID $\downarrow$ \\
-    \midrule
-    Physical-Hz, sensor-grouped, factored text & \PH & \PH & \PH & \PH \\
-    \quad$-$ filterbank (resample to 20\,Hz)   & \PH & \PH & \PH & \PH \\
-    \quad$-$ sensor grouping (per-chan.\ text) & \PH & \PH & \PH & \PH \\
-    \quad$-$ language conditioning (locked)    & \PH & \PH & \PH & \PH \\
-    \quad$-$ observability / resolution masks  & \PH & \PH & \PH & \PH \\
-    \quad$-$ signed DC (gravity) feature       & \PH & \PH & \PH & \PH \\
-    \midrule
-    \emph{naive}: resample $+$ per-chan.\ text & \PH & \PH & \PH & \PH \\
-    \midrule
-    harnet~\cite{sslwearables} / UniMTS~\cite{unimts} & \PH & \PH & --- & \PH \\
-    chance                                     & --- & --- & --- & \PH \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\subsection{Q3: Which Phase-A Objectives Carry the Transfer?}
-\label{sec:objective_ablation}
-
-The live recipe is two terms, so the ablation is short: strip each in turn, then swap the
-tokenizer's front end and its second resolution (Appendix~\ref{app:objectives}). One control
-matters more than the ablation itself. The \emph{untrained control} packages the retriever and
-decoder at initialisation into the evaluator's own artifact schema, so it is scored over identical
-cohorts through identical code with nothing differing but the weights. Every trained arm is
-reported beside it, and a component that does not beat its own initialisation is reported as
-such---a bar that some arms of this system have already failed.
-
-\subsection{Q4: On-Device Cost and a Real Deployment}
-\label{sec:deployment_experiments}
-\label{sec:case_study}
-
-We implement the full pipeline as an iOS application and will report encoder latency and peak
-memory under Core~ML, retrieval latency against bank size, and a case study in which a user
-enrolls activities by demonstration, changes body placement mid-session, and introduces names
-never enrolled---the deployment form of the label-efficiency argument.
-
-\PENDING{On-device latency, peak memory, retrieval cost versus bank size, and the case-study
-figure are added here once the encoder is compiled and profiled.}
+No on-device latency, Core~ML, iOS, or unknown-class result is claimed because the corresponding
+implementation and measurement artifacts do not exist in the repository.

@@ -1,79 +1,47 @@
-% =====================================================================
-% fig_overview.tex  --  the two-phase HALO system as one left-to-right flow.
+% Active HALO pipeline; synchronized with docs/design/DESIGN_OF_RECORD.md.
 %
-% Spans the full text width (used inside figure*).  Natural width ~156mm
-% against a 178mm text block, so \resizebox scales UP by ~1.14 and the
-% \tiny annotations land near 6.8pt.  The previous two-row single-column
-% layout had to be shrunk to 0.90 and rendered them at 5.4pt -- keep the
-% natural width UNDER \textwidth or that regression returns.
-%
-% Layout discipline: the phase boundary is one dashed vertical rule, not
-% two \fit boxes.  \fit boxes fight for horizontal room with the nodes
-% inside them and were what forced the earlier collisions.  Explanatory
-% prose belongs in the caption, NOT in floating text nodes.
-%
-% NOTE: keep every \\ at the top level of a node body -- a line break
-% nested inside a brace group breaks TikZ's align handling.
-% =====================================================================
+% TODO (figure, 2026-08-17): the "two resolutions" label below describes the pinned v2 artifact.
+% The repository default is now a single fixed 1.0 s patch grid (multiresolution=False), and the
+% descriptor-prediction term in the losses box is disabled (descriptor_weight=0). Redraw both
+% labels when the manuscript repins to phase_a_fixed_1s_rotation_20260817. See STALENESS.md sec. 2.
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[font=\scriptsize]
+\node[font=\scriptsize,anchor=south west] at (0,1.05)
+  {\textsf{\textbf{Phase A}} \ label-free representation learning};
+\node[font=\scriptsize,anchor=south west] at (8.55,1.05)
+  {\textsf{\textbf{Evidence stage}} \ fixed prediction rule};
+\draw[dashed,draw=halogray!60,line width=0.5pt] (8.35,1.18) -- (8.35,-2.15);
 
-% ---------------- phase headers + boundary ----------------
-\node[font=\scriptsize,anchor=south west] at (0,1.20)
-  {\textsf{\textbf{Phase A}} \ label-free pretraining \textbf{(no activity labels)}};
-\node[font=\scriptsize,anchor=south west] at (8.75,1.20)
-  {\textsf{\textbf{Phase B}} \ evidence engine \textbf{(labels enter only here)}};
-\draw[dashed,draw=halogray!60,line width=0.5pt] (8.60,1.30) -- (8.60,-2.35);
+\node[hplain,anchor=west,text width=23mm] (raw) at (0,0.35)
+  {stored-grid IMU window\\ \tiny source rate and valid axes};
+\node[hplain,anchor=west,text width=23mm] (desc) at (0,-0.85)
+  {sensor description\\ \tiny $+$ measured acquisition bias};
+\node[hbox,anchor=west,text width=28mm,minimum height=14mm] (tok) at (2.65,-0.20)
+  {\textbf{physical-Hz front end}\\ \tiny per-axis bands and support flags\\
+   \tiny $\rightarrow$ fold axes by sensor};
+\node[hbox,anchor=west,text width=25mm,minimum height=14mm] (enc) at (5.85,-0.20)
+  {\textbf{sensor encoder}\\ \tiny physical-time attention\\ \tiny \TODO{two resolutions (TODO)}};
+\node[hbox2,anchor=north,text width=48mm] (obj) at (5.55,-1.10)
+  {\textbf{label-free losses}\\
+   \tiny masked latent \TODO{+ descriptor prediction (TODO)} $\cdot$ augmentation VICReg};
+\draw[harrow] (raw.east) -- ($(tok.west)+(0,4mm)$);
+\draw[harrow] (desc.east) -- ($(tok.west)+(0,-4mm)$);
+\draw[harrow] (tok.east) -- (enc.west);
+\draw[harrow] (enc.south) -- ($(obj.north)+(14mm,0)$);
 
-% ---------------- Phase A ----------------
-\node[hplain,anchor=west,text width=23mm] (raw) at (0,0.60)
-  {native-rate IMU window\\ \tiny any rate, any channels};
-\node[hplain,anchor=west,text width=23mm] (text) at (0,-0.65)
-  {per-sensor text\\ \tiny ``a smartwatch accelerometer on the wrist''};
+\node[hbox,anchor=west,text width=25mm,minimum height=13mm] (bank) at (8.80,-0.20)
+  {\textbf{versioned bank}\\ \tiny one row per patch and sensor\\ \tiny label + provenance};
+\node[hbox2,anchor=west,text width=34mm,minimum height=13mm] (rule) at (11.80,-0.20)
+  {\textbf{compatibility $\rightarrow$ gate $\rightarrow$ rank}\\
+   \tiny vote by enrollment identity or label text\\ \tiny sum across sensors};
+\node[hplain,anchor=west,text width=19mm] (out) at (15.65,-0.20)
+  {one score per\\candidate activity};
+\node[hplain,anchor=north,text width=26mm] (cand) at (12.55,-1.10)
+  {candidate names + optional demonstrations\\ \tiny supplied at run time};
 
-\node[hbox,anchor=west,text width=27mm,minimum height=13mm] (tok) at (2.75,0)
-  {\textbf{physical-Hz tokenizer}\\ \tiny bands fixed in Hz, no resampling\\
-   \tiny $+$ signed DC (gravity)\\ \tiny $+$ observability masks};
-\node[hbox,anchor=west,text width=25mm,minimum height=13mm] (enc) at (5.95,0)
-  {\textbf{set encoder}\\ \tiny RoPE over physical time;\\
-   \tiny permutation-invariant over channels};
-
-\node[hbox2,anchor=north,text width=48mm] (obj) at (5.60,-0.92)
-  {\textbf{label-free objectives}\\
-   \tiny A1 masked latent prediction (EMA teacher)
-   $\cdot$ A2 VICReg over two augmented views};
-
-\draw[harrow] (raw.east)  -- ($(tok.west)+(0,4mm)$);
-\draw[harrow] (text.east) -- ($(tok.west)+(0,-4mm)$);
-\draw[harrow] (tok) -- (enc);
-\draw[harrow] (enc.south) -- ($(obj.north)+(16mm,0)$);
-
-% ---------------- Phase B ----------------
-\node[hbox2,anchor=west,text width=27mm,minimum height=13mm] (dec) at (10.10,0)
-  {\textbf{retriever} $\rightarrow$ \textbf{relational decoder}\\
-   \tiny top-$k$ by \mbox{\textbf{sensor}} similarity;\\ \tiny label text only names it};
-% must clear the dec box, whose 13mm minimum height puts its top edge at y=0.65
-\node[font=\tiny,color=halogreen,anchor=south] at (11.45,0.80)
-  {trained once $\cdot$ no parameter per label};
-\node[hplain,anchor=west,text width=22mm] (out) at (13.60,0)
-  {one score per candidate\\
-   \tiny $+$ the exemplars that produced it};
-
-% mem and cand start strictly LEFT of `out' so their arrows into the decoder
-% never run underneath it; the 0.3cm gap between them is what the `hbox'
-% inner sep needs to keep the two rounded rectangles from touching.
-\node[hbox,anchor=north,text width=30mm] (mem) at (10.30,-0.92)
-  {\textbf{append-only memory}\\
-   \tiny encoded exemplars, $k{=}0$ allowed\\
-   \tiny retrieved by \mbox{\textbf{sensor}} similarity};
-\node[hbox,anchor=north,text width=20mm] (cand) at (13.25,-0.92)
-  {\textbf{candidate labels}\\ \tiny declared at run time};
-
-\draw[harrow] (mem.north)  -- ($(dec.south)+(-7mm,0)$);
-\draw[harrow] (cand.north) -- ($(dec.south)+(7mm,0)$);
-\draw[harrow] (dec.east) -- (out.west);
-
-% ---------------- the freeze ----------------
-\draw[harrow,line width=1pt,draw=halogreen] (enc.east) -- (dec.west);
-\node[font=\scriptsize,color=halogreen,anchor=south] at (9.28,0.06) {\textbf{freeze}};
+\draw[harrow,line width=1pt,draw=halogreen] (enc.east) -- (bank.west);
+\node[font=\tiny,color=halogreen,anchor=south] at (8.58,-0.05) {freeze};
+\draw[harrow] (bank.east) -- (rule.west);
+\draw[harrow] (cand.north) -- ($(rule.south)+(5mm,0)$);
+\draw[harrow] (rule.east) -- (out.west);
 \end{tikzpicture}}

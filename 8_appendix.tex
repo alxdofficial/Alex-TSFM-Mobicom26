@@ -1,327 +1,178 @@
 % =========================
-% 8_appendix.tex --- follows the bibliography; does not count towards the 12-page limit.
-% Nothing load-bearing for the argument lives here: reviewers are not obligated to read it.
+% 8_appendix.tex --- follows the bibliography.
 % =========================
 \appendix
 
-\section{The Dependency Structure Behind the Combination}
+\section{Scope of the Closest Systems}
 \label{app:entailment}
 
-Section~\ref{sec:combination} claims HALO's four choices are \emph{mutually entailed} rather than
-independently attractive. Table~\ref{tab:coverage} records which axes the closest systems claim to
-address; the four dependencies follow in full.
+Table~\ref{tab:coverage} keeps four questions separate: handling acquisition rate, receiving
+placement or channel context, accepting run-time activity names, and evaluating multiple target
+example counts without parameter updates. A zero-shot result is not marked as a $k$ curve, and a
+linear probe or fine-tuning result is not marked as no-update enrollment.
 
-\begin{table}[h]
+\begin{table*}[t]
   \centering
-  \caption{Which axes each system \emph{explicitly claims} to address. $\checkmark$~= in the form
-  we argue is needed; $\circ$~= a weaker form (rate \emph{equivariance} rather than physical-Hz
-  anchoring; \emph{categorical} rather than free-text placement; rotation \emph{invariance},
-  which discards gravity). The last column marks systems reporting a range of label budgets with
-  no gradient update. Blank is not a criticism---these are different papers solving different
-  problems---and the table reports stated scope, not measured performance. The point is not the
-  bottom row's length but the dependency structure below.}
+  \caption{Reported scope of related systems. Entries summarize the cited evaluation rather than
+  infer unreported capabilities. ``Task fit'' includes a probe or fine-tuning; ``zero only'' is not
+  a target-example curve.}
   \label{tab:coverage}
   \scriptsize
-  \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}l ccccc@{}}
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabularx}{\textwidth}{@{}l
+      >{\raggedright\arraybackslash}X
+      >{\raggedright\arraybackslash}X
+      >{\raggedright\arraybackslash}X
+      >{\raggedright\arraybackslash}X@{}}
     \toprule
-    & \multicolumn{2}{c}{acquisition} & orient./ & label & $k$-curve \\
-    \cmidrule(lr){2-3}
-    System & rate & place & grav. & interf. & \\
+    System & Rate/input treatment & Configuration context & Label interface & Target adaptation \\
     \midrule
-    LiMU-BERT~\cite{limubert}, CrossHAR~\cite{crosshar}\hspace*{-4pt} &   &   &   &   &  \\
-    harnet~\cite{sslwearables}, LSM~\cite{lsm1,lsm2}    &   &   &   &   & \checkmark \\
-    NormWear~\cite{normwear}                &         & $\circ$ &    & \checkmark &  \\
-    UniMTS~\cite{unimts}                    &         & \checkmark & $\circ$ & \checkmark &  \\
-    ZeroHAR~\cite{zerohar}                  &         & $\circ$ &        & \checkmark &  \\
-    GOAT~\cite{goat}, oneHAR~\cite{onehar}  &         & \checkmark &     & \checkmark &  \\
-    CHARM~\cite{charm,sensorsvoice}         &         & \checkmark &     &        &  \\
-    MoPFormer~\cite{mopformer}              &         & $\circ$ &        &        &  \\
-    FlowState~\cite{flowstate}              & $\circ$ &         &        &        &  \\
-    RAG-HAR~\cite{raghar}, ZARA~\cite{zara} &         &         &        & \checkmark & \checkmark \\
-    SensorLM~\cite{sensorlm}                &         &         &        & \checkmark & \checkmark \\
+    LiMU-BERT~\cite{limubert} & common 20\,Hz & none & fixed downstream & task fit \\
+    CrossHAR~\cite{crosshar} & common-rate inputs & none & fixed downstream & task fit \\
+    harnet~\cite{sslwearables} & wrist contract & wrist accelerometer & fixed downstream & task fit \\
+    LSM / LSM-2~\cite{lsm1,lsm2} & multimodal, incomplete data & modality availability & fixed tasks & probe/fine-tune \\
+    UniMTS~\cite{unimts} & resampled inputs & placement graph & text-conditioned tasks & task fit \\
+    NormWear~\cite{normwear} & common-rate input & variable channels & text interface & zero/task evaluation \\
+    ZeroHAR~\cite{zerohar} & configured input & categorical context & run-time names & zero only \\
+    CHARM / SensorsVoice~\cite{charm,sensorsvoice} & channel-tokenized & channel descriptions & task dependent & task evaluation \\
+    MoPFormer~\cite{mopformer} & all data at 100\,Hz & wearable context & fixed tasks & task fit \\
+    FlowState~\cite{flowstate} & rate equivariant & sampling rate & forecasting output & not HAR \\
+    RAG-HAR~\cite{raghar} & retrieved descriptors & sensor evidence & run-time names & zero only \\
+    ZARA~\cite{zara} & multi-sensor evidence & sensor evidence & run-time names & zero only \\
+    SensorLM~\cite{sensorlm} & wearable pretraining & sensor/task prompts & task dependent & task adaptation \\
     \midrule
-    \textbf{HALO}                           & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+    \textbf{HALO} & stored-grid bands in Hz & per-sensor text + measurements & run-time names & $k=0,1,2,4,8$, no update \\
     \bottomrule
-  \end{tabular}
-\end{table}
+  \end{tabularx}
+\end{table*}
 
-\textbf{Rate anchoring is a precondition for the memory, not a parallel feature.} A
-non-parametric memory only works if a query and a stored exemplar recorded on different devices
-are comparable \emph{as vectors}. If the encoder is rate-\emph{equivariant}---told the rate and
-adapting---then two windows at different rates are related by a learned transformation, and the
-memory must either be indexed per configuration or trust that transformation to be exact. Because
-HALO's band $k$ denotes the same physical frequency for every device, one flat memory is
-well-posed. L1 exists in the form it does because of Phase~B.
-
-\textbf{The granularity of the language conditioning is forced by the retrieval.} Per-channel
-free text~\cite{charm,sensorsvoice,sensorllm} is the natural choice if the conditioning feeds a
-classifier: it is maximally expressive and the head can ignore what it does not need. It is the
-wrong choice if the conditioning feeds a memory, because a description nearly unique to a corpus
-makes \emph{same-corpus} neighbours the nearest ones---precisely the shortcut cross-dataset
-evaluation exists to catch. Attaching identity to the \emph{sensor} keeps the description
-expressive enough to name an unseen device and too coarse to name a dataset. That is why the
-dataset-identity probe is in the paper.
-
-\textbf{Preserving gravity is forced by the geometry finding.} Rotation
-invariance~\cite{unimts} is the standard answer to unknown mounting, and it is lossy in one
-specific way: it discards the gravity direction, and with it posture. Section~\ref{sec:geometry}
-shows that the label pairs a text projection cannot separate are exactly the posture-versus-
-transition pairs (\emph{sitting}/\emph{sitting down}, \emph{lying}/\emph{standing}). A system
-that gives up on the text geometry \emph{must} therefore keep posture in the signal, so
-conditioning rather than invariance is not a preference here but a requirement.
-
-\textbf{Label-free pretraining is forced by the same shortcut argument.} Any closed-vocabulary
-objective over a multi-corpus training set rewards inferring the corpus and predicting its
-marginal. That is survivable for a parametric head, which can be refitted per deployment; it is
-not survivable for a frozen encoder feeding a memory, because the shortcut is baked into the
-stored vectors.
-
-So the four choices form a chain: removing any one invalidates another. That is a different and
-more falsifiable claim than ``we do all of these,'' and Section~\ref{sec:bias_experiments} is
-built to test it---each ablation in Table~\ref{tab:tokenizer_ablation} removes one link and asks
-whether the rest still stand.
-
-\section{Corpus}
+\section{Corpus Construction}
 \label{app:corpus}
 
-Table~\ref{tab:datasets} in the body lists the training corpus and the held-out evaluation sets;
-Figure~\ref{fig:corpus} plots them by placement and native rate. Window counts there are windows
-on the native-rate grid after physical-plausibility and duplicate filtering. Most windows are six
-seconds, but UCI-HAR ships $2.56$\,s records and SP-SW-HAR $1$\,s, so hours are computed from each
-grid's own samples and rate rather than by multiplying by six.
+Table~\ref{tab:datasets} is generated from each stream's
+\path{grids/native/*/meta.json}. Window
+counts are properties of the HALO converters and grid policy, not quantities claimed by the source
+dataset papers. The evidence ledger records the aggregation command and distinguishes materialized
+rows, quality-screened rows, subject splits, and the balanced 250,000-window bank.
 
-\begin{figure}[h]
-    \centering
-    \setlength{\abovecaptionskip}{2pt}
+\begin{figure}[ht]
+  \centering
+  \setlength{\abovecaptionskip}{2pt}
   \input{figures/fig_corpus.tex}
 \end{figure}
 
-\begin{figure*}[t]
-    \centering
-    \setlength{\abovecaptionskip}{4pt}
-    \setlength{\belowcaptionskip}{-6pt}
-  \resizebox{0.92\textwidth}{!}{\input{figures/fig_hook.tex}}
-  \caption{\textbf{What ``no closed grammar'' looks like in the corpus.} The three traces on the
-  left are real accelerometer snippets of \emph{walking}, two seconds each, from three streams of
-  the materialised corpus; they are amplitude-normalised for display, but the sample counts are
-  the true ones. As arrays they have nothing in common. HALO absorbs that heterogeneity
-  \emph{in the tokenizer}---a frequency axis fixed in Hz, sensor identity supplied in language,
-  gravity preserved---so windows recorded on different devices become directly comparable as
-  vectors, which is the precondition for one flat memory. Recognition is then a retrieval in
-  \emph{sensor} space, with the label strings a deployment declares at run time used only to name
-  and to enumerate; because the memory is append-only, one frozen model spans the whole label
-  budget with no gradient update at any point.}
-  \label{fig:hook}
-\end{figure*}
+The expanded training roster deliberately includes body-worn stress configurations from DSADS and
+Opportunity; an earlier draft incorrectly listed both as excluded. Six newly added training
+sources contribute most of the placement coverage: DSADS, FORTH-TRACE, Opportunity, RealDISP,
+MM-Fit, and PhyTMo. MoniPar, SPAR, and Upper Limb Use are held out.
 
-\textbf{Deliberate exclusions.} Six datasets were excluded from both splits.
-DSADS~\cite{dsads}, HARTH~\cite{harth}, and Opportunity~\cite{opportunity} use torso and limb IMU
-harnesses rather than phone or watch placements. RecGym~\cite{recgym} is distributed per-axis
-min--max normalised, which destroys the physical scale and gravity component the tokenizer
-depends on. MobiAct~\cite{mobiact} was never materialised into grids. And HAPT~\cite{hapt} is
-excluded because it re-records the same 30 subjects as UCI-HAR~\cite{ucihar}, so including both
-would place the same people on both sides of a supposedly subject-disjoint boundary.
+\textbf{Sources not used in the named recipe.} HAPT~\cite{hapt} reuses the UCI-HAR participants and
+recordings, so it is excluded to avoid near-duplicate subjects. RecGym~\cite{recgym} distributes
+per-axis min--max-normalized data that no longer preserve the physical scale used by the tokenizer.
+The MobiAct~\cite{mobiact} download did not produce a materialized grid and is not counted.
+HARTH~\cite{harth} is
+available only as an optional placement stress source, and ExtraSensory, NHANES, HMOG, and KneE-PAD
+are optional scale/stress sources rather than members of the reported 18-dataset run.
 
-\section{Baselines}
+\section{Baseline Contracts}
 \label{app:baselines}
 
-Table~\ref{tab:baselines} lists the five baselines, what each was pretrained on, and how much
-acquisition context each can receive at inference---the axis on which the comparison is not
-symmetric.
+Models receive different input information, so a future comparison must disclose both weight source
+and input contract. LiMU-BERT and CrossHAR require corpus-matched retraining. Released harnet,
+UniMTS, and NormWear weights were trained on different corpora. ConSE~\cite{conse} can translate a
+fixed training classifier into candidate text scores, but it does not make the underlying encoder
+open label or provide an enrollment mechanism.
 
-\begin{table}[h]
+\begin{table}[t]
   \centering
-  \caption{Baselines and where each sits on the heterogeneity stack. ``Blind'' means the model
-  receives no information about where the sensor was worn. Two baselines are pretrained by us on
-  our corpus with their published objectives (data-matched); three are used as released
-  (faithful, but pretrained on their own, larger corpora). We report the two groups separately
-  rather than averaging over them.}
+  \caption{Planned baseline groups. Results are not reported until every row has an artifact using
+  the same support and query cohorts.}
   \label{tab:baselines}
   \scriptsize
-  \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}l l l l l@{}}
+  \setlength{\tabcolsep}{2pt}
+  \begin{tabularx}{\columnwidth}{@{}l
+      >{\raggedright\arraybackslash}X
+      >{\raggedright\arraybackslash}X
+      >{\raggedright\arraybackslash}X@{}}
     \toprule
-    Model & Weights & Rate & Channels / placement & Labels \\
+    Model & Weight source & Input contract & Candidate bridge \\
     \midrule
-    LiMU-BERT~\cite{limubert}   & we pretrain & 20\,Hz & 6-ch pad$+$mask; blind & ConSE \\
-    CrossHAR~\cite{crosshar}    & we pretrain & 20\,Hz & 6-ch pad$+$mask; blind & ConSE \\
-    harnet~\cite{sslwearables}  & released    & 30\,Hz & 3-ch acc; wrist & ConSE \\
-    UniMTS~\cite{unimts}        & released    & resamp. & joint-graph placement & native \\
-    NormWear~\cite{normwear}    & released    & 65\,Hz & variable ch; blind & native \\
-    \midrule
-    \textbf{HALO} (ours)        & we train    & \textbf{native} & \textbf{per-sensor language} & \textbf{native} \\
+    LiMU-BERT~\cite{limubert} & corpus matched & 20\,Hz, padded 6-channel & ConSE \\
+    CrossHAR~\cite{crosshar} & corpus matched & common rate, padded channels & ConSE \\
+    harnet~\cite{sslwearables} & released & 30\,Hz wrist acceleration & ConSE \\
+    UniMTS~\cite{unimts} & released & placement graph & native interface \\
+    NormWear~\cite{normwear} & released & model-specific common rate & text interface \\
+    \textbf{HALO} & current run & per-sensor stored-grid input & evidence rule \\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
 \end{table}
 
-\section{Parity Control}
-\label{app:parity}
-
-Because several baselines cannot accept HALO's native inputs, Table~\ref{tab:parity} reports HALO
-restricted to each baseline's own input contract, so any remaining gap is attributable to the
-model rather than to what it was allowed to read.
-
-\begin{table}[h]
-  \centering
-  \caption{Parity control: HALO under its native inputs versus baseline-equivalent inputs.
-  Baselines are split by whether their weights were trained on our corpus or released by their
-  authors.}
-  \label{tab:parity}
-  \scriptsize
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{l cc}
-    \toprule
-    Configuration & $k{=}0$ & $k{=}10$ \\
-    \midrule
-    HALO (native Hz, per-sensor text)          & \PH & \PH \\
-    HALO \emph{parity} (20\,Hz, neutral text)  & \PH & \PH \\
-    \midrule
-    Best baseline (data-matched group)         & \PH & \PH \\
-    Best baseline (released-checkpoint group)  & \PH & \PH \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\section{Gravity as a Signed DC Feature}
-\label{app:gravity}
-
-Section~\ref{sec:sensor_grouping} keeps the quasi-static component as a signed per-axis feature
-rather than normalising it away. Figure~\ref{fig:gravity} is the measurement behind that choice.
-
-\begin{figure*}[t]
-    \centering
-    \setlength{\abovecaptionskip}{4pt}
-  \resizebox{0.86\textwidth}{!}{\input{figures/fig_gravity.tex}}
-  \caption{\textbf{Why gravity is conditioned on rather than normalised away.} Three static
-  postures, UCI-HAR waist phone, $200$ windows each through the real tokenizer path.
-  \emph{Left:} the frequency path receives almost nothing (note the $\times10^{-3}$ axis) and
-  separates no pair distinctly---all pairwise cosines fall within $0.84$--$0.88$. \emph{Right:}
-  signed DC places lying nearly orthogonal to standing ($-0.04$), because gravity has
-  redistributed across axes. The limit is shown too: standing and sitting stay at $0.99$ in DC,
-  the same pair Section~\ref{sec:geometry} finds inseparable in text.}
-  \label{fig:gravity}
-\end{figure*}
-
-\section{Tokenizer Guardrails}
+\section{Tokenizer Checks Required for Publication}
 \label{app:tokenizer}
 
-\begin{figure}[h]
-    \centering
-    \setlength{\abovecaptionskip}{4pt}
-  \input{figures/fig_tokenizer.tex}
-  \caption{\textbf{The filterbank, and what a token carries.} \emph{Top:} $K{=}32$ Gaussian bands
-  log-spaced over $0.3$--$15$\,Hz; because a native-rate zero-padded rDFT maps bin $m$ to $mr/S$,
-  one bank reads every rate without resampling. Dashed lines mark the Nyquist guard for the two
-  lowest corpus rates. \emph{Bottom:} the real observability and resolution vectors emitted
-  alongside the energies---part of the token, not diagnostics.}
-  \label{fig:tokenizer}
-\end{figure}
-
-Zero-padding beyond the true patch length is frequency-domain interpolation only and does not
-alter band energies; we verified that $S{=}256$ and $S{=}512$ give band-energy cosine $1.000000$
-and identical masks at $20$, $25$, $50$, and $100$\,Hz. Patch lengths exceeding $S$ raise an error
-rather than silently truncating.
+The implementation contains unit guards for DFT overflow, acquisition-rate observability, sensor
+folding, and axis validity. Those software tests do not by themselves establish empirical
+rate-equivalence or posture utility. The retired figures used hard-coded values without an archived
+generator. Their replacements must be produced by a checked-in script that records input windows,
+anti-alias filtering, source and stored rates, checkpoint hash, random seed, and raw feature arrays.
+The signed-low-frequency ablation must use the same evaluation cohort and report uncertainty.
 
 \section{Phase-A Specification}
 \label{app:phasea}
 
-The encoder is $d{=}256$, 6 layers, 8 heads. Training runs $30$k steps at batch $256$, LR
-$4.2\mathrm{e}{-}4$ with $1$k warmup, weight decay $0.05$, gradient clip $1.0$, and the selected
-checkpoint is the subject-disjoint $k$-NN peak rather than the last step. The two objective weights
-are solved once after warmup from the measured encoder-gradient geometry and then held fixed rather
-than being continuously auto-balanced;
-VICReg keeps its published $25/25/1$ invariance/variance/covariance coefficients. The EMA teacher
-is updated only after an optimizer step (decay $0.996$) and is checkpointed with the model.
-Patches are drawn per batch at two physical resolutions---a short grid in $[0.4,0.8]$\,s and a
-long grid in $[1.0,1.5]$\,s, constrained to a ratio of at least $1.75$---so no single patch length
-is baked into the representation.
+% TODO (2026-08-17): every hyperparameter below is verified against the pinned v2 run configuration
+% and is correct for the reported checkpoint. It is NOT the current repository default. Head now
+% defaults to batch 1,024 / 7,500 steps / lr 6e-4 / 250 warmup / weight decay 0.1 / EMA 0.984 /
+% calibration at step 500 / single 1.0 s patches -- a recipe that has not yet produced a checkpoint.
+% The short/long patch ranges below now apply only to the multi-resolution ablation.
+% See STALENESS.md sec. 2.
+The reported run uses a fixed filterbank, sensor-granularity tokens, width 256, six layers, eight
+heads, batch size 256, 30,000 steps, learning rate $3\times10^{-4}$, 1,000 warmup steps, weight decay
+$0.05$, gradient clipping at $1.0$, and seed 20260718. The two top-level loss coefficients are fixed
+after calibration at step 2,000: 3.998090 for the JEPA family and 0.689099 for VICReg. Descriptor
+retrieval has coefficient $0.5$ inside the JEPA family. The teacher decay is $0.996$.
 
-Sampling is label-free and hierarchical: $P(\text{dataset})\!\propto\!n^{0.25}$ capped at $25\%$,
-then $P(\text{subject}\mid\text{dataset})\!\propto\!n^{0.5}$, then uniform within subject. Without
-tempering, one free-living wrist corpus would supply $88\%$ of every gradient---a single placement,
-device, and rate---which is self-defeating for a model whose claim is generalisation across
-acquisition configurations. Phase A does not sample by event identity at all; that structure is
-used only by Phase~B (Appendix~\ref{app:phaseb}).
+Short patch durations are drawn from $0.4$--$0.8$\,s, long durations from $1.0$--$1.5$\,s, with a
+minimum ratio of $1.75$. A dataset with $n$ windows is sampled proportional to $n^{0.25}$ with a
+maximum share of $25\%$; subjects are sampled proportional to the square root of their window
+count. Activity labels do not enter the training sampler or loss. The selected checkpoint is step
+4,000, which maximizes the predefined subject-disjoint label--stream-macro validation score over the
+completed run.
 
-Per-objective gradient norms, VICReg component values, minimum feature standard deviation,
-effective rank, and positive similarity by pair type are logged every step; non-finite values or
-representation collapse fail the run rather than being smoothed over.
-
-\section{Phase-A Objective Ablation}
-\label{app:objectives}
-
-Every row is a from-scratch run at the recipe of Appendix~\ref{app:phasea}, differing only in the
-stated term, scored under one protocol against one frozen evaluation split. Rows are read against
-the untrained control rather than against each other: a term that does not beat initialisation is
-reported as not earning its place.
-
-\begin{table}[htbp]
-  \centering
-  \caption{Phase-A ablation, macro-F1 over the held-out datasets. The first block strips the live
-  two-term recipe back one term at a time; the tokenizer rows test whether the physical-Hz front
-  end and the two resolutions earn their place; the last row is a control, not a variant.}
-  \label{tab:objective_ablation}
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{l cc}
-    \toprule
-    Phase-A configuration & $k{=}0$ & $k{=}10$ \\
-    \midrule
-    Masked latent $+$ augmentation relation (live)  & \PH & \PH \\
-    \quad $-$ masked latent (relation only)         & \PH & \PH \\
-    \quad $-$ relation (masked latent only)         & \PH & \PH \\
-    \midrule
-    Fixed filterbank $\rightarrow$ constrained-learnable & \PH & \PH \\
-    Two resolutions $\rightarrow$ one                    & \PH & \PH \\
-    \midrule
-    Untrained encoder (initialisation control)           & \PH & \PH \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\section{Phase-B Episodic Training}
+\section{Evidence Artifact and Controls}
 \label{app:phaseb}
 
-One optimizer step is eight independent episodes of eight query executions each. An episode draws
-its candidate count uniformly from $2$ to $16$; how many of those candidates are enrolled is drawn
-uniformly from one to the candidate count, so partial and full enrollment fall out of one draw
-rather than being named strata; and each enrolled candidate receives the \emph{same} number of
-examples, drawn uniformly from $1$ to $8$ \emph{distinct executions}, so the count cannot reveal
-the answer. Four regimes are covered: semantic zero-enrollment, ordinary few-example, cross-subject
-(examples and query from different people---a hard constraint), and same-subject enrollment from
-distinct executions. Two anchors are guaranteed per step: a partially enrolled episode paired with
-a zero-enrollment counterfactual reusing its exact query, candidates, phrasing and physical view,
-so only the memory overlay differs; and one fully enrolled alias episode. Distractor candidates are
-drawn to be hard---by text similarity and physical-centroid similarity---with the difficulty and the
-candidate range staged over the run.
+% TODO (2026-08-17): these bank statistics belong to the pinned v2 artifact. A schema-4 bank bound to
+% the newer checkpoint was rebuilt on 2026-08-17 (2,629,972 sensor rows, 166-label vocabulary), but
+% no gate has been fitted against it and no enrollment run exists, so the numbers below remain the
+% only reportable ones. Note also that the gate artifact backing this appendix records
+% artifact_version 2 and is refused by the current loader. See STALENESS.md sec. 0.
+The active bank schema has 250,000 source windows, 56 configurations, and 161 labels. It records
+3,942,901 valid patch rows and 7,653,242 per-sensor rows. The gate artifact is bound to this bank,
+checkpoint, text-embedding path, and evaluation schema. Evaluation refuses legacy banks or foreign
+artifacts unless the mismatch is explicitly acknowledged.
 
-With probability $1/3$ an enrolled episode replaces its candidate names with meaningless
-episode-local aliases. This is the only condition that forces example-based rather than text-based
-inference, so it is load-bearing rather than decorative; aliases appear only at full enrollment,
-because an arbitrary name with no example bound to it is unanswerable.
+The prediction budget is 64 evidence rows per query patch and candidate. Sensor-bias similarity is
+disabled. For semantically unfamiliar sensor or concept text, the gate blends toward a neutral
+value. The following telemetry is mandatory whenever the gate is reported:
 
-The unit of enrollment is a verified physical event, identified by explicit identifiers written
-during dataset conversion---never inferred from equal array lengths or row alignment, and never
-from an activity label. All rows from one event are bound together, so a demonstration captured
-simultaneously at two placements counts as one example rather than two.
+\begin{itemize}
+  \item gate mean, spread, extrema, and vetoed-row fraction;
+  \item same-dataset retrieval with the acquisition-bias blend both off and on;
+  \item held-out concept, dataset, and body-region errors relative to constant and per-concept
+        baselines; and
+  \item within-concept correlation between gate latents and the train-only resolvability table.
+\end{itemize}
 
-The objective is candidate-set cross-entropy and nothing else: no auxiliary retrieval term, no
-corpus-vocabulary classification head, no subject-adversarial loss, no collapse regulariser. Loss
-is reduced separately over four groups---zero-enrollment, unenrolled-candidate queries within a
-partial episode, enrolled queries under coherent names, and enrolled queries under aliases---and the
-present group means are weighted equally, so a common condition cannot swamp a rare one.
+Every enrollment result shares one deterministic query cohort and nested support prefixes across
+the gate, all-one admissibility, support removal, support-label shuffling, prototype, and ridge
+controls. These controls are part of the claim, not optional ablations.
 
-Retrieval during training runs against a rotating balanced view of the encoded corpus rather than
-all of it. The corpus is severely imbalanced---its most frequent label has $28{,}648$ windows
-against a $30$-window minimum---so the view caps every label at a fixed budget and is redrawn
-often enough that most of the corpus becomes reachable over a run. Exact sizes are in the released
-configuration.
+\section{Evidence Ledger}
+\label{app:ledger}
 
-Complete label \emph{families} are held out of decoder training and reserved for model selection,
-so candidate-text reasoning is always tested on concepts the decoder never fit. Training uses only
-rows whose subject and configuration both lie in the training partition, and validation queries the
-three excluded quadrants: held subject, held configuration, and both. Validation canaries enumerate
-rather than sample---they are the checkpoint-selection target, so they must be identical across
-runs and checkpoints---and every reported result is stratified by example count and regime.
-Averaging across them would hide whether the adaptation mechanism works at all.
+The paper source includes \texttt{EVIDENCE\_LEDGER.md}. Each quantitative manuscript statement is
+classified as verified, development-only, sealed, or pending. A verified entry names the producing
+command or log, source-data manifest, seed, checkpoint, and artifact fingerprint. Values without
+that chain are not printed as results. This policy is also why the earlier geometry, gravity,
+rate-equivalence, DFT-cosine, deployment, and phone-latency numbers are absent from this revision.

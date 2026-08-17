@@ -1,78 +1,54 @@
-
 \section{Related Work}
 \label{sec:related}
 
-HALO sits at the intersection of three literatures, and in each some part of what we do already
-exists. We name the closest work and state what is left.
+\textbf{Cross-dataset and foundation models for wearable sensing.}
+DeepConvLSTM~\cite{deepconvlstm} is representative of supervised HAR models trained for one
+benchmark. Later work addresses selected sources of variation~\cite{cosmo,unihar,clusterfl} or
+pretrains transferable encoders. LiMU-BERT~\cite{limubert} uses masked reconstruction at
+$20$\,Hz, CrossHAR~\cite{crosshar} adds a contrastive objective, and
+ssl-wearables~\cite{sslwearables} scales self-supervision on wrist accelerometry. Scaling Wearable
+Models~\cite{lsm1} studies population-scale pretraining and imputation; LSM-2~\cite{lsm2}
+specifically targets incomplete wearable observations. RelCon~\cite{relcon} learns relative motion
+similarity from roughly one billion sensor segments, and SensorLM~\cite{sensorlm} pairs wearable
+signals with language. Tartan IMU~\cite{tartanimu} studies inertial positioning, while general
+time-series architectures include MOMENT and PatchTST~\cite{moment,patchtst}. Mitra is not included
+in this group because it is a tabular, rather than time-series, foundation model~\cite{mitra}.
 
-\textbf{Cross-dataset and foundation models for IMU sensing.}
-Deep HAR has moved from single-dataset CNN--LSTM models~\cite{deepconvlstm} through methods
-attacking one axis of heterogeneity at a time~\cite{cosmo,unihar,clusterfl} to self-supervised
-encoders intended to transfer: LiMU-BERT~\cite{limubert} pretrains by span-masked reconstruction
-at $20$\,Hz, CrossHAR~\cite{crosshar} adds contrastive learning, and
-ssl-wearables~\cite{sslwearables} scales multi-task self-supervision to ${\sim}700$k person-days
-of wrist accelerometry. A second wave targets foundation scale, establishing the label-efficiency
-argument and learning from incomplete recordings~\cite{lsm1,lsm2}, learning motion-similarity
-metrics at ${\sim}10^9$ windows~\cite{relcon}, and pairing sensor data with
-captions~\cite{sensorlm}; IMU foundation models outside HAR pursue the same transfer goal on a different task---Tartan
-IMU~\cite{tartanimu} pretrains for inertial positioning across ground, aerial and legged
-platforms, then adapts per-deployment with LoRA; general time-series and tabular
-models~\cite{moment,patchtst,mitra}
-trade domain bias for breadth, and Inertia-1~\cite{inertia1} runs a controlled lifecycle study
-over modality, placement, rate, and window length~\cite{harfmsurvey}. \emph{What is left:} all of
-these treat sampling rate as a preprocessing decision to be normalised away. We argue that is
-where the information loss happens, and Section~\ref{sec:bias_experiments} measures it.
+The controlled Inertia-1 study varies modality, placement, rate, and window length~\cite{inertia1};
+the recent HAR foundation-model survey provides a broader taxonomy~\cite{harfmsurvey}. We cite the
+study for its controlled findings and the survey only for the landscape. HALO's narrower question is
+whether acquisition configuration can calibrate which retrieved evidence is allowed to vote.
 
-\textbf{Absorbing acquisition heterogeneity: resolution and language.}
-Two lines address the input side. The first, and the closest to our L1 mechanism, is not in HAR:
-rate-invariant autoencoding~\cite{rateinvae} quotients out temporal warping,
-FlowState~\cite{flowstate} builds a sampling-rate-\emph{equivariant} forecaster, and universal
-spectral tokenization~\cite{spectraltok} ingests native, irregular grids without resampling.
-Within IMU sensing, MoPFormer~\cite{mopformer} tokenizes into learned motion primitives but
-resamples every dataset to $100$\,Hz first, so its codebook is defined over a fixed-rate grid.
-The second describes the sensor in language, and is crowded: GOAT~\cite{goat} supervises over
-labels and on-body positions; ZeroHAR~\cite{zerohar} conditions on categorical sensor context;
-CHARM and its successor~\cite{charm,sensorsvoice} feed channel-level descriptions into a
-channel-order-equivariant transformer, finding text conditioning on channel identity among their
-largest drivers; SensorLLM~\cite{sensorllm} and oneHAR~\cite{onehar} take related routes;
-UniMTS~\cite{unimts} instead encodes placement structurally as a joint graph with
-rotation-invariant augmentation. \emph{What is left, honestly:} ``sensor identity as natural
-language'' is not ours to claim, and our differences are narrower than the general idea. FlowState
-conditions on the rate---it is equivariant, adapting its computation---whereas HALO's features
-are \emph{anchored} to physical Hz, so no conditioning is required to compare across devices. And
-the channel-description line~\cite{charm,sensorsvoice,sensorllm} attaches free text \emph{per
-channel}, exactly the configuration whose corpus-identifiability we argue against and test
-(Table~\ref{tab:tokenizer_ablation}); ZeroHAR's attributes are a fixed closed set, whereas free
-text composes to descriptions never seen.
+\textbf{Sampling and acquisition context.}
+Rate-invariant autoencoding disentangles order-preserving temporal warp into rate parameters and a
+rate-invariant latent~\cite{rateinvae}. FlowState combines a state-space model with a functional
+basis decoder and dynamic timescale adjustment for sampling-rate-equivariant
+forecasting~\cite{flowstate}. Universal Spectral Tokenization accepts native wavelength grids in
+astronomy and proposes extension to other sampled domains; it is adjacent inspiration, not evidence
+on wearable HAR~\cite{spectraltok}. MoPFormer learns IMU motion primitives after resampling its
+datasets to $100$\,Hz~\cite{mopformer}. These systems therefore should not be summarized as sharing
+one rate-normalization strategy.
 
-\textbf{Retrieval, memory, and few-shot recognition.}
-Deciding by comparison to stored examples is old in this field and new in its current form. The
-ubicomp lineage recognises gestures by template~\cite{uwave,junker,warpinglcss}; the modern one
-is episodic and parametric~\cite{matchingnet,protonet}, and in language and vision attaches
-non-parametric memory to a frozen model~\cite{knnlm,rag,retro,knnvision,reco}. Memory-modular
-classification~\cite{memorymodular} states as its contribution the property we build our
-recognition stage around: generalise to new classes by replacing memory contents, without
-retraining. In sensing,
-RAG-HAR~\cite{raghar} retrieves over signal descriptors and lets an LLM decide;
-ZARA~\cite{zara} retrieves multi-sensor evidence into an LLM agent, under the same
-``evidence-grounded'' name we use for a different mechanism; and in-context time-series
-classifiers~\cite{timee,ticfm} collapse zero- and few-shot into one forward pass.
-\emph{What is left:} not ``we retrieve,'' but that retrieval happens where similarity is
-\emph{sensor} similarity between encoded exemplar \emph{patches}, from an encoder conditioned on
-acquisition configuration---which is what lets a wrist query at an unusual rate retrieve
-comparable evidence, and which descriptor-space, LLM-agent, and CLIP-space retrieval cannot do.
-Section~\ref{sec:label_efficiency} reports the control that decides whether the distinction is
-real: the same memory mechanism on a competitor's encoder.
+Other work supplies acquisition context explicitly. GOAT~\cite{goat} uses activity and body-position
+text, ZeroHAR~\cite{zerohar} uses categorical sensor context, and CHARM was introduced as a preprint
+and subsequently presented in the peer-reviewed SensorsVoice work~\cite{charm,sensorsvoice}.
+SensorLLM~\cite{sensorllm} and oneHAR~\cite{onehar} also use language for sensor context, whereas
+UniMTS~\cite{unimts} represents placement as a graph and uses rotation augmentation. HALO does not
+claim that sensor descriptions are new. Its contribution is to separate a declared description
+from measured acquisition statistics and then use configuration to calibrate retrieval
+admissibility.
 
-\textbf{What the closest systems claim.} Appendix~\ref{app:entailment},
-Table~\ref{tab:coverage} summarises which axes each addresses. No system addresses all of them,
-which is true and also the least interesting thing to say---Section~\ref{sec:combination} argues
-why our set is entailed rather than assembled.
+\textbf{Retrieval and label-efficient recognition.}
+Template matching has long been used for gestures~\cite{uwave,junker,warpinglcss}. Matching Networks
+and Prototypical Networks learn or use comparison rules under episodic tasks~\cite{matchingnet,protonet}.
+Language and vision systems augment parametric models with external non-parametric
+memory~\cite{knnlm,rag,retro,knnvision,reco}; not all of these systems keep the parametric model
+frozen. Memory-modular classification studies adding classes by changing memory
+contents~\cite{memorymodular}.
 
-\textbf{A note on scale.} We do not claim the scale-first programme fails on its own terms: on
-population-scale health outcomes, models trained on tens of millions of
-hours~\cite{sslwearables,lsm1,sensorlm} are the right instrument and we would not beat them. Our
-position is not ``less data, cleverer model'' but that a corpus closes only the axes it
-\emph{samples} (Section~\ref{sec:no_grammar}); the axes generated at deployment time call for a
-different remedy, and are under-served because they are invisible to the benchmark protocols the
-field uses.
+In sensing, RAG-HAR retrieves signal descriptors for an LLM~\cite{raghar}, and ZARA is a
+training-free, evidence-grounded LLM agent~\cite{zara}. TimEE and TIC-FM perform zero- or
+few-example time-series classification in context~\cite{timee,ticfm}. These are not evidence for a
+target-example $k$ curve without parameter updates unless such a curve is explicitly reported.
+Appendix~\ref{app:entailment} therefore separates open-label evaluation, use of target examples,
+and no-update enrollment instead of collapsing them into one checkmark.

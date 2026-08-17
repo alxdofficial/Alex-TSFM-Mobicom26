@@ -1,6 +1,6 @@
 .PHONY: all clean dist print
 
-P = paper
+P = 0_main
 
 default : $P.pdf
 

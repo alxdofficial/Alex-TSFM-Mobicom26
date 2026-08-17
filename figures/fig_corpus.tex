@@ -1,82 +1,30 @@
-% =====================================================================
-% fig_corpus.tex  --  corpus heterogeneity: placement x sampling rate
-%
-% DATA PROVENANCE: every point is a real stream in the materialized native
-% grids, enumerated 2026-07-26 from training.tokenizer.pretrain_data.CorpusIndex
-% (20 training streams over 12 datasets) and data/datasets/*/metadata.json
-% (7 held-out datasets).  Bubble area encodes window count; the largest
-% (CAPTURE-24 wrist) is 144,142 windows, the smallest (SP-SW-HAR pocket) 1,179.
-% =====================================================================
+% Generated from data/datasets/*/grids/native/*/meta.json on 2026-08-17.
 \resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}
 \begin{axis}[
-  width=\columnwidth, height=4.6cm,
-  xmin=0.55, xmax=5.55,
-  ymin=6, ymax=145,
-  ytick={20,50,100},
-  yticklabels={20\,Hz,50\,Hz,100\,Hz},
-  yticklabel style={font=\scriptsize},
-  xtick={1,2,3,4,5},
-  xticklabels={waist/hip,pocket,wrist,lower back,head/ear},
-  xticklabel style={font=\scriptsize},
-  ylabel={sampling rate},
+  width=\columnwidth,height=4.4cm,
+  ybar,bar width=7pt,
+  ymin=0,ymax=22,
+  ylabel={number of configurations},
   ylabel style={font=\scriptsize,yshift=-6pt},
-  grid=major, grid style={draw=halogray!18},
+  symbolic x coords={20,25,30,50,51.2,100},
+  xtick=data,
+  xticklabels={20,25,30,50,51.2,100},
+  xlabel={stored grid rate (Hz)},
+  xlabel style={font=\scriptsize},
+  tick label style={font=\scriptsize},
+  legend style={font=\scriptsize,draw=none,at={(0.5,1.02)},anchor=south,legend columns=2},
+  grid=major,grid style={draw=halogray!18},
   axis line style={draw=halogray!60},
-  tick style={draw=halogray!60},
-  scale only axis,
-  clip=false,
 ]
-% ---------- training streams (filled blue discs, diameter ~ #windows^0.4) ----
-% diameters below are 2*(1.2 + 4.5*(n/144142)^0.4) pt, n = window count
-\tikzset{hdisc/.style={circle,draw=haloblue,fill=haloblue!45,line width=0.4pt,inner sep=0pt}}
-\node[hdisc,minimum size=5.44pt] at (axis cs:0.88,50)  {};% hhar        9,587
-\node[hdisc,minimum size=5.40pt] at (axis cs:1.00,100) {};% kuhar       9,233
-\node[hdisc,minimum size=5.54pt] at (axis cs:1.12,50)  {};% uci_har    10,299
-\node[hdisc,minimum size=5.70pt] at (axis cs:1.80,50)  {};% unimib     11,771
-\node[hdisc,minimum size=4.88pt] at (axis cs:1.94,50)  {};% xrf l.pkt   5,794
-\node[hdisc,minimum size=7.76pt] at (axis cs:2.00,20)  {};% wisdm pkt  39,329
-\node[hdisc,minimum size=4.88pt] at (axis cs:2.06,50)  {};% xrf r.pkt   5,794
-\node[hdisc,minimum size=3.72pt] at (axis cs:2.00,100) {};% spsw pkt    1,179
-\node[hdisc,minimum size=11.4pt] at (axis cs:2.82,100) {};% capture24 144,142
-\node[hdisc,minimum size=6.36pt] at (axis cs:2.85,50)  {};% harmes     18,576
-\node[hdisc,minimum size=4.36pt] at (axis cs:2.94,100) {};% pamap2      3,186
-\node[hdisc,minimum size=3.68pt] at (axis cs:2.95,50)  {};% mhealth     1,104
-\node[hdisc,minimum size=7.26pt] at (axis cs:3.00,20)  {};% wisdm wr   30,876
-\node[hdisc,minimum size=4.88pt] at (axis cs:3.05,50)  {};% xrf l.wr    5,794
-\node[hdisc,minimum size=5.86pt] at (axis cs:3.06,100) {};% nfi wrist  13,260
-\node[hdisc,minimum size=4.88pt] at (axis cs:3.15,50)  {};% xrf r.wr    5,794
-\node[hdisc,minimum size=4.20pt] at (axis cs:3.18,100) {};% spsw wrist  2,578
-\node[hdisc,minimum size=5.86pt] at (axis cs:4.00,100) {};% nfi back   13,260
-\node[hdisc,minimum size=4.88pt] at (axis cs:4.92,50)  {};% xrf glasses 5,794
-\node[hdisc,minimum size=4.88pt] at (axis cs:5.08,50)  {};% xrf earbuds 5,794
-% ---------- held-out datasets (open orange triangles) ----------
-\addplot[only marks,mark=triangle*,mark size=2.6pt,color=haloorange,
-         fill=halolight2,line width=0.7pt]
-  coordinates {
-    (1.26,50) (1.38,50) (1.26,100)
-    (2.20,50) (2.32,50)
-    (3.30,50) (3.42,50)
-  };
-% ---------- annotations ----------
-\node[font=\scriptsize,color=haloblue!75!black,anchor=west] at (axis cs:2.95,128)
-  {\textbf{CAPTURE-24} 144k windows};
-\draw[haloblue!70,thin] (axis cs:2.86,106) -- (axis cs:2.93,124);
-\node[font=\scriptsize,color=halogray,anchor=west,align=left] at (axis cs:4.05,24)
-  {smart glasses\\ \& earbuds};
-\draw[halogray,thin] (axis cs:5.00,44) -- (axis cs:4.90,31);
-\node[font=\scriptsize,anchor=west,align=left] at (axis cs:0.62,13)
-  {\textcolor{haloblue!75!black}{$\bullet$ 20 training streams}\;\;
-   \textcolor{haloorange!85!black}{$\blacktriangle$ 7 held-out}};
+\addplot[fill=haloblue!55,draw=haloblue] coordinates
+  {(20,2) (25,5) (30,5) (50,20) (51.2,5) (100,19)};
+\addplot[fill=haloorange!35,draw=haloorange] coordinates
+  {(20,0) (25,0) (30,0) (50,13) (51.2,0) (100,1)};
+\legend{Phase-A train,external eval}
 \end{axis}
 \end{tikzpicture}}
-\caption{\textbf{The corpus does not cover a grid; it covers a scatter.} Each blue disc is
-one of the 20 sensor streams HALO trains on, positioned by body placement and native
-sampling rate, with area proportional to the number of $6$\,s windows it contributes; orange
-triangles are the 7 held-out evaluation datasets. Rates span a $5\times$ range and placements
-include two---smart glasses and wireless earbuds---that no established HAR benchmark
-contains. Held-out cells are not simply new subjects: they combine placements and rates in
-proportions the training corpus never sees. Absorbing this by resampling to a common rate
-would discard the content above $10$\,Hz that only the $50$/$100$\,Hz streams can
-resolve.}
+\caption{\textbf{Materialized configurations by stored grid rate.} The current roster contains 56
+Phase-A configurations and 14 external-evaluation configurations. Source acquisition rate is
+stored separately and bounds observability when a converter has already resampled a stream.}
 \label{fig:corpus}

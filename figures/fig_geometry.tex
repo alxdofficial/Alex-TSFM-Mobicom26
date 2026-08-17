@@ -1,88 +1,27 @@
-% =====================================================================
-% fig_geometry.tex  --  L2 evidence: sensor similarity != linguistic similarity
-%
-% DATA PROVENANCE: cosine similarities between all-MiniLM-L6-v2 sentence
-% embeddings of the label strings, measured 2026-07-26 by
-%   sentence_transformers.SentenceTransformer('all-MiniLM-L6-v2')
-% with normalize_embeddings=True.  Raw values in the arrays below; the
-% generating script and its JSON output are archived with the paper source.
-% The MOTION grouping (same vs different physical motion) is our own
-% judgement and is stated as such in the caption -- it is not measured.
-% =====================================================================
+% Qualitative counterexamples only. No author-assigned motion distance is reported as a measurement.
 \begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{3pt}
 \setlength{\belowcaptionskip}{-4pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tikzpicture}
-\begin{axis}[
-  width=\columnwidth, height=4.35cm,
-  xmin=0.40, xmax=1.02,
-  ymin=-1.15, ymax=1.85,
-  xtick={0.4,0.5,0.6,0.7,0.8,0.9,1.0},
-  xticklabel style={font=\scriptsize},
-  xlabel={cosine similarity of the two label strings (frozen sentence encoder)},
-  xlabel style={font=\scriptsize,yshift=2pt},
-  ytick={0,1},
-  yticklabels={},
-  axis y line=none,
-  axis x line*=bottom,
-  clip=false,
-  scale only axis,
-]
-% ---- shaded overlap region: where the two groups interleave ----
-\addplot[draw=none,fill=halogray!12,forget plot]
-  coordinates {(0.5239,-1.15) (0.7965,-1.15) (0.7965,1.85) (0.5239,1.85)}
-  \closedcycle;
-\node[font=\scriptsize\itshape,halogray,anchor=south,align=center]
-  at (axis cs:0.660,1.50) {overlap};
+\begin{tikzpicture}[font=\scriptsize]
+\node[hbox2,text width=35mm,minimum height=13mm] (object) at (0,0)
+  {\textbf{object semantics differ}\\
+   \emph{drinking coffee}\\\emph{drinking water}};
+\node[hbox,text width=37mm,minimum height=13mm] (motion1) at (5.2,0)
+  {a wrist IMU may observe\\nearly the same gesture};
+\draw[harrow] (object.east) -- (motion1.west);
 
-% ---- lane guides ----
-\addplot[draw=halogray!35,thin,forget plot] coordinates {(0.40,1) (1.02,1)};
-\addplot[draw=halogray!35,thin,forget plot] coordinates {(0.40,0) (1.02,0)};
-
-% ---- TOP LANE: DIFFERENT physical motion, near-identical text ----
-\addplot[only marks,mark=*,mark size=1.9pt,color=haloorange,forget plot]
-  coordinates {(0.5239,1) (0.6396,1) (0.7668,1) (0.7690,1) (0.8678,1) (0.8990,1) (0.9342,1)};
-% group mean
-\addplot[only marks,mark=|,mark size=5pt,line width=1.1pt,color=haloorange!70!black,forget plot]
-  coordinates {(0.7715,1)};
-
-% ---- BOTTOM LANE: SAME physical motion, distant text ----
-\addplot[only marks,mark=*,mark size=1.9pt,color=haloblue,forget plot]
-  coordinates {(0.4500,0) (0.4595,0) (0.4917,0) (0.5599,0) (0.6645,0) (0.7775,0) (0.7965,0)};
-\addplot[only marks,mark=|,mark size=5pt,line width=1.1pt,color=haloblue!70!black,forget plot]
-  coordinates {(0.5999,0)};
-
-% ---- lane titles ----
-\node[font=\scriptsize\bfseries,color=haloorange!75!black,anchor=west]
-  at (axis cs:0.405,1.42) {different motion, near-identical text};
-\node[font=\scriptsize\bfseries,color=haloblue!75!black,anchor=west]
-  at (axis cs:0.405,-0.72) {same motion, distant text};
-
-% ---- callouts on the two headline pairs ----
-\node[font=\scriptsize,anchor=south east,inner sep=1pt]
-  (sitdown) at (axis cs:1.015,1.06) {\emph{sitting} / \emph{sitting down}};
-\node[font=\scriptsize,anchor=north west,inner sep=1pt]
-  (coffee) at (axis cs:0.500,-0.20) {\emph{drinking coffee} / \emph{drinking water}};
-\draw[haloblue,thin] (axis cs:0.5599,-0.10) -- (axis cs:0.552,-0.30);
-
-% ---- mean labels ----
-\node[font=\scriptsize,color=haloorange!70!black,anchor=south] at (axis cs:0.7715,1.10) {$\bar{s}=.77$};
-\node[font=\scriptsize,color=haloblue!70!black,anchor=south]   at (axis cs:0.5999,0.10) {$\bar{s}=.60$};
-\end{axis}
+\node[hbox2,text width=35mm,minimum height=13mm] (wording) at (0,-1.75)
+  {\textbf{wording is similar}\\
+   \emph{sitting}\\\emph{sitting down}};
+\node[hbox,text width=37mm,minimum height=13mm] (motion2) at (5.2,-1.75)
+  {an IMU observes a posture\\versus a transition};
+\draw[harrow] (wording.east) -- (motion2.west);
 \end{tikzpicture}}
-\caption{\textbf{Sensor similarity and linguistic similarity are inverted, not merely
-noisy.} Each dot is one pair of activity names from our label vocabulary, placed at the
-cosine similarity of their frozen sentence embeddings (all-MiniLM-L6-v2, the encoder
-language-aligned HAR models use). Pairs in the \emph{top} lane denote physically distinct
-activities; pairs in the \emph{bottom} lane denote the same physical motion. If text
-similarity tracked sensor similarity the lanes would separate, with the bottom lane on the
-right. They separate the wrong way: the mean of the physically \emph{distinct} pairs
-($0.77$) exceeds the mean of the physically \emph{identical} pairs ($0.60$), and $38$ of the
-$49$ cross-lane comparisons are inverted. The motion grouping is our judgement; the
-similarities are measured. A single projection from sensor space into this text geometry is
-therefore mis-specified---which is why HALO retrieves in sensor space and votes in label
-space (Section~\ref{sec:evidence_design}).}
+\caption{\textbf{Why name similarity is not used as a motion metric.} These are qualitative
+counterexamples, not measured sensor distances. A quantitative geometry claim requires a
+predeclared all-pairs comparison between text embeddings and sensor-derived activity centroids; that
+artifact is not yet available.}
 \label{fig:geometry}
 \end{figure}
