@@ -1,27 +1,12 @@
-% Qualitative counterexamples only. No author-assigned motion distance is reported as a measurement.
+% PLACEHOLDER. Previous drawing: fig_geometry_prev.tex.
 \begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{3pt}
 \setlength{\belowcaptionskip}{-4pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tikzpicture}[font=\scriptsize]
-\node[hbox2,text width=35mm,minimum height=13mm] (object) at (0,0)
-  {\textbf{object semantics differ}\\
-   \emph{drinking coffee}\\\emph{drinking water}};
-\node[hbox,text width=37mm,minimum height=13mm] (motion1) at (5.2,0)
-  {a wrist IMU may observe\\nearly the same gesture};
-\draw[harrow] (object.east) -- (motion1.west);
-
-\node[hbox2,text width=35mm,minimum height=13mm] (wording) at (0,-1.75)
-  {\textbf{wording is similar}\\
-   \emph{sitting}\\\emph{sitting down}};
-\node[hbox,text width=37mm,minimum height=13mm] (motion2) at (5.2,-1.75)
-  {an IMU observes a posture\\versus a transition};
-\draw[harrow] (wording.east) -- (motion2.west);
-\end{tikzpicture}}
-\caption{\textbf{Why name similarity is not used as a motion metric.} These are qualitative
-counterexamples, not measured sensor distances. A quantitative geometry claim requires a
-predeclared all-pairs comparison between text embeddings and sensor-derived activity centroids; that
-artifact is not yet available.}
+\figplaceholder{0.96\columnwidth}{%
+  Two counterexamples: \emph{drinking coffee} vs.\ \emph{drinking water} (words differ, wrist motion
+  does not); \emph{sitting} vs.\ \emph{sitting down} (words agree, posture vs.\ transition).}
+\caption{\textbf{Activity-name similarity is not a motion metric.} Qualitative counterexamples
+only; no author-assigned motion distance is reported as a measurement.}
 \label{fig:geometry}
 \end{figure}

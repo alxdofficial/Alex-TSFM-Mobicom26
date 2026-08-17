@@ -73,6 +73,17 @@
 % MOBICOM_REQUIREMENTS.md sec. 10 before every submission.
 \hypersetup{draft}
 
+% FIGURE PLACEHOLDERS. Every figure body in figures/ is currently a placeholder; the previous
+% drawing of each lives beside it as figures/fig_<name>_prev.tex. Captions, \label{}s and all
+% cross-references are unchanged, so restoring a figure is a one-line \input swap.
+% Clear every placeholder before submission (MOBICOM_REQUIREMENTS.md sec. 10).
+\newcommand{\figplaceholder}[2]{%
+  \begin{tikzpicture}
+  \node[draw=red!70,line width=0.9pt,dashed,rounded corners=3pt,inner sep=8pt,
+        minimum width=#1,minimum height=16mm,align=center,fill=red!3]
+    {\TODO{\textbf{[FIGURE PLACEHOLDER]}}\\[2pt]\scriptsize #2};
+  \end{tikzpicture}}
+
 \pagestyle{plain} % removes running headers
 \settopmatter{printacmref=false, printccs=false, printfolios=true}
 % \acmConference[SIGCOMM '23]{SIGCOMM '23: Annual conference of the ACM Special Interest Group on Data Communication}{Sep 2023}{New York City, US}

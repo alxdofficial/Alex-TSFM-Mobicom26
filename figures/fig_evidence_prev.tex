@@ -1,0 +1,35 @@
+% Closed-form evidence path; bars and row labels are illustrative.
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[font=\scriptsize]
+\node[hbox,anchor=west,text width=17mm,minimum height=8mm] (query) at (0,0)
+  {query sensor\\ \tiny feature + description};
+\node[hbox,anchor=west,text width=21mm,minimum height=8mm] (compat) at (2.05,0)
+  {\textbf{compatibility}\\ \tiny modality, gravity};
+\node[hbox2,anchor=west,text width=23mm,minimum height=8mm] (gate) at (4.55,0)
+  {\textbf{admissibility}\\ \tiny query and row vs candidate};
+\node[hbox,anchor=west,text width=20mm,minimum height=8mm] (rank) at (7.25,0)
+  {\textbf{cosine rank}\\ \tiny top-$k$ after veto};
+\draw[harrow] (query.east) -- (compat.west);
+\draw[harrow] (compat.east) -- (gate.west);
+\draw[harrow] (gate.east) -- (rank.west);
+
+\node[hphase,anchor=north west,text width=38mm,minimum height=14mm] (memory) at (2.05,-0.85)
+  {\textbf{versioned sensor-row bank}\\
+   \tiny \emph{walking}: wrist, 100\,Hz\\
+   \tiny \emph{stairs}: pocket, 20\,Hz\\
+   \tiny enrolled candidate 2: wrist, 50\,Hz};
+\node[hplain,anchor=north,text width=28mm] (candidate) at (6.45,-0.95)
+  {candidate concepts\\ \tiny supplied by application};
+\draw[harrow] (memory.north) -- ($(compat.south)+(-2mm,0)$);
+\draw[harrow] (candidate.north) -- ($(gate.south)+(3mm,0)$);
+
+\node[hbox2,anchor=north west,text width=25mm,minimum height=9mm] (vote) at (7.25,-1.15)
+  {\textbf{vote}\\ \tiny enrolled: bound identity\\ \tiny corpus: label text};
+\node[hbox,anchor=north west,text width=21mm,minimum height=9mm] (merge) at (4.55,-2.45)
+  {\textbf{merge sensors}\\ \tiny sum votes};
+\node[hplain,anchor=west,text width=18mm] (score) at (7.25,-2.90)
+  {score per candidate};
+\draw[harrow] (rank.south) -- (vote.north);
+\draw[harrow] (vote.south) |- (merge.east);
+\draw[harrow] (merge.east) -- (score.west);
+\end{tikzpicture}}

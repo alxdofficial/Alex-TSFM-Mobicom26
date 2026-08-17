@@ -1,18 +1,5 @@
-% PLACEHOLDER --- the system-overview figure is STALE and has been withdrawn from the manuscript.
-%
-% Why: the previous drawing labelled the encoder "two resolutions" and the loss box
-% "masked latent + descriptor prediction". Both describe the pinned v2 artifact. The current
-% repository default is a single fixed 1.0 s patch grid (multiresolution=False) with the
-% descriptor term disabled (descriptor_weight=0), so the drawing no longer depicts the system.
-%
-% The previous TikZ source is preserved verbatim in figures/fig_overview_v2artifact.tex.
-% Redraw from it once the checkpoint repin is decided. See STALENESS.md sec. 0 and sec. 2.
-\begin{tikzpicture}
-\node[draw=red!70,line width=0.9pt,dashed,rounded corners=3pt,inner sep=10pt,
-      minimum width=0.96\textwidth,minimum height=26mm,align=center,fill=red!3]
-  {\TODO{\textbf{[FIGURE PLACEHOLDER --- TODO: redraw system overview]}}\\[3pt]
-   \scriptsize Withdrawn 2026-08-17. The previous drawing depicted a two-resolution encoder and an
-   active descriptor-prediction term;\\
-   \scriptsize the current recipe uses a single 1\,s patch grid with that term disabled.
-   Source preserved in \texttt{figures/fig\_overview\_v2artifact.tex}.};
-\end{tikzpicture}
+% PLACEHOLDER. Previous drawing: fig_overview_prev.tex (stale -- it labels a two-resolution encoder
+% and an active descriptor-prediction term, neither of which the current recipe uses).
+\figplaceholder{0.96\textwidth}{%
+  End-to-end pipeline: Phase-A label-free encoder $\rightarrow$ frozen per-patch, per-sensor bank
+  $\rightarrow$ compatibility, admissibility, ranking, voting, sensor fusion.}

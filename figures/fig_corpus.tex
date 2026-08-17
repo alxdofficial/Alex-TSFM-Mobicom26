@@ -1,29 +1,7 @@
-% Generated from data/datasets/*/grids/native/*/meta.json on 2026-08-17.
-\resizebox{\columnwidth}{!}{%
-\begin{tikzpicture}
-\begin{axis}[
-  width=\columnwidth,height=4.4cm,
-  ybar,bar width=7pt,
-  ymin=0,ymax=22,
-  ylabel={number of configurations},
-  ylabel style={font=\scriptsize,yshift=-6pt},
-  symbolic x coords={20,25,30,50,51.2,100},
-  xtick=data,
-  xticklabels={20,25,30,50,51.2,100},
-  xlabel={stored grid rate (Hz)},
-  xlabel style={font=\scriptsize},
-  tick label style={font=\scriptsize},
-  legend style={font=\scriptsize,draw=none,at={(0.5,1.02)},anchor=south,legend columns=2},
-  grid=major,grid style={draw=halogray!18},
-  axis line style={draw=halogray!60},
-]
-\addplot[fill=haloblue!55,draw=haloblue] coordinates
-  {(20,2) (25,5) (30,5) (50,20) (51.2,5) (100,19)};
-\addplot[fill=haloorange!35,draw=haloorange] coordinates
-  {(20,0) (25,0) (30,0) (50,13) (51.2,0) (100,1)};
-\legend{Phase-A train,external eval}
-\end{axis}
-\end{tikzpicture}}
+% PLACEHOLDER. Previous drawing: fig_corpus_prev.tex (a bar chart of configurations per stored grid
+% rate; its 56/14 counts were re-verified as current, so it can be restored unchanged).
+\figplaceholder{0.96\columnwidth}{%
+  Materialized configurations by stored grid rate (20--100\,Hz): 56 Phase-A, 14 external.}
 \caption{\textbf{Materialized configurations by stored grid rate.} The current roster contains 56
 Phase-A configurations and 14 external-evaluation configurations. Source acquisition rate is
 stored separately and bounds observability when a converter has already resampled a stream.}
