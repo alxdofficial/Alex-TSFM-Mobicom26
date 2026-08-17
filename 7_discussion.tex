@@ -1,37 +1,36 @@
 % =========================
-% 7_discussion.tex --- what the negative result does and does not license
+% 7_discussion.tex --- structural limits of the design, and what is not yet claimed
 % =========================
 \section{Discussion and Limitations}
 \label{sec:discussion}
 
-\textbf{What the development result rules out, and what it does not.}
-The gated rule uses enrollment --- removing or shuffling support collapses it --- but it trails
-ungated retrieval, prototypes, and ridge heads on the same frozen features. We therefore reject the
-claim that the current gate improves few-example recognition. We do not conclude that admissibility
-is the wrong idea, because the protocol that produced this result cannot express it. Every scored
-cell enrolls and queries the \emph{same} configuration, so the evidence row carries the query's own
-descriptor and the two-sided gate collapses to a per-candidate constant. A query-independent
-constant multiplying an evidence-derived vote can only add bias. The cross-configuration cell that
-would separate these two readings is pure evaluation: it needs no retraining, only support drawn
-from a different device than the query.
+\textbf{Same-configuration cells cannot test admissibility.}
+The gate scores the query sensor and the evidence sensor against each candidate and combines them.
+When enrollment and query come from the same configuration, both factors read the same description,
+and the product reduces to a function of the candidate alone. A query-independent per-candidate
+constant multiplying an evidence-derived vote can shift an argmax, but only toward whichever concept
+the gate considers a priori more observable, regardless of what the retrieved evidence says. This is
+a property of the rule, not of any particular fit, and it is why
+Section~\ref{sec:eval_protocol} treats cross-configuration cells as a precondition rather than an
+extension. It also means an evaluation restricted to same-configuration cells can measure the
+mechanism's cost while being structurally unable to measure its benefit.
 
-\textbf{The veto never fires, and the threshold is not calibrated to the artifact.}
-Gate values on the development cells span $0.245$ to $0.733$ against a threshold of $0.15$, so no
-row is ever removed. The mechanism reduces to reweighting. Worse, the threshold is a fixed constant
-while the fitted gate's scale moves with the encoder that produced the resolvability table: on a
-later table the fitted neutral value sits at $0.190$, only marginally above the same threshold, and
-the fraction of fitted cells below it doubles. Nothing in the current design ties the veto to the
-distribution it gates. A threshold expressed as a quantile of the fitted values, with an asserted
-ordering between the neutral fallback and the veto, would remove a failure mode in which an
-unfamiliar configuration is either always admitted or vetoed on every candidate.
+\textbf{The veto threshold is not tied to the distribution it gates.}
+Admissibility below a fixed constant removes a row from a candidate's pool. That constant does not
+move with the fitted gate, whose output scale depends on the encoder that produced the resolvability
+table. Two failure modes follow. If the neutral value that unfamiliar text falls back to sits above
+the threshold, abstention rescues every unfamiliar configuration and the veto never fires, leaving
+only reweighting. If it sits below, an unfamiliar configuration is vetoed on every candidate and
+contributes nothing. Nothing in the current design asserts an ordering between the two. Expressing
+the threshold as a quantile of the fitted values, and asserting that ordering at fit time, would
+remove the failure mode; we have not done so.
 
 \textbf{Provenance is confounded with hardware in public corpora.}
 Each public dataset generally uses one device model and one preprocessing chain, so a descriptor of
-acquisition behavior is also a descriptor of which study a recording came from. Our encoder reads
-dataset identity from pooled embeddings well above chance. We respond by keeping the
-acquisition-statistics similarity term disabled in the reported retriever and by measuring
-same-dataset retrieval directly rather than assuming it is benign, but the confound is a property of
-the available data and cannot be resolved by a better estimator. Settling it needs a corpus with the
+acquisition behavior is also a descriptor of which study a recording came from. We respond by
+keeping the acquisition-statistics similarity term disabled in the reported retriever and by
+measuring same-dataset retrieval directly rather than assuming it is benign. The confound is a
+property of the available data and no estimator resolves it. Settling it needs a corpus with the
 same hardware across studies, or the same study across hardware.
 
 \textbf{Scope of the recognition problem.}
@@ -41,17 +40,20 @@ its candidate set will still name one. Selective classification would require tr
 and risk--coverage evaluation~\cite{selectiveclass}; we treat it as future work rather than claiming
 it, because the evaluation artifacts that would support such a claim do not exist.
 
-\textbf{No on-device claim.}
-We report training and memory cost on a workstation GPU. We make no claim about phone-side latency,
-energy, or export, because we have not built that path. The design does bound what such a claim
-would look like: the encoder is 7.70\,M parameters and enrollment appends rows rather than running a
-gradient step, so the runtime question is retrieval over a bank rather than on-device training. The
-bank is also the obvious pressure point --- 6.9\,GB is a server-side artifact, and a phone-side
-deployment would need either a per-user subset or a compressed index.
+\textbf{No accuracy and no on-device claim.}
+We report the design, the implementation, and the protocol, and no recognition accuracy. The
+encoder is complete and its memory is built, but the gate has not been fitted against that memory,
+so any number we printed would describe a different system than the one specified here. We likewise
+make no claim about phone-side latency, energy, or export, because we have not built that path. The
+design does bound what such a claim would look like: the encoder is 7.70\,M parameters and
+enrollment appends rows rather than running a gradient step, so the runtime question is retrieval
+over a bank rather than on-device training. The bank is the obvious pressure point --- 6.9\,GB is a
+server-side artifact, and a phone-side deployment would need either a per-user subset or a
+compressed index.
 
 \textbf{Sealing the test roster.}
-Seven evaluation datasets remain unconsumed. We chose to report a negative development result rather
-than spend them on a method that fails its own controls, and we state the criteria for unsealing in
-Section~\ref{sec:pending_measurements}. This is a deliberate cost: it means this paper reports no
-external performance number. We think that is the correct trade when the alternative is a headline
-produced by a mechanism whose telemetry shows it is inactive.
+Seven evaluation datasets remain unconsumed, and Section~\ref{sec:pending_measurements} states the
+criteria for unsealing them. This is a deliberate cost: it means this paper reports no external
+performance number. We think it is the correct trade while the development criteria are unmet,
+because a test number produced under a protocol that cannot express the mechanism would not be
+evidence for the claim the paper makes.

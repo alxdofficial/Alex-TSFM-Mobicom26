@@ -1,37 +1,32 @@
 % =========================
-% 6_experiments.tex --- current roster and provenance-bound development evidence
+% 5_evaluation.tex --- corpus, protocol, and the measurements that remain outstanding
 % =========================
 \section{Evaluation}
 \label{sec:experiments}
 
-We ask a narrower question than a completed benchmark paper answers: does the active
-admissibility-gated rule improve on simpler enrollment rules on the development roster? We report
-that result here. We leave the external test roster and several tokenizer ablations unevaluated, and
-we state them as pending measurements rather than filling the space with fabricated cells.
+This section states the corpus the system is trained on, the enrollment protocol and its controls,
+and the measurements that must exist before we make a performance claim. We report no accuracy
+number. The Phase-A encoder is complete and its memory and resolvability artifacts are built against
+it, but the admissibility gate has not been fitted to those artifacts, so no enrollment result is
+attributable to the system this paper describes.
 
 \subsection{Data and Artifacts}
 \label{sec:methodology}
 \label{sec:datasets}
 
-% TODO (2026-08-17): every Phase-A row count in this paragraph and in Table~\ref{tab:datasets} is
-% pinned to the grids the reported checkpoint was trained on. Native grids were rebuilt on
-% 2026-08-17 (final partial contexts retained; KU-HAR reconverted) and now total 1,963,606 rows over
-% the same 56 configurations, with 166 canonical labels. Regenerate together with the checkpoint
-% repin, never separately -- see STALENESS.md sec. 1. The external column is unchanged and correct.
 Phase A uses 18 public datasets and 56 acquisition configurations. Their materialized native-grid
-manifests contain 1,871,011 stream-window rows before quality screens and the subject split. The
-selected bank contains 250,000 balanced source windows, 546 training subjects, all 161 canonical
-training labels, 3,942,901 patch rows, and 7,653,242 sensor rows. Ten datasets are disjoint from
-Phase-A training: three are the development roster and seven are sealed for testing. The full
-grid-derived roster appears in Table~\ref{tab:datasets}; its machine-readable provenance is listed
-in the paper-source evidence ledger.
+manifests contain 1,963,606 stream-window rows before quality screens and the subject split. The
+bank built from the completed encoder contains 250,000 balanced source windows, 546 training
+subjects, all 166 canonical training labels, 1,350,834 patch rows, and 2,629,972 sensor rows. Ten
+datasets are disjoint from Phase-A training: three are the development roster and seven are sealed
+for testing. Table~\ref{tab:datasets} gives the full grid-derived roster; its machine-readable
+provenance is listed in the paper-source evidence ledger.
 
 \begin{table*}[t]
   \centering
   \caption{Current Phase-A and external-evaluation rosters. \emph{Cfg} counts materialized sensor
   configurations; \emph{rows} counts stream-window rows before the current quality exclusions and
-  subject split, so simultaneous placements are counted separately. Counts describe the grid build
-  the reported checkpoint was trained on. \TODO{[TODO: regenerate with the checkpoint repin.]} $^\dagger$The XRF ear stream was
+  subject split, so simultaneous placements are counted separately. $^\dagger$The XRF ear stream was
   acquired at 25\,Hz and stored at 50\,Hz. $^\ddagger$MM-Fit devices have different acquisition
   clocks and are placed on a shared 100\,Hz grid; source rates still bound observability. The seven
   test datasets have not been used for method selection.}
@@ -44,50 +39,48 @@ in the paper-source evidence ledger.
     \cmidrule(lr){1-4}\cmidrule(lr){5-8}
     Dataset & Hz & Cfg & rows & Dataset (role) & Hz & Cfg & rows \\
     \midrule
-    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 1,530,792
+    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 1,543,573
       & MotionSense~\cite{motionsense} (dev) & 50 & 1 & 4,534 \\
-    WISDM~\cite{wisdm} & 20 & 2 & 70,205
+    WISDM~\cite{wisdm} & 20 & 2 & 72,227
       & RealWorld~\cite{realworld} (dev) & 50 & 1 & 11,237 \\
-    RealDISP~\cite{realdisp} & 50 & 9 & 50,886
+    RealDISP~\cite{realdisp} & 50 & 9 & 63,432
       & Shoaib~\cite{shoaib} (dev) & 50 & 1 & 2,100 \\
-    DSADS~\cite{dsads} & 25 & 5 & 37,815
+    XRF V2~\cite{xrf_v2} & 25/50$^\dagger$ & 6 & 59,442
       & InclusiveHAR~\cite{inclusivehar} (test) & 50 & 1 & 1,260 \\
-    XRF V2~\cite{xrf_v2} & 25/50$^\dagger$ & 6 & 34,764
+    DSADS~\cite{dsads} & 25 & 5 & 38,175
       & USC-HAD~\cite{usc_had} (test) & 100 & 1 & 4,350 \\
-    NFI-FARED~\cite{nfi_fared} & 100 & 2 & 26,876
+    NFI-FARED~\cite{nfi_fared} & 100 & 2 & 29,184
       & TNDA-HAR~\cite{tnda_har} (test) & 50 & 1 & 3,353 \\
-    PhyTMo~\cite{phytmo} & 100 & 8 & 24,684
+    PhyTMo~\cite{phytmo} & 100 & 8 & 29,180
       & UT-Complex~\cite{ut_complex} (test) & 50 & 1 & 3,900 \\
-    HARMES~\cite{harmes} & 50 & 1 & 18,576
+    Opportunity~\cite{opportunity_challenge} & 30 & 5 & 28,785
       & MoniPar~\cite{monipar} (test) & 50 & 1 & 12,079 \\
-    UniMiB SHAR~\cite{unimibi} & 50 & 1 & 11,771
+    HARMES~\cite{harmes} & 50 & 1 & 25,583
       & SPAR~\cite{spar} (test) & 50 & 2 & 1,898 \\
-    Opportunity~\cite{opportunity_challenge} & 30 & 5 & 10,765
+    FORTH-TRACE~\cite{forth_trace} & 51.2 & 5 & 12,330
       & Upper Limb Use~\cite{upper_limb_use} (test) & 50 & 4 & 1,124 \\
-    FORTH-TRACE~\cite{forth_trace} & 51.2 & 5 & 10,340
+    UniMiB SHAR~\cite{unimibi} & 50 & 1 & 11,771
+      & & & & \\
+    HHAR~\cite{hhar} & 50 & 1 & 11,587
+      & & & & \\
+    KU-HAR~\cite{kuhar} & 100 & 1 & 11,263
       & & & & \\
     UCI-HAR~\cite{ucihar} & 50 & 1 & 10,299
       & & & & \\
-    HHAR~\cite{hhar} & 50 & 1 & 9,587
-      & & & & \\
-    KU-HAR~\cite{kuhar} & 100 & 1 & 9,324
-      & & & & \\
-    MM-Fit~\cite{mmfit} & 100$^\ddagger$ & 4 & 6,280
+    MM-Fit~\cite{mmfit} & 100$^\ddagger$ & 4 & 8,496
       & & & & \\
     SP-SW-HAR~\cite{sp_sw_har} & 100 & 2 & 3,757
       & & & & \\
-    PAMAP2~\cite{pamap2} & 100 & 1 & 3,186
+    PAMAP2~\cite{pamap2} & 100 & 1 & 3,292
       & & & & \\
-    MHEALTH~\cite{mhealth} & 50 & 1 & 1,104
+    MHEALTH~\cite{mhealth} & 50 & 1 & 1,230
       & & & & \\
     \bottomrule
   \end{tabular}
 \end{table*}
 
-The completed run trains for 30,000 steps. The subject-disjoint Phase-A selection metric peaks at
-step 4,000 (label--stream-macro balanced accuracy $0.3028$), so \texttt{best.pt} rather than the
-last checkpoint builds the reported bank. Dense development-only comparisons also favor this
-checkpoint; the test roster is not involved in that choice.
+The completed run trains for 30,000 steps and we select step 27,000 by a subject-disjoint Phase-A
+validation metric that never sees an evaluation dataset.
 
 \subsection{Evaluation Protocol}
 \label{sec:eval_protocol}
@@ -98,96 +91,49 @@ separately report whether a candidate was seen or unseen during training~\cite{z
 primary because activity frequencies are imbalanced.
 
 For enrollment, support and query executions are disjoint. The development evaluation uses
-cross-subject, same-configuration cohorts for MotionSense, RealWorld, and Shoaib. At each
-$k\in\{1,2,4,8\}$, we retain the same queries and candidate inventory and nest the support prefixes.
-A verified recording execution, not an adjacent window, counts as one example. We also run support
-removal, cyclic support-label shuffling, an all-one admissibility control, prototypes, and ridge
-heads on the identical features and support split.
+cross-subject cohorts over MotionSense, RealWorld, and Shoaib. At each $k\in\{1,2,4,8\}$, we retain
+the same queries and candidate inventory and nest the support prefixes. A verified recording
+execution, not an adjacent window, counts as one example. We also run support removal, cyclic
+support-label shuffling, an all-one admissibility control, prototypes, and ridge heads on the
+identical features and support split. These controls are part of the claim, not optional ablations:
+the all-one arm isolates the gate, and the prototype and ridge arms establish what the frozen
+representation already supports without any retrieval machinery.
 
-The test roster was fixed before the present gate evaluation: InclusiveHAR, USC-HAD, TNDA-HAR,
-UT-Complex, MoniPar, SPAR, and Upper Limb Use. TNDA-HAR has no usable subject-disjoint enrollment
-cohort and contributes only to a future zero-support cell. SPAR's repetitions occur within one bout
-and do not establish across-session enrollment. MoniPar is the held-out source that can support
-across-week enrollment. We do not consume any of these test datasets in the present revision.
+The protocol must include cells in which the enrolled configuration differs from the query
+configuration. A two-sided admissibility test scores the query sensor and the evidence sensor
+against each candidate; when both are the same sensor, that product reduces to a per-candidate
+constant and cannot express configuration dependence at all. Cross-configuration cells are therefore
+not an extension of the protocol but a precondition for it to measure the mechanism.
 
-\subsection{Development Result: the Gate Does Not Beat Simpler Controls}
-\label{sec:label_efficiency}
-
-Table~\ref{tab:label_efficiency} averages dataset-level macro-F1 percentages over the three
-development datasets. ``Ungated'' uses the identical prediction path with admissibility fixed to
-one. Prototype and ridge operate on the same frozen representation and enrolled executions.
-
-\begin{table}[t]
-  \centering
-  \caption{Development macro-F1 (percentage points), averaged over MotionSense, RealWorld, and
-  Shoaib. These are model-selection diagnostics, not sealed-test results.}
-  \label{tab:label_efficiency}
-  \scriptsize
-  \setlength{\tabcolsep}{3.0pt}
-  \begin{tabular}{@{}lrrrrr@{}}
-    \toprule
-    & \multicolumn{5}{c}{labeled executions per candidate ($k$)} \\
-    \cmidrule(lr){2-6}
-    Method & 0 & 1 & 2 & 4 & 8 \\
-    \midrule
-    HALO admissibility gate & 15.73 & 40.88 & 43.11 & 44.29 & 39.72 \\
-    HALO ungated retrieval  &  9.07 & 52.15 & 57.14 & 56.16 & 53.62 \\
-    Frozen HALO $+$ prototype & --- & 57.76 & 61.16 & 65.41 & \textbf{72.04} \\
-    Frozen HALO $+$ ridge     & --- & 56.62 & 59.42 & 62.60 & 71.29 \\
-    \midrule
-    Gate, support removed & --- & 15.73 & 15.73 & 15.73 & 15.73 \\
-    Gate, support labels shuffled & --- & 6.02 & 4.75 & 2.19 & 0.88 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-The support interventions show that the gated rule uses enrollment: removing or shuffling support
-substantially reduces macro-F1. That fact is insufficient for a performance claim. Ungated
-retrieval is 11.3--14.0 points better at $k=1$ through 4, and prototypes are 16.9--32.3 points
-better across the enrollment curve. Performance also falls from $k=4$ to 8 for the gated rule while
-prototype and ridge improve.
-
-The telemetry identifies a concrete mechanism. Across every reported development cell, gate values
-range from $0.245$ to $0.733$, above the configured veto threshold $0.15$; consequently the hard
-veto removes no row. The gate only reweights already selected evidence and cannot demonstrate the
-paper's intended admissibility behavior. We therefore reject the hypothesis that the current gate
-improves few-example recognition. The seven-dataset test evaluation remains sealed rather than
-being spent on a method that fails its development controls.
-
-% TODO (2026-08-17): strengthen this paragraph once the repin lands. Three facts are now measured
-% and sharpen the negative result from "the gate did not help" to "this protocol could not have
-% shown it helping":
-%   (i) every reported cell is same-configuration, so evidence rows carry the query's own
-%       descriptor and the geometric mean sqrt(g(query,c) * g(row,c)) collapses to a function of the
-%       candidate alone -- a query-independent per-candidate prior, which can only add bias;
-%  (ii) the veto is inert because the fitted neutral (0.190 on the rebuilt table) sits ABOVE the
-%       0.15 threshold, so abstention rescues unfamiliar rows rather than triggering the veto; the
-%       threshold was calibrated against a table median of 0.33 that is now 0.22;
-% (iii) arbitrary-alias cells set admissibility to all-ones, so gated and ungated arms are
-%       bit-identical there and carry no information about the gate.
-% (i) directly motivates the cross-configuration cell already listed in Sec. 6.4.
-% See STALENESS.md sec. 4.
+The test roster is fixed: InclusiveHAR, USC-HAD, TNDA-HAR, UT-Complex, MoniPar, SPAR, and Upper Limb
+Use. TNDA-HAR has no usable subject-disjoint enrollment cohort and contributes only to a future
+zero-support cell. SPAR's repetitions occur within one bout and do not establish across-session
+enrollment. MoniPar is the held-out source that can support across-week enrollment. We consume none
+of these datasets in the present revision.
 
 \subsection{Required Measurements Before a Performance Claim}
+\label{sec:label_efficiency}
 \label{sec:pending_measurements}
 
-The following experiments are part of the protocol but do not yet have provenance-complete
+The following experiments are part of the protocol and do not yet have provenance-complete
 artifacts:
 
 \begin{itemize}
-  \item held-out concept, dataset, and body-region studies for the gate, including gate-collapse,
-        provenance-capture, and latent-to-measurement guards;
+  \item development enrollment curves for the gate against every control above, on a bank and gate
+        bound to the completed encoder;
   \item cross-configuration enrollment on simultaneous training streams, reported separately from
         the external test result;
-  \item native-grid versus common-rate, sensor-folded versus channel-level, descriptor-off,
-        acquisition-bias-off, observability-off, and signed-low-frequency ablations;
+  \item held-out concept, dataset, and body-region studies for the gate, including gate-collapse,
+        provenance-capture, and latent-to-measurement guards;
+  \item native-grid versus common-rate, sensor-folded versus channel-level, descriptor-on,
+        acquisition-bias-on, observability-off, and signed-low-frequency ablations;
   \item all-pairs activity-text similarity versus sensor-centroid similarity, replacing any
         hand-selected quantitative geometry claim;
   \item data-matched and released-checkpoint baselines, including the published short fine-tuning
-        baseline required by the wearable-foundation-model literature; and
-  \item only after development criteria are met, one evaluation of the seven-dataset sealed test
+        baseline the wearable-foundation-model literature requires; and
+  \item only after the development criteria are met, one evaluation of the seven-dataset sealed test
         roster with confidence intervals and seen/unseen candidate breakdowns.
 \end{itemize}
 
-No on-device latency, Core~ML, iOS, or unknown-class result is claimed because the corresponding
+We claim no on-device latency, Core~ML, iOS, or unknown-class result, because the corresponding
 implementation and measurement artifacts do not exist in the repository.

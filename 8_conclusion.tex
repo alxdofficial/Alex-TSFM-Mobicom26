@@ -7,9 +7,9 @@ marks what a configuration cannot resolve, and learns without activity labels; w
 transparent sequence of compatibility, admissibility, cosine ranking, voting, and sensor fusion; and
 we enroll a new activity by appending rows to memory rather than updating parameters.
 
-The proposition remains open. Our retrieval stage works --- it uses enrollment, and its ungated form
-beats prototype and ridge heads on the same frozen features --- but the admissibility gate that
-carries the thesis does not beat those controls, and its telemetry shows the veto never fires. We
-report that rather than a headline, and we keep seven evaluation datasets sealed. The next
-measurement is cheap and decisive: enroll on one device and query from another, which is the only
-regime in which a two-sided admissibility test can express anything at all.
+The proposition remains open, and we are explicit about why. The encoder and its memory are built,
+but the admissibility gate is not yet fitted against them, so we report no recognition accuracy. The
+more useful finding is structural: a two-sided admissibility score degenerates to a per-candidate
+constant whenever enrollment and query share a configuration, so the obvious evaluation --- enroll
+and query on the same device --- cannot express the mechanism at all. The next measurement follows
+directly and needs no retraining: enroll on one device, query from another.

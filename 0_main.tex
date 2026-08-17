@@ -145,20 +145,19 @@ candidate activity names, and number of labeled demonstrations may all change. H
 acquisition configuration instead of normalizing it away. Its tokenizer computes frequency
 features on each stored sampling grid, defines bands in hertz, records acquisition-limited
 observability and patch-limited resolution, and folds the axes of each physical sensor into one
-token. We train the encoder without activity labels, using masked contextual prediction, masked
-sensor-description retrieval, and augmentation consistency.
+token. We train the encoder without activity labels, using masked contextual prediction and
+augmentation consistency.
 
 Classification uses a versioned bank of sensor-patch embeddings. A closed-form evidence path first
 enforces modality and gravity compatibility, then uses a low-rank text-conditioned gate to decide
 whether a query and stored sensor can observe each candidate concept. It applies this admissibility
 test before cosine ranking, votes with enrolled-label identity or corpus-label text, and sums votes
 across query sensors. Adding a demonstration changes memory but does not update model parameters.
-The current Phase-A run uses 18 public datasets, 56 acquisition configurations, and 161 canonical
-labels; we reserve ten disjoint datasets for development and testing. On the three development
-datasets, the admissibility-gated path uses enrollment but trails both ungated retrieval and
-prototype or ridge classifiers on the same frozen features. We report this negative result rather
-than claim an unsupported retrieval advantage, and keep the seven-dataset test roster sealed until
-the method is fixed.
+The current Phase-A run uses 18 public datasets, 56 acquisition configurations, and 166 canonical
+labels; we reserve ten disjoint datasets for development and testing. We report the design, its
+implementation, and the enrollment protocol with its controls. We report no accuracy number: the
+gate has not been fitted against the completed encoder's memory, so no result is attributable to
+the system described here, and the seven-dataset test roster stays sealed.
 \end{abstract}
 
 

@@ -75,9 +75,9 @@ loaded with the same discipline: a missing or stale exclusion cache is a hard fa
 silently re-admitting byte-identical stale-buffer windows would corrupt both training and scoring.
 
 These guards are load-bearing rather than decorative. During development they rejected a legacy
-resolvability table that pooled evaluation datasets into a training-only measurement, and they
-currently refuse the gate artifact described in Section~\ref{sec:label_efficiency} whenever it is
-paired with a bank from a different checkpoint.
+resolvability table that had pooled evaluation datasets into a training-only measurement, and they
+currently refuse every gate artifact fitted before the completed encoder, which is why this paper
+reports no enrollment result rather than one carried over from a superseded checkpoint.
 
 \subsection{Reproducibility}
 \label{sec:reproducibility}

@@ -70,9 +70,9 @@ MM-Fit, and PhyTMo. MoniPar, SPAR, and Upper Limb Use are held out.
 recordings, so it is excluded to avoid near-duplicate subjects. RecGym~\cite{recgym} distributes
 per-axis min--max-normalized data that no longer preserve the physical scale used by the tokenizer.
 The MobiAct~\cite{mobiact} download did not produce a materialized grid and is not counted.
-HARTH~\cite{harth} is
-available only as an optional placement stress source, and ExtraSensory, NHANES, HMOG, and KneE-PAD
-are optional scale/stress sources rather than members of the reported 18-dataset run.
+HARTH~\cite{harth} is converted but has no materialized grid. ExtraSensory, NHANES, HMOG, and
+KneE-PAD are buildable optional scale and stress sources that must be requested explicitly, and are
+not members of the reported 18-dataset run.
 
 \section{Baseline Contracts}
 \label{app:baselines}
@@ -120,37 +120,26 @@ The signed-low-frequency ablation must use the same evaluation cohort and report
 \section{Phase-A Specification}
 \label{app:phasea}
 
-% TODO (2026-08-17): every hyperparameter below is verified against the pinned v2 run configuration
-% and is correct for the reported checkpoint. It is NOT the current repository default. Head now
-% defaults to batch 1,024 / 7,500 steps / lr 6e-4 / 250 warmup / weight decay 0.1 / EMA 0.984 /
-% calibration at step 500 / single 1.0 s patches -- a recipe that has not yet produced a checkpoint.
-% The short/long patch ranges below now apply only to the multi-resolution ablation.
-% See STALENESS.md sec. 2.
 The reported run uses a fixed filterbank, sensor-granularity tokens, width 256, six layers, eight
 heads, batch size 256, 30,000 steps, learning rate $3\times10^{-4}$, 1,000 warmup steps, weight decay
 $0.05$, gradient clipping at $1.0$, and seed 20260718. The two top-level loss coefficients are fixed
-after calibration at step 2,000: 3.998090 for the JEPA family and 0.689099 for VICReg. Descriptor
-retrieval has coefficient $0.5$ inside the JEPA family. The teacher decay is $0.996$.
+after calibration at step 2,000: 7.053501 for the JEPA family and 0.653232 for VICReg. The teacher
+decay is $0.996$. Descriptor retrieval carries coefficient zero and is not trained.
 
-Short patch durations are drawn from $0.4$--$0.8$\,s, long durations from $1.0$--$1.5$\,s, with a
-minimum ratio of $1.75$. A dataset with $n$ windows is sampled proportional to $n^{0.25}$ with a
-maximum share of $25\%$; subjects are sampled proportional to the square root of their window
-count. Activity labels do not enter the training sampler or loss. The selected checkpoint is step
-4,000, which maximizes the predefined subject-disjoint label--stream-macro validation score over the
-completed run.
+Patches are one second on a single resolution. A dataset with $n$ windows is sampled proportional to
+$n^{0.25}$ with a maximum share of $25\%$; subjects are sampled proportional to the square root of
+their window count. Activity labels do not enter the training sampler or loss. The selected
+checkpoint is step 27,000, which maximizes the predefined subject-disjoint label--stream-macro
+validation score over the completed run.
 
 \section{Evidence Artifact and Controls}
 \label{app:phaseb}
 
-% TODO (2026-08-17): these bank statistics belong to the pinned v2 artifact. A schema-4 bank bound to
-% the newer checkpoint was rebuilt on 2026-08-17 (2,629,972 sensor rows, 166-label vocabulary), but
-% no gate has been fitted against it and no enrollment run exists, so the numbers below remain the
-% only reportable ones. Note also that the gate artifact backing this appendix records
-% artifact_version 2 and is refused by the current loader. See STALENESS.md sec. 0.
-The active bank schema has 250,000 source windows, 56 configurations, and 161 labels. It records
-3,942,901 valid patch rows and 7,653,242 per-sensor rows. The gate artifact is bound to this bank,
-checkpoint, text-embedding path, and evaluation schema. Evaluation refuses legacy banks or foreign
-artifacts unless the mismatch is explicitly acknowledged.
+The active bank has 250,000 source windows, 56 configurations, and all 166 canonical labels. It
+records 1,350,834 valid patch rows and 2,629,972 per-sensor rows, and it is bound to the completed
+encoder checkpoint and to the sentence-embedding path used to build it. A gate artifact must
+additionally record the resolvability table and bank it was fitted against. Evaluation refuses
+legacy banks or foreign artifacts unless the mismatch is explicitly acknowledged.
 
 The prediction budget is 64 evidence rows per query patch and candidate. Sensor-bias similarity is
 disabled. For semantically unfamiliar sensor or concept text, the gate blends toward a neutral

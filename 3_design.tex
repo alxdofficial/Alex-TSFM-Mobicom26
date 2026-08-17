@@ -126,37 +126,25 @@ safe.
 The transformer encoder~\cite{transformer} has width 256, six layers, eight heads, and a frozen
 all-MiniLM-L6-v2 text encoder~\cite{sbert}. Attention alternates over time within a sensor and across sensors at a patch;
 padding and sensor masks exclude missing values. Rotary positions use elapsed seconds rather than
-token indices~\cite{rope}. Each window is represented at two patch-duration resolutions. Pooling weights real
-patch duration within a resolution and gives equal weight to active resolutions.
-% TODO (2026-08-17): "two patch-duration resolutions" describes the pinned v2 artifact. The current
-% repository default is a single fixed 1.0 s grid (multiresolution=False); multi-resolution survives
-% only as an explicit ablation. Rewrite together with the checkpoint repin, not before -- the
-% reported results were produced by the two-resolution encoder. See STALENESS.md sec. 2.
+token indices~\cite{rope}. Each window is represented on one fixed one-second patch grid, and
+pooling weights each patch by its real temporal support, so a final short patch counts for less than
+a full one. A multi-resolution variant remains available as an ablation.
 
 \subsection{Phase A: Label-Free Pretraining}
 \label{sec:phaseA_design}
 
-% TODO (2026-08-17): this subsection describes the pinned v2 recipe. Diverged from repository head
-% in three ways, all of which must move together with the checkpoint repin:
-%   - descriptor-mask retrieval is disabled by default (descriptor_weight=0, event probability 0),
-%     so the paragraph below describes a term the current recipe does not train;
-%   - the augmentation stack is now rotation-only at p=1, and rotation moved from the shared-config
-%     group to the per-view nuisance group, so the two VICReg views draw INDEPENDENT rotations;
-%   - the calibration step default is now 500 rather than 2,000 (the reported run used 2,000).
-% See STALENESS.md sec. 2.
 Phase A has two top-level objectives. Their coefficients are calibrated once at step 2,000 from
 encoder-gradient norms and then fixed.
 
 \textbf{Masked contextual prediction.} A student predicts contextual sensor tokens produced by an
 exponential-moving-average teacher~\cite{byol,data2vec,ijepa}. Masking includes contiguous time
 blocks and, when physically well posed, a complete modality at one placement. A descriptor-mask
-event hides a sensor's text while leaving its signal and measured bias visible; an InfoNCE
-retrieval loss~\cite{infonce}
-then ranks the true frozen descriptor among the distinct descriptions in the batch. This term is
-part of the JEPA objective family rather than a third top-level objective.
+variant, which hides a sensor's text and scores an InfoNCE retrieval of the true frozen
+descriptor~\cite{infonce}, is implemented but carries zero weight in the reported recipe.
 
-\textbf{Augmentation consistency.} VICReg~\cite{vicreg} aligns two physical augmentations of the
-same window while maintaining feature variance and reducing covariance. It avoids declaring other
+\textbf{Augmentation consistency.} VICReg~\cite{vicreg} aligns two augmentations of the same window
+while maintaining feature variance and reducing covariance. The reference recipe applies one
+transform: an $SO(3)$ mounting rotation drawn independently for each view. It avoids declaring other
 windows to be negatives when they may contain the same activity. Activity labels are not used in
 either gradient path. Checkpoint selection uses subject-disjoint $k$-nearest-neighbor balanced
 accuracy on the Phase-A validation subjects.

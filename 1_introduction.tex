@@ -37,8 +37,8 @@ defines frequency bands in physical hertz on the stored grid, preserves signed l
 acceleration, and marks bands unavailable under the acquisition rate or unresolved by the patch
 duration. It folds the axes of each accelerometer or gyroscope into a sensor token with an explicit
 axis-validity mask. The token also receives a frozen text description and activity-invariant
-acquisition statistics. Phase A learns from masked contextual prediction, reconstruction of hidden
-sensor descriptions, and consistency across physical augmentations.
+acquisition statistics. Phase A learns from masked contextual prediction and consistency across
+physical augmentations.
 
 At inference we freeze the encoder. A versioned memory stores one row per patch and sensor, with
 label and provenance. The evidence path applies hard modality/gravity compatibility, a learned
@@ -63,8 +63,8 @@ We make four contributions.
         different recorded executions, and we ship five controls with every number: ungated
         retrieval, support removal, support-label shuffling, prototypes, and ridge heads on the same
         frozen features.
-  \item \textbf{We report a negative development result.} The fitted gate uses enrollment but does
-        not beat those controls, and its telemetry shows the veto never fires. We bound the present
-        claim, identify the protocol change that would make the mechanism testable, and keep the
-        seven-dataset test roster sealed.
+  \item \textbf{We state what the protocol must contain before it can test the claim.} A two-sided
+        admissibility score collapses to a per-candidate constant whenever the enrolled and queried
+        configurations coincide, so cross-configuration cells are a precondition for measuring the
+        mechanism rather than an extension. We keep the seven-dataset test roster sealed.
 \end{itemize}
