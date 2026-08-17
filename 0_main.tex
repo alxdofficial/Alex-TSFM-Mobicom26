@@ -77,6 +77,17 @@
 % drawing of each lives beside it as figures/fig_<name>_prev.tex. Captions, \label{}s and all
 % cross-references are unchanged, so restoring a figure is a one-line \input swap.
 % Clear every placeholder before submission (MOBICOM_REQUIREMENTS.md sec. 10).
+% SECTION PLACEHOLDER. Used where the content depends on experiments that have not been run. We
+% render a marked box rather than prose, because prose describing an unrun protocol in the present
+% tense reads as though the work was done.
+\newcommand{\pendingsection}[1]{%
+  \par\medskip\noindent
+  \fcolorbox{red!70}{red!3}{%
+    \begin{minipage}{0.955\columnwidth}
+    \TODO{\textbf{[SECTION PLACEHOLDER --- PENDING EXPERIMENTS]}}\\[3pt]
+    \footnotesize #1
+    \end{minipage}}\par\medskip}
+
 \newcommand{\figplaceholder}[2]{%
   \begin{tikzpicture}
   \node[draw=red!70,line width=0.9pt,dashed,rounded corners=3pt,inner sep=8pt,

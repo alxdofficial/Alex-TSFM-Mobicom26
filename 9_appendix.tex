@@ -49,8 +49,70 @@ linear probe or fine-tuning result is not marked as no-update enrollment.
 \section{Corpus Construction}
 \label{app:corpus}
 
-Table~\ref{tab:datasets} is generated from each stream's
-\path{grids/native/*/meta.json}. Window
+\begin{table*}[t]
+  \centering
+  \caption{Current Phase-A and external-evaluation rosters. \emph{Cfg} counts materialized sensor
+  configurations; \emph{rows} counts stream-window rows before the current quality exclusions and
+  subject split, so simultaneous placements are counted separately. $^\dagger$The XRF ear stream was
+  acquired at 25\,Hz and stored at 50\,Hz. $^\ddagger$MM-Fit devices have different acquisition
+  clocks and are placed on a shared 100\,Hz grid; source rates still bound observability. The seven
+  test datasets have not been used for method selection.}
+  \label{tab:datasets}
+  \scriptsize
+  \setlength{\tabcolsep}{3.2pt}
+  \begin{tabular}{@{}lrrr@{\hspace{8mm}}lrrr@{}}
+    \toprule
+    \multicolumn{4}{c}{Phase-A training} & \multicolumn{4}{c}{External evaluation} \\
+    \cmidrule(lr){1-4}\cmidrule(lr){5-8}
+    Dataset & Hz & Cfg & rows & Dataset (role) & Hz & Cfg & rows \\
+    \midrule
+    CAPTURE-24~\cite{chan2024capture24} & 100 & 1 & 1,543,573
+      & MotionSense~\cite{motionsense} (dev) & 50 & 1 & 4,534 \\
+    WISDM~\cite{wisdm} & 20 & 2 & 72,227
+      & RealWorld~\cite{realworld} (dev) & 50 & 1 & 11,237 \\
+    RealDISP~\cite{realdisp} & 50 & 9 & 63,432
+      & Shoaib~\cite{shoaib} (dev) & 50 & 1 & 2,100 \\
+    XRF V2~\cite{xrf_v2} & 25/50$^\dagger$ & 6 & 59,442
+      & InclusiveHAR~\cite{inclusivehar} (test) & 50 & 1 & 1,260 \\
+    DSADS~\cite{dsads} & 25 & 5 & 38,175
+      & USC-HAD~\cite{usc_had} (test) & 100 & 1 & 4,350 \\
+    NFI-FARED~\cite{nfi_fared} & 100 & 2 & 29,184
+      & TNDA-HAR~\cite{tnda_har} (test) & 50 & 1 & 3,353 \\
+    PhyTMo~\cite{phytmo} & 100 & 8 & 29,180
+      & UT-Complex~\cite{ut_complex} (test) & 50 & 1 & 3,900 \\
+    Opportunity~\cite{opportunity_challenge} & 30 & 5 & 28,785
+      & MoniPar~\cite{monipar} (test) & 50 & 1 & 12,079 \\
+    HARMES~\cite{harmes} & 50 & 1 & 25,583
+      & SPAR~\cite{spar} (test) & 50 & 2 & 1,898 \\
+    FORTH-TRACE~\cite{forth_trace} & 51.2 & 5 & 12,330
+      & Upper Limb Use~\cite{upper_limb_use} (test) & 50 & 4 & 1,124 \\
+    UniMiB SHAR~\cite{unimibi} & 50 & 1 & 11,771
+      & & & & \\
+    HHAR~\cite{hhar} & 50 & 1 & 11,587
+      & & & & \\
+    KU-HAR~\cite{kuhar} & 100 & 1 & 11,263
+      & & & & \\
+    UCI-HAR~\cite{ucihar} & 50 & 1 & 10,299
+      & & & & \\
+    MM-Fit~\cite{mmfit} & 100$^\ddagger$ & 4 & 8,496
+      & & & & \\
+    SP-SW-HAR~\cite{sp_sw_har} & 100 & 2 & 3,757
+      & & & & \\
+    PAMAP2~\cite{pamap2} & 100 & 1 & 3,292
+      & & & & \\
+    MHEALTH~\cite{mhealth} & 50 & 1 & 1,230
+      & & & & \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+Phase A uses 18 public datasets and 56 acquisition configurations, whose materialized native-grid
+manifests hold 1,963,606 stream-window rows before quality screens and the subject split. The bank
+built from the completed encoder contains 250,000 balanced source windows, 546 training subjects,
+all 166 canonical training labels, 1,350,834 patch rows, and 2,629,972 sensor rows. Ten datasets are
+disjoint from Phase-A training: three form the development roster and seven are sealed for testing.
+
+Table~\ref{tab:datasets} is generated from each stream's \path{grids/native/*/meta.json}. Window
 counts are properties of the HALO converters and grid policy, not quantities claimed by the source
 dataset papers. The evidence ledger records the aggregation command and distinguishes materialized
 rows, quality-screened rows, subject splits, and the balanced 250,000-window bank.
@@ -74,48 +136,27 @@ HARTH~\cite{harth} is converted but has no materialized grid. ExtraSensory, NHAN
 KneE-PAD are buildable optional scale and stress sources that must be requested explicitly, and are
 not members of the reported 18-dataset run.
 
-\section{Baseline Contracts}
+\section{Baseline Comparison}
 \label{app:baselines}
 
-Models receive different input information, so a future comparison must disclose both weight source
-and input contract. LiMU-BERT and CrossHAR require corpus-matched retraining. Released harnet,
-UniMTS, and NormWear weights were trained on different corpora. ConSE~\cite{conse} can translate a
-fixed training classifier into candidate text scores, but it does not make the underlying encoder
-open label or provide an enrollment mechanism.
+\pendingsection{No baseline has been run against the completed encoder. Models receive different
+input information, so any future comparison must disclose both weight source and input contract:
+LiMU-BERT and CrossHAR require corpus-matched retraining, while released harnet, UniMTS and NormWear
+weights were trained on different corpora. ConSE~\cite{conse} can translate a fixed training
+classifier into candidate-text scores, but it does not make the underlying encoder open-label or
+supply an enrollment mechanism. Results will be reported only when every row shares the support and
+query cohorts used for HALO.}
 
-\begin{table}[t]
-  \centering
-  \caption{Planned baseline groups. Results are not reported until every row has an artifact using
-  the same support and query cohorts.}
-  \label{tab:baselines}
-  \scriptsize
-  \setlength{\tabcolsep}{2pt}
-  \begin{tabularx}{\columnwidth}{@{}l
-      >{\raggedright\arraybackslash}X
-      >{\raggedright\arraybackslash}X
-      >{\raggedright\arraybackslash}X@{}}
-    \toprule
-    Model & Weight source & Input contract & Candidate bridge \\
-    \midrule
-    LiMU-BERT~\cite{limubert} & corpus matched & 20\,Hz, padded 6-channel & ConSE \\
-    CrossHAR~\cite{crosshar} & corpus matched & common rate, padded channels & ConSE \\
-    harnet~\cite{sslwearables} & released & 30\,Hz wrist acceleration & ConSE \\
-    UniMTS~\cite{unimts} & released & placement graph & native interface \\
-    NormWear~\cite{normwear} & released & model-specific common rate & text interface \\
-    \textbf{HALO} & current run & per-sensor stored-grid input & evidence rule \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
-
-\section{Tokenizer Checks Required for Publication}
+\section{Tokenizer Validation}
 \label{app:tokenizer}
 
-The implementation contains unit guards for DFT overflow, acquisition-rate observability, sensor
-folding, and axis validity. Those software tests do not by themselves establish empirical
-rate-equivalence or posture utility. The retired figures used hard-coded values without an archived
-generator. Their replacements must be produced by a checked-in script that records input windows,
-anti-alias filtering, source and stored rates, checkpoint hash, random seed, and raw feature arrays.
-The signed-low-frequency ablation must use the same evaluation cohort and report uncertainty.
+\pendingsection{The implementation carries unit guards for DFT overflow, acquisition-rate
+observability, sensor folding, and axis validity, and those tests pass. They establish that the code
+computes what it claims, not that the resulting features are empirically rate-equivalent or that the
+signed low-frequency feature is useful. Both are open measurements. Their generating script must
+record input windows, anti-alias filtering, source and stored rates, checkpoint hash, random seed,
+and raw feature arrays, and the signed low-frequency ablation must use the same evaluation cohort as
+the main result and report uncertainty.}
 
 \section{Phase-A Specification}
 \label{app:phasea}
@@ -141,21 +182,18 @@ encoder checkpoint and to the sentence-embedding path used to build it. A gate a
 additionally record the resolvability table and bank it was fitted against. Evaluation refuses
 legacy banks or foreign artifacts unless the mismatch is explicitly acknowledged.
 
-The prediction budget is 64 evidence rows per query patch and candidate. Sensor-bias similarity is
-disabled. For semantically unfamiliar sensor or concept text, the gate blends toward a neutral
-value. The following telemetry is mandatory whenever the gate is reported:
+The prediction budget is 64 evidence rows per query patch and candidate, sensor-bias similarity
+carries weight zero, and for semantically unfamiliar sensor or concept text the gate blends toward a
+neutral value.
 
-\begin{itemize}
-  \item gate mean, spread, extrema, and vetoed-row fraction;
-  \item same-dataset retrieval with the acquisition-bias blend both off and on;
-  \item held-out concept, dataset, and body-region errors relative to constant and per-concept
-        baselines; and
-  \item within-concept correlation between gate latents and the train-only resolvability table.
-\end{itemize}
-
-Every enrollment result shares one deterministic query cohort and nested support prefixes across
+\pendingsection{No gate has been fitted against this bank, so none of the telemetry below has been
+produced. When a gate is reported, four items are mandatory rather than optional: gate mean, spread,
+extrema and vetoed-row fraction; same-dataset retrieval with the acquisition-bias blend both off and
+on; held-out concept, dataset and body-region errors relative to constant and per-concept baselines;
+and within-concept correlation between the gate latents and the train-only resolvability table.
+Every enrollment result must share one deterministic query cohort and nested support prefixes across
 the gate, all-one admissibility, support removal, support-label shuffling, prototype, and ridge
-controls. These controls are part of the claim, not optional ablations.
+controls.}
 
 \section{Evidence Ledger}
 \label{app:ledger}
